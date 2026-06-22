@@ -85,8 +85,8 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 
 | Método   | Endpoint                                 | Descrição                              | Parâmetros                           |
 |----------|------------------------------------------|----------------------------------------|--------------------------------------|
-| POST     | `/resumo-mensal`                         | Calcular ou atualizar resumo           | Body: `MonthlySummaryRequestDTO`     |
-| GET      | `/resumo-mensal`                         | Calcular ou retornar resumo do período | `userId`*, `month`*, `year`* (query) |
+| POST     | `/resumo-mensal`                         | (Re)calcular ou atualizar resumo       | Body: `MonthlySummaryRequestDTO`     |
+| GET      | `/resumo-mensal`                         | Retornar resumo do período             | `userId`*, `month`*, `year`* (query) |
 | GET      | `/resumo-mensal/historico`               | Listar histórico de resumos do usuário | `userId`* (query)                    |
 | GET      | `/resumo-mensal/{userId}/{year}/{month}` | Buscar resumo por período              | `userId`, `year`, `month` (path)     |
 | DELETE   | `/resumo-mensal/{userId}/{year}/{month}` | Deletar resumo de um período           | `userId`, `year`, `month` (path)     |
