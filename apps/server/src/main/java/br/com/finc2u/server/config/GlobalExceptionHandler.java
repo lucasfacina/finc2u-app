@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 status.value(),
-                "Erro de validação",
+                "Erro de validação.",
                 details,
                 LocalDateTime.now()
         );
