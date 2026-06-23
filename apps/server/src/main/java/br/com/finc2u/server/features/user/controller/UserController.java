@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,7 @@ public class UserController {
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest userRequest) {
         User user = toEntity(userRequest);
         User savedUser = userService.create(user);
-        return ResponseEntity.ok(UserResponse.from(savedUser));
+        return new ResponseEntity<>(UserResponse.from(savedUser), HttpStatus.CREATED);
     }
 
     @GetMapping
