@@ -57,14 +57,14 @@ public class UserController {
     }
 
     private User toEntity(UserRequest userRequest) {
-        return new User(
-                userRequest.name(),
-                userRequest.email(),
-                new UserConfiguration(
+        return User.builder()
+                .name(userRequest.name())
+                .email(userRequest.email())
+                .userConfiguration(new UserConfiguration(
                         userRequest.baseSalary(),
                         userRequest.savingsBalance()
-                )
-        );
+                ))
+                .build();
     }
 
 }
