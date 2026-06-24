@@ -1,5 +1,7 @@
 package br.com.finc2u.server.features.user.dto;
 
+import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -19,4 +21,16 @@ public record UserRequest(
         @PositiveOrZero(message = "Saldo de poupança não pode ser negativo")
         BigDecimal savingsBalance
 ) {
+
+    public User toEntity() {
+        return User.builder()
+                .name(this.name)
+                .email(this.email)
+                .userConfiguration(new UserConfiguration(
+                        this.baseSalary,
+                        this.savingsBalance
+                ))
+                .build();
+    }
+
 }
