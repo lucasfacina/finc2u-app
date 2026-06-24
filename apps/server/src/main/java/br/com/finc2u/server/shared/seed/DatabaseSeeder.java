@@ -1,6 +1,5 @@
 package br.com.finc2u.server.shared.seed;
 
-import br.com.finc2u.server.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -18,16 +17,10 @@ import java.util.List;
 public class DatabaseSeeder implements CommandLineRunner {
 
     private final List<Seeder> seeders;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (userRepository.count() > 0) {
-            log.info("⚠️ Banco já populado, seeding ignorado.");
-            return;
-        }
-
         log.info("🚀 Iniciando processo de Database Seeding...");
         SeedContext context = new SeedContext();
         seeders.stream()
