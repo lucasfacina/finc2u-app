@@ -14,6 +14,8 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class UserSeeder implements Seeder {
 
+    private static final String SEED_EMAIL = "facina3@gmail.com";
+
     private final UserRepository userRepository;
 
     @Override
@@ -23,6 +25,13 @@ public class UserSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
+        User user = userRepository.findByEmail(SEED_EMAIL)
+                .orElseGet(this::createSeedUser);
+
+        context.setUser(user);
+    }
+
+    private User createSeedUser() {
         UserConfiguration configuration = new UserConfiguration(
                 new BigDecimal("3000.00"),
                 new BigDecimal("5000.00")
@@ -30,11 +39,11 @@ public class UserSeeder implements Seeder {
 
         User user = User.builder()
                 .name("Lucas Facina")
-                .email("facina3@gmail.com")
+                .email(SEED_EMAIL)
                 .userConfiguration(configuration)
                 .build();
 
-        context.setUser(userRepository.save(user));
+        return userRepository.save(user);
     }
 
 }
