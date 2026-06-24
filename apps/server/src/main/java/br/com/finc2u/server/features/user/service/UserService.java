@@ -26,11 +26,13 @@ public class UserService {
         return userRepository.saveAndFlush(user);
     }
 
+    @Transactional(readOnly = true)
     public User getById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com o ID: " + id));
     }
 
+    @Transactional(readOnly = true)
     public List<User> getAll() {
         return userRepository.findAll();
     }

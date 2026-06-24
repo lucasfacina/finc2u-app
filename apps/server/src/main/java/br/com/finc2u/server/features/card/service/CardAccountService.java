@@ -27,11 +27,13 @@ public class CardAccountService {
         return cardAccountRepository.save(cardAccount);
     }
 
+    @Transactional(readOnly = true)
     public CardAccount getById(UUID id) {
         return cardAccountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + id));
     }
 
+    @Transactional(readOnly = true)
     public List<CardAccount> getByUser(UUID userId) {
         userService.getById(userId);
         return cardAccountRepository.findByUserIdOrderByCardNameAsc(userId);
