@@ -1,11 +1,12 @@
 package br.com.finc2u.server.features.user.entity;
 
+import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.shared.model.BaseModel;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "tb_user")
@@ -21,5 +22,9 @@ public class User extends BaseModel {
 
     @OneToOne(cascade = CascadeType.ALL)
     private UserConfiguration userConfiguration;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user")
+    List<CardAccount> cardAccountList;
 
 }
