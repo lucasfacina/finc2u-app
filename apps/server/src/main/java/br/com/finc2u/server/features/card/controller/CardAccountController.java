@@ -48,7 +48,7 @@ public class CardAccountController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<CardAccountResponse> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         cardAccountService.delete(id);
         return ResponseEntity.noContent().build();
     }
