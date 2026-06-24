@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.user.controller;
 
 import br.com.finc2u.server.features.user.dto.UserRequest;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.service.UserService;
 import jakarta.validation.Valid;
@@ -54,17 +53,6 @@ public class UserController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
-    }
-
-    private User toEntity(UserRequest userRequest) {
-        return User.builder()
-                .name(userRequest.name())
-                .email(userRequest.email())
-                .userConfiguration(new UserConfiguration(
-                        userRequest.baseSalary(),
-                        userRequest.savingsBalance()
-                ))
-                .build();
     }
 
 }
