@@ -58,7 +58,7 @@ public class Expense extends BaseModel {
      * - Com cartão e sem dueDate: calcula a partir de purchaseDate + fechamento/vencimento do cartão.
      * - Sem cartão e sem dueDate: erro (despesa avulsa exige vencimento manual).
      */
-    public void setDueDate(LocalDate purchaseDate) {
+    public void resolveDueDate(LocalDate purchaseDate) {
         if (dueDate != null) {
             return;
         }
@@ -110,7 +110,7 @@ public class Expense extends BaseModel {
      * as regras de parcelamento.
      */
     public void prepareForPersistence(LocalDate purchaseDate) {
-        setDueDate(purchaseDate);
+        resolveDueDate(purchaseDate);
         setDefaultPaymentStatus();
         applyInstallmentRules();
     }
