@@ -104,4 +104,15 @@ public class Expense extends BaseModel {
         }
     }
 
+    /*
+     * Normaliza o estado derivado da despesa antes de persistir, na ordem correta:
+     * resolve o vencimento, define o status padrão (que depende do vencimento) e aplica
+     * as regras de parcelamento.
+     */
+    public void prepareForPersistence(LocalDate purchaseDate) {
+        setDueDate(purchaseDate);
+        setDefaultPaymentStatus();
+        applyInstallmentRules();
+    }
+
 }
