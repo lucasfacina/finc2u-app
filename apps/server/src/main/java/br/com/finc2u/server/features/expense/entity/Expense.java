@@ -1,5 +1,7 @@
 package br.com.finc2u.server.features.expense.entity;
 
+import br.com.finc2u.server.config.BusinessConstants;
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -49,5 +51,57 @@ public class Expense extends BaseModel {
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private List<Tag> tags;
+
+    /*
+     * Resolve a data de vencimento da despesa:
+     * - Se dueDate já foi informado, ele prevalece (override manual).
+     * - Com cartão e sem dueDate: calcula a partir de purchaseDate + fechamento/vencimento do cartão.
+     * - Sem cartão e sem dueDate: erro (despesa avulsa exige vencimento manual).
+     */
+    public void setDueDate(LocalDate purchaseDate) {
+        if (dueDate != null) {
+            return;
+        }
+
+        if (cardAccount == null) {
+            throw new BusinessException("Data de vencimento é obrigatória para despesas sem cartão.");
+        }
+
+        if (cardAccount.getClosingDate() == null || cardAccount.getDueDate() == null) {
+            throw new BusinessException("Cartão não possui datas de fechamento/vencimento configuradas.");
+        }
+
+        LocalDate purchase = purchaseDate != null
+                ? purchaseDate
+                : LocalDate.now();
+        this.dueDate = cardAccount.calculateInvoiceDueDate(purchase);
+    }
+
+    /*
+     * Define o status de pagamento por padrão quando não informado:
+     * vencimento até hoje conta como PAID (assume pagamento em dia); vencimento futuro fica PENDING.
+     */
+    public void setDefaultPaymentStatus() {
+        if (paymentStatus == null) {
+            paymentStatus = !dueDate.isAfter(LocalDate.now())
+                    ? PaymentStatus.PAID
+                    : PaymentStatus.PENDING;
+        }
+    }
+
+    /* Valida regras de PARCELED: mínimo de parcelas, parcela inicial padrão e auto-PAID na última. */
+    public void applyInstallmentRules() {
+        if (expenseType == ExpenseType.PARCELED) {
+            if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS) {
+                throw new BusinessException("Total de parcelas deve ser pelo menos 1 para despesas parceladas");
+            }
+            if (currentInstallment == null) {
+                currentInstallment = BusinessConstants.DEFAULT_FIRST_INSTALLMENT;
+            }
+            if (currentInstallment.equals(totalInstallment)) {
+                paymentStatus = PaymentStatus.PAID;
+            }
+        }
+    }
 
 }
