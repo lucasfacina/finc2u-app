@@ -23,7 +23,7 @@ import java.util.List;
 public class Expense extends BaseModel {
 
     private String description;
-    private LocalDate date;
+    private LocalDate dueDate;
     private Integer currentInstallment;
     private Integer totalInstallment;
 
@@ -49,5 +49,5 @@ public class Expense extends BaseModel {
             inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private List<Tag> tags;
-    
+
 }
