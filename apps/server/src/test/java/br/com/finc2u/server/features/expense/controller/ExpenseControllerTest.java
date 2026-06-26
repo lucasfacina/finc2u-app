@@ -111,7 +111,7 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void getByFilters_shouldBindQueryParamsIntoFilter() throws Exception {
+    void getWithFilters_shouldBindQueryParamsIntoFilter() throws Exception {
         when(expenseService.getWithFilters(eq(userId), any())).thenReturn(List.of(expense));
 
         mockMvc.perform(get("/expenses/filters")
