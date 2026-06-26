@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.summary.entity;
 
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -54,32 +55,44 @@ public class MonthlySummary {
     }
 
     /**
-     * Aplica os totais agregados do período e deriva os campos compostos:
+     * Resolve o caixa do período: usa o valor informado se houver; senão preserva o já persistido neste
+     * resumo; senão faz auto-fill com o restante do mês anterior (zero se não houver).
+     */
+    private BigDecimal resolveCashBalance(BigDecimal requested, BigDecimal previousMonthRemaining) {
+        if (requested != null) return requested;
+        if (this.cashBalance != null) return this.cashBalance;
+
+        return previousMonthRemaining != null
+                ? previousMonthRemaining
+                : BigDecimal.ZERO;
+    }
+
+    /*
+     * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
+     * compostos a partir dos totais agregados.
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses
      * -> flexibleBudget  = totalIncome − totalFixed
-     * -> totalFixed entra apenas na derivação do orçamento flexível (não é persistido).
+     * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe);
+     * -> totalFixed entra só no orçamento flexível (não é persistido como coluna).
+     * -> previousMonthRemaining restante do mês anterior, usado no auto-fill do caixa (pode ser nulo).
      */
-    public void applyTotals(
-            BigDecimal totalExpenses,
-            BigDecimal totalPaid,
-            BigDecimal totalPending,
-            BigDecimal totalExtras,
-            BigDecimal totalFixed,
-            BigDecimal cashBalance,
-            BigDecimal savingsBalance,
-            BigDecimal baseSalary
+    public void resolveTotals(
+            MonthlySummaryTotals totals,
+            BigDecimal requestedCashBalance,
+            BigDecimal previousMonthRemaining
     ) {
-        BigDecimal totalIncome = baseSalary.add(totalExtras).add(cashBalance);
+        this.cashBalance = resolveCashBalance(requestedCashBalance, previousMonthRemaining);
+        this.savingsBalance = user.savingsBalanceOrZero();
 
-        this.totalExpenses = totalExpenses;
-        this.totalPaid = totalPaid;
-        this.totalPending = totalPending;
-        this.totalExtras = totalExtras;
-        this.cashBalance = cashBalance;
-        this.savingsBalance = savingsBalance;
-        this.remainingAmount = totalIncome.subtract(totalExpenses);
-        this.flexibleBudget = totalIncome.subtract(totalFixed);
+        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras()).add(this.cashBalance);
+
+        this.totalExpenses = totals.totalExpenses();
+        this.totalPaid = totals.totalPaid();
+        this.totalPending = totals.totalPending();
+        this.totalExtras = totals.totalExtras();
+        this.remainingAmount = totalIncome.subtract(totals.totalExpenses());
+        this.flexibleBudget = totalIncome.subtract(totals.totalFixed());
     }
 
     @Override
