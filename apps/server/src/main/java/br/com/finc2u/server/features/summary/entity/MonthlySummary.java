@@ -45,6 +45,14 @@ public class MonthlySummary {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    public Integer getMonth() {
+        return id != null ? id.getMonth() : null;
+    }
+
+    public Integer getYear() {
+        return id != null ? id.getYear() : null;
+    }
+
     /**
      * Aplica os totais agregados do período e deriva os campos compostos:
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
