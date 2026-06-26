@@ -54,6 +54,18 @@ public class MonthlySummary {
         return id != null ? id.getYear() : null;
     }
 
+    /** Cria um resumo novo (id composto + usuário) para o período, ainda não calculado. */
+    public static MonthlySummary userIdForPeriod(User user, Integer month, Integer year) {
+        return MonthlySummary.builder()
+                .id(MonthlySummaryId.builder()
+                        .userId(user.getId())
+                        .month(month)
+                        .year(year)
+                        .build())
+                .user(user)
+                .build();
+    }
+
     /**
      * Resolve o caixa do período: usa o valor informado se houver; senão preserva o já persistido neste
      * resumo; senão faz auto-fill com o restante do mês anterior (zero se não houver).
