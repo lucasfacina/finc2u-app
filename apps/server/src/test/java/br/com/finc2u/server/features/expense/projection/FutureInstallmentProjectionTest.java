@@ -57,13 +57,13 @@ class FutureInstallmentProjectionTest {
         assertTrue(result.containsKey(YearMonth.of(2026, 6)));
         assertTrue(result.containsKey(YearMonth.of(2026, 7)));
 
-        Expense june = result.get(YearMonth.of(2026, 6)).get(0);
+        Expense june = result.get(YearMonth.of(2026, 6)).getFirst();
 
         assertEquals("Notebook (2/3)", june.getDescription());
         assertEquals(LocalDate.of(2026, 6, 10), june.getDueDate());
         assertEquals(0, BigDecimal.valueOf(500).compareTo(june.getValue()));
         assertEquals(PaymentStatus.PENDING, june.getPaymentStatus());
-        assertEquals("Notebook (3/3)", result.get(YearMonth.of(2026, 7)).get(0).getDescription());
+        assertEquals("Notebook (3/3)", result.get(YearMonth.of(2026, 7)).getFirst().getDescription());
     }
 
     @Test
