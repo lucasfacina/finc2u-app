@@ -81,7 +81,7 @@ public class Expense extends BaseModel {
      * Define o status de pagamento por padrão quando não informado:
      * vencimento até hoje conta como PAID (assume pagamento em dia); vencimento futuro fica PENDING.
      */
-    public void setDefaultPaymentStatus() {
+    public void resolveDefaultPaymentStatus() {
         if (paymentStatus == null) {
             paymentStatus = !dueDate.isAfter(LocalDate.now())
                     ? PaymentStatus.PAID
@@ -111,7 +111,7 @@ public class Expense extends BaseModel {
      */
     public void prepareForPersistence(LocalDate purchaseDate) {
         resolveDueDate(purchaseDate);
-        setDefaultPaymentStatus();
+        resolveDefaultPaymentStatus();
         applyInstallmentRules();
     }
 
