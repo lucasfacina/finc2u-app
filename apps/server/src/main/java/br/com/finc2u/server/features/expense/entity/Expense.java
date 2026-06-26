@@ -115,4 +115,13 @@ public class Expense extends BaseModel {
         applyInstallmentRules();
     }
 
+    /**
+     * Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior a hoje).
+     */
+    public void markPaidIfOverdue() {
+        if (paymentStatus == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(LocalDate.now())) {
+            paymentStatus = PaymentStatus.PAID;
+        }
+    }
+
 }
