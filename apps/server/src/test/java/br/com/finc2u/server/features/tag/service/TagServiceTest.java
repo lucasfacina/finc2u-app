@@ -105,12 +105,37 @@ class TagServiceTest {
     void update_shouldReturnUpdatedTag_whenTagExists() {
         Tag tagUpdates = Tag.builder().name("Lazer").build();
         when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Lazer")).thenReturn(Optional.empty());
         when(tagRepository.save(any(Tag.class))).thenReturn(tag);
 
         Tag response = tagService.update(tagId, tagUpdates);
 
         assertNotNull(response);
         assertEquals("Lazer", tag.getName());
+        verify(tagRepository, times(1)).save(any(Tag.class));
+    }
+
+    @Test
+    void update_shouldThrowBusinessException_whenNameAlreadyExistsOnAnotherTag() {
+        Tag other = Tag.builder().name("Lazer").build();
+        other.setId(UUID.randomUUID());
+
+        Tag tagUpdates = Tag.builder().name("Lazer").build();
+        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Lazer")).thenReturn(Optional.of(other));
+
+        assertThrows(BusinessException.class, () -> tagService.update(tagId, tagUpdates));
+        verify(tagRepository, never()).save(any(Tag.class));
+    }
+
+    @Test
+    void update_shouldAllowSameName_whenRenameToOwnCurrentName() {
+        Tag tagUpdates = Tag.builder().name("Alimentação").build();
+        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Alimentação")).thenReturn(Optional.of(tag));
+        when(tagRepository.save(any(Tag.class))).thenReturn(tag);
+
+        assertDoesNotThrow(() -> tagService.update(tagId, tagUpdates));
         verify(tagRepository, times(1)).save(any(Tag.class));
     }
 

@@ -46,6 +46,10 @@ public class TagService {
     public Tag update(UUID id, Tag tagUpdated) {
         Tag tag = getById(id);
 
+        tagRepository.findByNameIgnoreCase(tagUpdated.getName())
+                .filter(existing -> !existing.getId().equals(id))
+                .ifPresent(__ -> { throw new BusinessException("Tag já cadastrada"); });
+
         tag.setName(tagUpdated.getName());
         tag.setColorCode(tagUpdated.getColorCode());
 
