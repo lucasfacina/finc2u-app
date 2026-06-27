@@ -2,6 +2,7 @@ package br.com.finc2u.server.config;
 
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
+import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -35,6 +36,16 @@ public class ExceptionTestController {
     @GetMapping("/generic")
     public void throwGenericException() {
         throw new RuntimeException("Erro inesperado");
+    }
+
+    // HTTP 400 — enum inválido em @RequestParam
+    @GetMapping("/type-mismatch")
+    public void throwTypeMismatch(@RequestParam PaymentStatus status) {
+    }
+
+    // HTTP 400 — JSON malformado (corpo inválido)
+    @PostMapping("/unreadable")
+    public void throwUnreadable(@RequestBody TestRequest request) {
     }
 
     // HTTP 400

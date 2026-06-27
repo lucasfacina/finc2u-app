@@ -6,9 +6,11 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -37,6 +39,33 @@ public class GlobalExceptionHandler {
                 status.value(),
                 exception.getMessage(),
                 "Regra de negócio violada.",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, status);
+    }
+
+    // HTTP 400
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        String detail = "Valor inválido '" + exception.getValue() + "' para o parâmetro '" + exception.getName() + "'.";
+        ErrorResponse error = new ErrorResponse(
+                status.value(),
+                "Parâmetro inválido.",
+                detail,
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, status);
+    }
+
+    // HTTP 400
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ErrorResponse error = new ErrorResponse(
+                status.value(),
+                "Corpo da requisição inválido ou malformado.",
+                "Verifique o formato e os tipos dos campos enviados.",
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);

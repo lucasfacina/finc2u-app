@@ -61,6 +61,30 @@ public class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
+    // HTTP 400 — enum inválido em @RequestParam
+    @Test
+    void shouldHandleMethodArgumentTypeMismatchException() throws Exception {
+        mockMvc.perform(get("/test/exceptions/type-mismatch")
+                        .param("status", "INVALIDO"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Parâmetro inválido."))
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("INVALIDO")))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // HTTP 400 — JSON malformado
+    @Test
+    void shouldHandleHttpMessageNotReadableException() throws Exception {
+        mockMvc.perform(post("/test/exceptions/unreadable")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ invalid json }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Corpo da requisição inválido ou malformado."))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
     // HTTP 400
     @Test
     void shouldHandleValidationException() throws Exception {
