@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse(
                 status.value(),
                 "Operação não permitida, existem registros dependentes vinculados a este recurso.",
-                exception.getRootCause() != null ? exception.getRootCause().getMessage() : exception.getMessage(),
+                "Violação de integridade referencial.",
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
