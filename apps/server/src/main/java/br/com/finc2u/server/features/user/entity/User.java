@@ -21,6 +21,8 @@ import java.util.List;
 public class User extends BaseModel {
 
     private String name;
+
+    @Column(unique = true)
     private String email;
 
     @OneToOne(cascade = CascadeType.ALL)
