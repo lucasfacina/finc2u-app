@@ -86,7 +86,7 @@ public class ExpenseController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<ExpenseResponse> updateStatus(@PathVariable UUID id, @RequestParam PaymentStatus  status) {
+    public ResponseEntity<ExpenseResponse> updateStatus(@PathVariable UUID id, @RequestParam PaymentStatus status) {
         Expense updatedExpenseStatus = expenseService.updateStatus(id, status);
         return ResponseEntity.ok(ExpenseResponse.from(updatedExpenseStatus));
     }

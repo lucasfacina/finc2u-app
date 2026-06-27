@@ -42,7 +42,7 @@ public record ExpenseFilter(
         return card != null && cardAccountId.equals(card.getId());
     }
 
-    public boolean matchesPriceRange (Expense expense) {
+    public boolean matchesPriceRange(Expense expense) {
         BigDecimal value = expense.getValue();
         return (minPrice == null || value.compareTo(minPrice) >= 0)
                 && (maxPrice == null || value.compareTo(maxPrice) <= 0);
