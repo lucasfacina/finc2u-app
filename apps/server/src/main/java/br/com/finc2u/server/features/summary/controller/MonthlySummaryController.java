@@ -42,7 +42,7 @@ public class MonthlySummaryController {
 
     @GetMapping("/{userId}/{year}/{month}")
     public ResponseEntity<MonthlySummaryResponse> getPeriodByUserId(@PathVariable UUID userId, @PathVariable Integer year, @PathVariable Integer month) {
-        MonthlySummary monthlySummary = monthlySummaryService.getByUserAndPeriod(userId, year, month);
+        MonthlySummary monthlySummary = monthlySummaryService.getByUserAndPeriod(userId, month, year);
         return ResponseEntity.ok(MonthlySummaryResponse.from(monthlySummary));
     }
 

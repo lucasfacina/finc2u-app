@@ -122,7 +122,7 @@ class MonthlySummaryControllerTest {
 
     @Test
     void getPeriodByUserId_shouldReturnOk() throws Exception {
-        when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(YEAR), eq(MONTH))).thenReturn(summary);
+        when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
 
         mockMvc.perform(get("/monthly-summary/{userId}/{year}/{month}", userId, YEAR, MONTH))
                 .andExpect(status().isOk())
