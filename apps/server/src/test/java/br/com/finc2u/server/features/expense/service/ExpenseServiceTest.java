@@ -203,6 +203,7 @@ class ExpenseServiceTest {
 
     @Test
     void getWithFilters_shouldReturnFilteredExpenses() {
+        when(userService.getById(userId)).thenReturn(user);
         when(expenseRepository.findByUserId(userId)).thenReturn(List.of(expense));
 
         ExpenseFilter filter = new ExpenseFilter(expense.getDueDate().getMonthValue(), null, null, null, null, null, null);

@@ -53,6 +53,7 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public List<Expense> getWithFilters(UUID userId, ExpenseFilter filter) {
+        userService.getById(userId);
         return expenseRepository.findByUserId(userId).stream()
                 .filter(filter::matches)
                 .toList();
