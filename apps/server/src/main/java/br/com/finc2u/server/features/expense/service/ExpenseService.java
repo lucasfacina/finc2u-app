@@ -47,6 +47,7 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public List<Expense> getByUser(UUID userId) {
+        userService.getById(userId);
         return expenseRepository.findByUserId(userId);
     }
 

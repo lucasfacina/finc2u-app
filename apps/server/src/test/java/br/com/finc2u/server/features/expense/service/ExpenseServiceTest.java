@@ -184,12 +184,21 @@ class ExpenseServiceTest {
 
     @Test
     void getByUser_shouldReturnListOfExpenses() {
+        when(userService.getById(userId)).thenReturn(user);
         when(expenseRepository.findByUserId(userId)).thenReturn(List.of(expense));
 
         List<Expense> response = expenseService.getByUser(userId);
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
+    }
+
+    @Test
+    void getByUser_shouldThrowResourceNotFoundException_whenUserDoesNotExist() {
+        when(userService.getById(userId)).thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.getByUser(userId));
+        verify(expenseRepository, never()).findByUserId(any());
     }
 
     @Test
