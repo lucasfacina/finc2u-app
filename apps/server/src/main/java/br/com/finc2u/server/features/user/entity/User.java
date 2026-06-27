@@ -30,15 +30,15 @@ public class User extends BaseModel {
 
     @JsonIgnore
     @OneToMany(mappedBy = "user")
-    List<CardAccount> cardAccountList;
+    private List<CardAccount> cardAccountList;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user")
-    List<Extra> extraList;
+    private List<Extra> extraList;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user")
-    List<MonthlySummary> monthlySummaryList;
+    private List<MonthlySummary> monthlySummaryList;
 
     /**
      * Salário-base configurado ou zero quando não há configuração/valor

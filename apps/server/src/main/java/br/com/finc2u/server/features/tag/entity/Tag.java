@@ -27,6 +27,6 @@ public class Tag extends BaseModel {
 
     @JsonIgnore
     @ManyToMany(mappedBy = "tags")
-    List<Expense> expenseList;
+    private List<Expense> expenseList;
 
 }
