@@ -27,8 +27,6 @@ class MonthlySummaryTotalsTest {
                 .build();
     }
 
-    // ---- listas vazias ----
-
     @Test
     void from_shouldReturnAllZeros_whenListsAreEmpty() {
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(List.of(), List.of());
@@ -39,8 +37,6 @@ class MonthlySummaryTotalsTest {
         assertEquals(BigDecimal.ZERO, totals.totalExtras());
         assertEquals(BigDecimal.ZERO, totals.totalFixed());
     }
-
-    // ---- totalExpenses ----
 
     @Test
     void from_shouldSumAllExpenses_forTotalExpenses() {
@@ -53,8 +49,6 @@ class MonthlySummaryTotalsTest {
 
         assertEquals(0, BigDecimal.valueOf(300).compareTo(totals.totalExpenses()));
     }
-
-    // ---- totalPaid / totalPending ----
 
     @Test
     void from_shouldSeparatePaidAndPending() {
@@ -70,8 +64,6 @@ class MonthlySummaryTotalsTest {
         assertEquals(0, BigDecimal.valueOf(150).compareTo(totals.totalPending()));
     }
 
-    // ---- totalFixed ----
-
     @Test
     void from_shouldSumOnlyFixed_forTotalFixed() {
         List<Expense> expenses = List.of(
@@ -85,8 +77,6 @@ class MonthlySummaryTotalsTest {
 
         assertEquals(0, BigDecimal.valueOf(80).compareTo(totals.totalFixed()));
     }
-
-    // ---- totalExtras ----
 
     @Test
     void from_shouldSumAllExtras() {

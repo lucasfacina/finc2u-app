@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MonthlyPeriodTest {
 
-    // ---- validação ----
-
     @Test
     void of_shouldThrow_whenMonthIsZero() {
         assertThrows(IllegalArgumentException.class, () -> MonthlyPeriod.of(0, 2026));
@@ -26,8 +24,6 @@ class MonthlyPeriodTest {
         assertEquals(6, period.month());
         assertEquals(2026, period.year());
     }
-
-    // ---- start / end ----
 
     @Test
     void start_shouldReturnFirstDayOfMonth() {
@@ -48,8 +44,6 @@ class MonthlyPeriodTest {
     void end_shouldReturn28_whenFebruaryOnNonLeapYear() {
         assertEquals(LocalDate.of(2026, 2, 28), MonthlyPeriod.of(2, 2026).end());
     }
-
-    // ---- previous ----
 
     @Test
     void previous_shouldReturnPriorMonth() {
