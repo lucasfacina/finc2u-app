@@ -41,12 +41,12 @@ public class CardAccount extends BaseModel {
      * Se o dia de vencimento é anterior ao de fechamento, a fatura vence no mês seguinte ao fechamento
      * (ex.: cartão fecha dia 30 e vence dia 15).
      */
-    public LocalDate calculateInvoiceDueDate(LocalDate pucrchaseDate) {
+    public LocalDate calculateInvoiceDueDate(LocalDate purchaseDate) {
         int closingDay = this.closingDate;
         int dueDay = this.dueDate;
 
-        YearMonth closingMonth = YearMonth.from(pucrchaseDate);
-        if (pucrchaseDate.getDayOfMonth() > closingDay) {
+        YearMonth closingMonth = YearMonth.from(purchaseDate);
+        if (purchaseDate.getDayOfMonth() > closingDay) {
             closingMonth = closingMonth.plusMonths(1);
         }
 
