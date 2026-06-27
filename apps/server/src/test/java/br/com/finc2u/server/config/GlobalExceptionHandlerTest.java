@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {ExceptionTestController.class, GlobalExceptionHandlerTest.class})
+@WebMvcTest(controllers = {ExceptionTestController.class, GlobalExceptionHandler.class})
 public class GlobalExceptionHandlerTest {
 
     @Autowired
@@ -52,12 +52,13 @@ public class GlobalExceptionHandlerTest {
     }
 
     // HTTP 500
+    @Test
     void shouldHandleGenericException() throws Exception {
         mockMvc.perform(get("/test/exceptions/generic"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.message").value("Erro interno no servidor."))
-                .andExpect(jsonPath("$.detail").value("Ocorreu um erro inesperado no servidor."))
+                .andExpect(jsonPath("$.detail").value("Erro inesperado"))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
@@ -78,7 +79,7 @@ public class GlobalExceptionHandlerTest {
     void shouldHandleHttpMessageNotReadableException() throws Exception {
         mockMvc.perform(post("/test/exceptions/unreadable")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ invalid json }"))
+                        .content("{ \"invalid\" \"json\" }"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("Corpo da requisição inválido ou malformado."))
