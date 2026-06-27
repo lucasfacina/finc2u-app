@@ -28,10 +28,10 @@ public class ExpenseController {
     private final FutureInstallmentProjection futureInstallmentProjection;
 
     @PostMapping
-    public ResponseEntity<ExpenseResponse> create(@Valid @RequestBody ExpenseRequest expenseRequest) {
+    public ResponseEntity<ExpenseResponse> create(@RequestParam UUID userId, @Valid @RequestBody ExpenseRequest expenseRequest) {
         Expense savedExpense = expenseService.create(
                 expenseRequest.toEntity(),
-                expenseRequest.userId(),
+                userId,
                 expenseRequest.cardAccountId(),
                 expenseRequest.purchaseDate(),
                 expenseRequest.tagIds()

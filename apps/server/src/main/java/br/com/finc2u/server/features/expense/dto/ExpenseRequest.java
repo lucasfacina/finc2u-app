@@ -23,9 +23,6 @@ public record ExpenseRequest(
         @NotNull(message = "Tipo de despesa é obrigatório")
         ExpenseType expenseType,
 
-        @NotNull(message = "ID do usuário é obrigatório")
-        UUID userId,
-
         // Opcional: quando ausente e houver cartão, é calculado a partir de purchaseDate + fechamento/vencimento do cartão.
         // Para despesas avulsas (sem cartão), continua sendo obrigatório (validado no service).
         LocalDate dueDate,

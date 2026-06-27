@@ -21,8 +21,8 @@ public class ExtraController {
     private final ExtraService extraService;
 
     @PostMapping
-    public ResponseEntity<ExtraResponse> create(@Valid @RequestBody ExtraRequest extraRequest) {
-        Extra savedExtra = extraService.create(extraRequest.toEntity(), extraRequest.userId());
+    public ResponseEntity<ExtraResponse> create(@RequestParam UUID userId, @Valid @RequestBody ExtraRequest extraRequest) {
+        Extra savedExtra = extraService.create(extraRequest.toEntity(), userId);
         return new ResponseEntity<>(ExtraResponse.from(savedExtra), HttpStatus.CREATED);
     }
 

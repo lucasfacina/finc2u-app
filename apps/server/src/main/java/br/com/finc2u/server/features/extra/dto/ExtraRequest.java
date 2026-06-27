@@ -7,12 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 public record ExtraRequest(
-        @NotNull(message = "O ID do usuário é obrigatório")
-        UUID userId,
-
         @NotBlank(message = "Descrição é obrigatória")
         String description,
 

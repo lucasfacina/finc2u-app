@@ -63,7 +63,6 @@ class ExtraControllerTest {
         extra.setId(extraId);
 
         request = new ExtraRequest(
-                userId,
                 "Freela site",
                 BigDecimal.valueOf(800),
                 LocalDate.of(2026, 5, 10)
@@ -75,6 +74,7 @@ class ExtraControllerTest {
         when(extraService.create(any(Extra.class), eq(userId))).thenReturn(extra);
 
         mockMvc.perform(post("/extras")
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())

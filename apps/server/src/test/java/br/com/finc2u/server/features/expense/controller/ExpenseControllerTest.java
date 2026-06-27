@@ -76,7 +76,6 @@ class ExpenseControllerTest {
                 "Mercado",
                 BigDecimal.valueOf(150.0),
                 ExpenseType.VARIABLE,
-                userId,
                 LocalDate.now(),
                 null,
                 PaymentStatus.PENDING,
@@ -92,6 +91,7 @@ class ExpenseControllerTest {
         when(expenseService.create(any(Expense.class), eq(userId), eq(cardAccountId), any(), any())).thenReturn(expense);
 
         mockMvc.perform(post("/expenses")
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
