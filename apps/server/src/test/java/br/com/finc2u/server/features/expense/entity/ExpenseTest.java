@@ -144,6 +144,17 @@ public class ExpenseTest {
     }
 
     @Test
+    void applyInstallmentRules_shouldThrow_whenCurrentInstallmentExceedsTotal() {
+        Expense expense = Expense.builder()
+                .expenseType(ExpenseType.PARCELED)
+                .currentInstallment(10)
+                .totalInstallment(5)
+                .build();
+
+        assertThrows(BusinessException.class, expense::applyInstallmentRules);
+    }
+
+    @Test
     void applyInstallmentRules_shouldDoNothing_whenNotParceled() {
         Expense expense = Expense.builder()
                 .expenseType(ExpenseType.VARIABLE)

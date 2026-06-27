@@ -98,6 +98,11 @@ public class Expense extends BaseModel {
             if (currentInstallment == null) {
                 currentInstallment = BusinessConstants.DEFAULT_FIRST_INSTALLMENT;
             }
+            if (currentInstallment > totalInstallment) {
+                throw new BusinessException(
+                        "Parcela atual (" + currentInstallment + ") não pode ser maior que o total (" + totalInstallment + ")."
+                );
+            }
             if (currentInstallment.equals(totalInstallment)) {
                 paymentStatus = PaymentStatus.PAID;
             }
