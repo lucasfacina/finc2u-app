@@ -29,64 +29,64 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 
 ## Endpoints Disponíveis
 
-### Usuário — `/usuario`
+### Usuários — `/users`
 
-| Método   | Endpoint         | Descrição                | Parâmetros                          | 
-|----------|------------------|--------------------------|-------------------------------------|
-| POST     | `/usuarios`      | Criar usuário            | Body: `UserRequestDTO`              |
-| GET      | `/usuarios`      | Listar todos os usuários | —                                   |
-| GET      | `/usuarios/{id}` | Buscar usuário por ID    | `id` (path)                         |
-| PUT      | `/usuarios/{id}` | Atualizar usuário        | `id` (path), Body: `UserRequestDTO` |
-| DELETE   | `/usuarios/{id}` | Deletar usuário          | `id` (path)                         |
+| Método | Endpoint      | Descrição                | Parâmetros                       |
+|--------|---------------|--------------------------|----------------------------------|
+| POST   | `/users`      | Criar usuário            | Body: `UserRequest`              |
+| GET    | `/users`      | Listar todos os usuários | —                                |
+| GET    | `/users/{id}` | Buscar usuário por ID    | `id` (path)                      |
+| PUT    | `/users/{id}` | Atualizar usuário        | `id` (path), Body: `UserRequest` |
+| DELETE | `/users/{id}` | Deletar usuário          | `id` (path)                      |
 
-### Contas/Cartões — `/contas-cartao`
+### Contas/Cartões — `/card-accounts`
 
-| Método   | Endpoint              | Descrição                 | Parâmetros                                      |
-|----------|-----------------------|---------------------------|-------------------------------------------------|
-| POST     | `/contas-cartao`      | Criar conta/cartão        | `userId` (query), Body: `CardAccountRequestDTO` |
-| GET      | `/contas-cartao`      | Listar cartões do usuário | `userId` (query)                                |
-| GET      | `/contas-cartao/{id}` | Buscar cartão por ID      | `id` (path)                                     |
-| PUT      | `/contas-cartao/{id}` | Atualizar cartão          | `id` (path), Body: `CardAccountRequestDTO`      |
-| DELETE   | `/contas-cartao/{id}` | Deletar cartão            | `id` (path)                                     |
+| Método | Endpoint               | Descrição                 | Parâmetros                                    |
+|--------|------------------------|---------------------------|-----------------------------------------------|
+| POST   | `/card-accounts`       | Criar conta/cartão        | `userId` (query), Body: `CardAccountRequest`  |
+| GET    | `/card-accounts`       | Listar cartões do usuário | `userId` (query)                              |
+| GET    | `/card-accounts/{id}`  | Buscar cartão por ID      | `id` (path)                                   |
+| PUT    | `/card-accounts/{id}`  | Atualizar cartão          | `id` (path), Body: `CardAccountRequest`       |
+| DELETE | `/card-accounts/{id}`  | Deletar cartão            | `id` (path)                                   |
 
 ### Tags — `/tags`
 
-| Método   | Endpoint     | Descrição            | Parâmetros                         |
-|----------|--------------|----------------------|------------------------------------|
-| POST     | `/tags`      | Criar tag            | Body: `TagRequestDTO`              |
-| GET      | `/tags`      | Listar todas as tags | —                                  |
-| GET      | `/tags/{id}` | Buscar tag por ID    | `id` (path)                        |
-| PUT      | `/tags/{id}` | Atualizar tag        | `id` (path), Body: `TagRequestDTO` |
-| DELETE   | `/tags/{id}` | Deletar tag          | `id` (path)                        |
+| Método | Endpoint     | Descrição            | Parâmetros                      |
+|--------|--------------|----------------------|---------------------------------|
+| POST   | `/tags`      | Criar tag            | Body: `TagRequest`              |
+| GET    | `/tags`      | Listar todas as tags | —                               |
+| GET    | `/tags/{id}` | Buscar tag por ID    | `id` (path)                     |
+| PUT    | `/tags/{id}` | Atualizar tag        | `id` (path), Body: `TagRequest` |
+| DELETE | `/tags/{id}` | Deletar tag          | `id` (path)                     |
 
-### Despesas — `/despesas`
+### Despesas — `/expenses`
 
-| Método   | Endpoint                | Descrição                    | Parâmetros                                                                                    |
-|----------|-------------------------|------------------------------|-----------------------------------------------------------------------------------------------|
-| POST     | `/despesas`             | Criar despesa                | Body: `ExpenseRequestDTO`                                                                     |
-| GET      | `/despesas`             | Listar despesas com filtros  | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
-| GET      | `/despesas/{id}`        | Buscar despesa por ID        | `id` (path)                                                                                   |
-| PUT      | `/despesas/{id}`        | Atualizar despesa            | `id` (path), Body: `ExpenseRequestDTO`                                                        |
-| PATCH    | `/despesas/{id}/status` | Atualizar status da despesa  | `id` (path), `status` (query)                                                                 |
-| DELETE   | `/despesas/{id}`        | Deletar despesa              | `id` (path)                                                                                   |
-| GET      | `/despesas/projecao`    | Projeção de parcelas futuras | `userId`* (query)                                                                             |
+| Método | Endpoint                   | Descrição                    | Parâmetros                                                                               |
+|--------|----------------------------|------------------------------|------------------------------------------------------------------------------------------|
+| POST   | `/expenses`                | Criar despesa                | `userId` (query), Body: `ExpenseRequest`                                                 |
+| GET    | `/expenses`                | Listar despesas do usuário   | `userId`* (query)                                                                        |
+| GET    | `/expenses/filters`        | Listar despesas com filtros  | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
+| GET    | `/expenses/{id}`           | Buscar despesa por ID        | `id` (path)                                                                              |
+| GET    | `/expenses/projections`    | Projeção de parcelas futuras | `userId`* (query)                                                                        |
+| PUT    | `/expenses/{id}`           | Atualizar despesa            | `id` (path), Body: `ExpenseRequest`                                                      |
+| PATCH  | `/expenses/{id}/status`    | Atualizar status da despesa  | `id` (path), `status` (query)                                                            |
+| DELETE | `/expenses/{id}`           | Deletar despesa              | `id` (path)                                                                              |
 
 ### Ganhos Extras — `/extras`
 
-| Método | Endpoint       | Descrição                       | Parâmetros                          |
-|--------|----------------|---------------------------------|-------------------------------------|
-| POST   | `/extras`      | Registrar ganho extra           | Body: `ExtraRequestDTO`             |
-| GET    | `/extras`      | Listar ganhos extras do usuário | `userId`* (query)                   |
-| GET    | `/extras/{id}` | Buscar ganho extra por ID       | `id` (path)                         |
-| PUT    | `/extras/{id}` | Atualizar ganho extra           | `id` (path), Body: `ExtraRequestDTO`|
-| DELETE | `/extras/{id}` | Deletar ganho extra             | `id` (path)                         |
+| Método | Endpoint       | Descrição                       | Parâmetros                         |
+|--------|----------------|---------------------------------|------------------------------------|
+| POST   | `/extras`      | Registrar ganho extra           | `userId` (query), Body: `ExtraRequest` |
+| GET    | `/extras`      | Listar ganhos extras do usuário | `userId`* (query)                  |
+| GET    | `/extras/{id}` | Buscar ganho extra por ID       | `id` (path)                        |
+| PUT    | `/extras/{id}` | Atualizar ganho extra           | `id` (path), Body: `ExtraRequest`  |
+| DELETE | `/extras/{id}` | Deletar ganho extra             | `id` (path)                        |
 
-### Resumo Mensal — `/resumo-mensal`
+### Resumo Mensal — `/monthly-summary`
 
-| Método   | Endpoint                                 | Descrição                              | Parâmetros                           |
-|----------|------------------------------------------|----------------------------------------|--------------------------------------|
-| POST     | `/resumo-mensal`                         | (Re)calcular ou atualizar resumo       | Body: `MonthlySummaryRequestDTO`     |
-| GET      | `/resumo-mensal`                         | Retornar resumo do período             | `userId`*, `month`*, `year`* (query) |
-| GET      | `/resumo-mensal/historico`               | Listar histórico de resumos do usuário | `userId`* (query)                    |
-| GET      | `/resumo-mensal/{userId}/{year}/{month}` | Buscar resumo por período              | `userId`, `year`, `month` (path)     |
-| DELETE   | `/resumo-mensal/{userId}/{year}/{month}` | Deletar resumo de um período           | `userId`, `year`, `month` (path)     |
+| Método | Endpoint                                        | Descrição                              | Parâmetros                               |
+|--------|-------------------------------------------------|----------------------------------------|------------------------------------------|
+| POST   | `/monthly-summary`                              | (Re)calcular ou atualizar resumo       | Body: `MonthlySummaryRequest`            |
+| GET    | `/monthly-summary/history`                      | Listar histórico de resumos do usuário | `userId`* (query)                        |
+| GET    | `/monthly-summary/{userId}/{year}/{month}`      | Buscar resumo por período              | `userId`, `year`, `month` (path)         |
+| DELETE | `/monthly-summary/{userId}/{year}/{month}`      | Deletar resumo de um período           | `userId`, `year`, `month` (path)         |
