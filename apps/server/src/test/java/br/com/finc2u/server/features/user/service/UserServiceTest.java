@@ -51,14 +51,14 @@ public class UserServiceTest {
     @Test
     void create_shouldReturnUser_whenEmailIsUnique() {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(userRepository.saveAndFlush(any(User.class))).thenReturn(user);
+        when(userRepository.save(any(User.class))).thenReturn(user);
 
         User response = userService.create(user);
 
         assertNotNull(response);
         assertEquals(user.getName(), response.getName());
         assertEquals(user.getEmail(), response.getEmail());
-        verify(userRepository, times(1)).saveAndFlush(any(User.class));
+        verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test

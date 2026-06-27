@@ -23,7 +23,7 @@ public class UserService {
             throw new BusinessException("E-mail já cadastrado!");
         }
 
-        return userRepository.saveAndFlush(user);
+        return userRepository.save(user);
     }
 
     @Transactional(readOnly = true)
