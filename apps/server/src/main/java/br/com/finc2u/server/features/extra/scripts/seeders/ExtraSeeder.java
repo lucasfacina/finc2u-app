@@ -41,6 +41,10 @@ public class ExtraSeeder implements Seeder {
                         .build()
         );
 
+        if (extraRepository.existsByUserId(context.getUser().getId())) {
+            return;
+        }
+
         extraRepository.saveAll(extras);
     }
 

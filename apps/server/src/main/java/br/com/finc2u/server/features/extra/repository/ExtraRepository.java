@@ -13,6 +13,8 @@ public interface ExtraRepository extends JpaRepository<Extra, UUID> {
 
     List<Extra> findByUserId(UUID userId);
 
+    boolean existsByUserId(UUID userId);
+
     List<Extra> findByUserIdAndDateBetween(UUID userId, LocalDate start, LocalDate end);
 
 }
