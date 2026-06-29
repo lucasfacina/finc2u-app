@@ -127,6 +127,10 @@ public class ExpenseSeeder implements Seeder {
                         .build()
         );
 
+        if (expenseRepository.existsByUserId(context.getUser().getId())) {
+            return;
+        }
+
         expenseRepository.saveAll(expenses);
     }
 
