@@ -21,6 +21,8 @@ import java.util.Objects;
 @Builder
 public class MonthlySummary {
 
+    private BigDecimal baseSalary;
+    private BigDecimal totalIncome;
     private BigDecimal totalExpenses;
     private BigDecimal totalPaid;
     private BigDecimal totalPending;
@@ -74,8 +76,8 @@ public class MonthlySummary {
      * compostos a partir dos totais agregados.
      * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
-     * -> remainingAmount = totalIncome − totalExpenses
-     * -> flexibleBudget  = totalIncome − totalExpenses  (quanto ainda pode gastar com base em tudo gasto)
+     * -> remainingAmount = totalIncome − totalExpenses  (projeção: quanto sobra ao fim do mês, descontando pago + pendente)
+     * -> flexibleBudget  = totalIncome − totalPaid      (quanto ainda está disponível agora, só desconta o que já saiu)
      * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
      * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe).
      */
@@ -94,16 +96,16 @@ public class MonthlySummary {
                 ? this.savingsBalance.subtract(previousMonthSavingsBalance)
                 : BigDecimal.ZERO;
 
-        BigDecimal totalIncome = user.baseSalaryOrZero()
-                .add(totals.totalExtras())
-                .add(this.cashBalance);
+        this.baseSalary = user.baseSalaryOrZero();
+
+        this.totalIncome = this.baseSalary.add(totals.totalExtras()).add(this.cashBalance);
 
         this.totalExpenses = totals.totalExpenses();
         this.totalPaid = totals.totalPaid();
         this.totalPending = totals.totalPending();
         this.totalExtras = totals.totalExtras();
-        this.remainingAmount = totalIncome.subtract(totals.totalExpenses());
-        this.flexibleBudget = totalIncome.subtract(totals.totalExpenses());
+        this.remainingAmount = this.totalIncome.subtract(totals.totalExpenses());
+        this.flexibleBudget = this.totalIncome.subtract(totals.totalPaid());
     }
 
     @Override

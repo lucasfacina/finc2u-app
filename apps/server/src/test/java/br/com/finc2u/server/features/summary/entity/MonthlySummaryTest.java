@@ -93,6 +93,8 @@ class MonthlySummaryTest {
                 null
         );
 
+        assertEquals(0, BigDecimal.valueOf(3000).compareTo(summary.getBaseSalary()));
+        assertEquals(0, BigDecimal.valueOf(3700).compareTo(summary.getTotalIncome()));
         assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
     }
 
@@ -100,7 +102,8 @@ class MonthlySummaryTest {
     void resolveTotals_shouldComputeFlexibleBudget() {
         // cashBalance = 200 (carryover do mês anterior)
         // totalIncome = baseSalary(3000) + totalExtras(500) + cashBalance(200) = 3700
-        // flexibleBudget = totalIncome(3700) - totalExpenses(1000) = 2700
+        // flexibleBudget = totalIncome(3700) - totalPaid(600) = 3100  (quanto ainda tem na mão)
+        // remainingAmount = totalIncome(3700) - totalExpenses(1000) = 2700  (projeção fim do mês)
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
@@ -110,7 +113,8 @@ class MonthlySummaryTest {
                 null
         );
 
-        assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getFlexibleBudget()));
+        assertEquals(0, BigDecimal.valueOf(3100).compareTo(summary.getFlexibleBudget()));
+        assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
     }
 
     @Test
