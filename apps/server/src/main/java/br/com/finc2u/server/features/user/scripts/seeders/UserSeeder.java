@@ -1,5 +1,7 @@
 package br.com.finc2u.server.features.user.scripts.seeders;
 
+import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
+import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.repository.UserRepository;
@@ -9,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +20,7 @@ public class UserSeeder implements Seeder {
     private static final String SEED_EMAIL = "facina3@gmail.com";
 
     private final UserRepository userRepository;
+    private final SalaryHistoryRepository salaryHistoryRepository;
 
     @Override
     public int order() {
@@ -29,6 +33,14 @@ public class UserSeeder implements Seeder {
                 .orElseGet(this::createSeedUser);
 
         context.setUser(user);
+
+        if (!salaryHistoryRepository.existsByUserId(user.getId())) {
+            salaryHistoryRepository.save(SalaryHistory.builder()
+                    .user(user)
+                    .baseSalary(new BigDecimal("3000.00"))
+                    .effectiveFrom(LocalDate.of(2026, 1, 1))
+                    .build());
+        }
     }
 
     private User createSeedUser() {
