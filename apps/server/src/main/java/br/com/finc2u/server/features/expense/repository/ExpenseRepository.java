@@ -3,17 +3,25 @@ package br.com.finc2u.server.features.expense.repository;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
+    @NonNull
+    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
+    Optional<Expense> findById(@NonNull UUID id);
+
+    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserId(UUID userId);
 
     List<Expense> findByCardAccountId(UUID cardAccountId);
