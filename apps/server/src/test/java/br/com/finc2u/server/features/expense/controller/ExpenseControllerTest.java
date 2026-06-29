@@ -100,7 +100,7 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void getByUserId_shouldReturnOk() throws Exception {
+    void getAllByUserId_shouldReturnOk() throws Exception {
         when(expenseService.getByUser(userId))
                 .thenReturn(List.of(expense));
 

@@ -40,7 +40,7 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ExpenseResponse>> getByUserId(@RequestParam UUID userId) {
+    public ResponseEntity<List<ExpenseResponse>> getAllByUserId(@RequestParam UUID userId) {
         List<ExpenseResponse> expenseResponse = expenseService.getByUser(userId)
                 .stream()
                 .map(ExpenseResponse::from)
