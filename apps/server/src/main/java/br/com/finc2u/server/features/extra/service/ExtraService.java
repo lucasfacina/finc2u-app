@@ -41,6 +41,7 @@ public class ExtraService {
 
     @Transactional(readOnly = true)
     public List<Extra> getByUserAndPeriod(UUID userId, LocalDate start, LocalDate end) {
+        userService.getById(userId);
         return extraRepository.findByUserIdAndDateBetween(userId, start, end);
     }
 

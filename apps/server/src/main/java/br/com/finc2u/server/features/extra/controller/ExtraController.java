@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +34,15 @@ public class ExtraController {
                 .map(ExtraResponse::from)
                 .toList();
         return ResponseEntity.ok(extraResponse);
+    }
+
+    @GetMapping("/period")
+    public ResponseEntity<List<ExtraResponse>> getByUserIdAndPeriod(@RequestParam UUID userId, @RequestParam LocalDate startDate, @RequestParam LocalDate endDate) {
+        List<ExtraResponse> response = extraService.getByUserAndPeriod(userId, startDate, endDate)
+                .stream()
+                .map(ExtraResponse::from)
+                .toList();
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

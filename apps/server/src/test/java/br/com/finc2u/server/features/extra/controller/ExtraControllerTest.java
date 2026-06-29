@@ -113,6 +113,21 @@ class ExtraControllerTest {
     }
 
     @Test
+    void getByUserIdAndPeriod_shouldReturnOk() throws Exception {
+        LocalDate start = LocalDate.of(2026, 5, 1);
+        LocalDate end = LocalDate.of(2026, 5, 31);
+
+        when(extraService.getByUserAndPeriod(userId, start, end)).thenReturn(List.of(extra));
+
+        mockMvc.perform(get("/extras/period")
+                        .param("userId", userId.toString())
+                        .param("startDate", start.toString())
+                        .param("endDate", end.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].description").value("Freela site"));
+    }
+
+    @Test
     void delete_shouldReturnNoContent() throws Exception {
         doNothing().when(extraService).delete(extraId);
 
