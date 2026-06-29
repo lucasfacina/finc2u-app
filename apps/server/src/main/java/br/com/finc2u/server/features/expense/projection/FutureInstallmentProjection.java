@@ -33,7 +33,7 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
 
         List<Expense> projections = new ArrayList<>();
         for (int i = 1; i <= remaining; i++) {
-            projections.add(Expense.builder()
+            Expense projection = Expense.builder()
                     .description(source.getDescription() + " (" + (current + i) + "/" + total + ")")
                     .value(source.getValue())
                     .dueDate(source.getDueDate().plusMonths(i))
@@ -42,7 +42,11 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
                     .currentInstallment(current + i)
                     .totalInstallment(total)
                     .cardAccount(source.getCardAccount())
-                    .build());
+                    .tags(source.getTags())
+                    .build();
+            projection.setId(source.getId());
+            projection.setCreatedAt(source.getCreatedAt());
+            projections.add(projection);
         }
         return projections;
     }
