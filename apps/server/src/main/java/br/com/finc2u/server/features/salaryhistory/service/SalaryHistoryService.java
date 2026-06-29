@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.salaryhistory.service;
 
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
@@ -24,6 +25,10 @@ public class SalaryHistoryService {
     @Transactional
     public SalaryHistory create(SalaryHistory history, UUID userId) {
         User user = userService.getById(userId);
+        if (salaryHistoryRepository.existsByUserIdAndEffectiveFrom(userId, history.getEffectiveFrom())) {
+            throw new BusinessException("Já existe um registro de salário com vigência em " +
+                    history.getEffectiveFrom() + " para este usuário.");
+        }
         history.setUser(user);
         return salaryHistoryRepository.save(history);
     }
@@ -55,6 +60,12 @@ public class SalaryHistoryService {
     @Transactional
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
         SalaryHistory history = getById(id);
+        salaryHistoryRepository
+                .findByUserIdAndEffectiveFrom(history.getUser().getId(), historyData.getEffectiveFrom())
+                .filter(conflict -> !conflict.getId().equals(id))
+                .ifPresent(conflict -> {
+                    throw new BusinessException("Já existe um registro de salário com vigência em " + historyData.getEffectiveFrom() + " para este usuário.");
+                });
         history.setBaseSalary(historyData.getBaseSalary());
         history.setEffectiveFrom(historyData.getEffectiveFrom());
         return salaryHistoryRepository.save(history);

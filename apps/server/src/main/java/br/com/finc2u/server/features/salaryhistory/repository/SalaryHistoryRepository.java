@@ -18,4 +18,8 @@ public interface SalaryHistoryRepository extends JpaRepository<SalaryHistory, UU
 
     boolean existsByUserId(UUID userId);
 
+    boolean existsByUserIdAndEffectiveFrom(UUID userId, LocalDate effectiveFrom);
+
+    Optional<SalaryHistory> findByUserIdAndEffectiveFrom(UUID userId, LocalDate effectiveFrom);
+
 }
