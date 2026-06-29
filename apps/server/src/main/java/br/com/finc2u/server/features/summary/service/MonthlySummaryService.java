@@ -16,8 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -49,7 +49,12 @@ public class MonthlySummaryService {
         MonthlySummary summary = monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
                 .orElseGet(() -> MonthlySummary.userIdForPeriod(user, month, year));
 
-        summary.resolveTotals(totals, previousMonthRemaining(userId, period));
+        Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
+        summary.resolveTotals(
+                totals,
+                previous.map(MonthlySummary::getRemainingAmount).orElse(null),
+                previous.map(MonthlySummary::getSavingsBalance).orElse(null)
+        );
 
         return monthlySummaryRepository.save(summary);
     }
@@ -71,11 +76,9 @@ public class MonthlySummaryService {
         monthlySummaryRepository.delete(summary);
     }
 
-    private BigDecimal previousMonthRemaining(UUID userId, MonthlyPeriod period) {
-        MonthlyPeriod previousMonth = period.previous();
-        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, previousMonth.month(), previousMonth.year())
-                .map(MonthlySummary::getRemainingAmount)
-                .orElse(null);
+    private Optional<MonthlySummary> findPreviousMonth(UUID userId, MonthlyPeriod period) {
+        MonthlyPeriod previous = period.previous();
+        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, previous.month(), previous.year());
     }
 
 }

@@ -27,6 +27,7 @@ public class MonthlySummary {
     private BigDecimal totalExtras;
     private BigDecimal cashBalance;
     private BigDecimal savingsBalance;
+    private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
     private BigDecimal flexibleBudget;
 
@@ -54,7 +55,9 @@ public class MonthlySummary {
         return id != null ? id.getYear() : null;
     }
 
-    /** Cria um resumo novo (id composto + usuário) para o período, ainda não calculado. */
+    /**
+     * Cria um resumo novo (id composto + usuário) para o período, ainda não calculado.
+     */
     public static MonthlySummary userIdForPeriod(User user, Integer month, Integer year) {
         return MonthlySummary.builder()
                 .id(MonthlySummaryId.builder()
@@ -73,16 +76,27 @@ public class MonthlySummary {
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses
      * -> flexibleBudget  = totalIncome − totalExpenses  (quanto ainda pode gastar com base em tudo gasto)
+     * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
      * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe).
      */
     public void resolveTotals(
             MonthlySummaryTotals totals,
-            BigDecimal previousMonthRemaining
+            BigDecimal previousMonthRemaining,
+            BigDecimal previousMonthSavingsBalance
     ) {
-        this.cashBalance = previousMonthRemaining != null ? previousMonthRemaining : BigDecimal.ZERO;
+        this.cashBalance = previousMonthRemaining != null
+                ? previousMonthRemaining
+                : BigDecimal.ZERO;
+
         this.savingsBalance = user.savingsBalanceOrZero();
 
-        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras()).add(this.cashBalance);
+        this.savingsYield = previousMonthSavingsBalance != null
+                ? this.savingsBalance.subtract(previousMonthSavingsBalance)
+                : BigDecimal.ZERO;
+
+        BigDecimal totalIncome = user.baseSalaryOrZero()
+                .add(totals.totalExtras())
+                .add(this.cashBalance);
 
         this.totalExpenses = totals.totalExpenses();
         this.totalPaid = totals.totalPaid();

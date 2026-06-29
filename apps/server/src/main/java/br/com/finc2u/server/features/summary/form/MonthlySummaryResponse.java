@@ -16,6 +16,7 @@ public record MonthlySummaryResponse(
         BigDecimal totalExtras,
         BigDecimal cashBalance,
         BigDecimal savingsBalance,
+        BigDecimal savingsYield,
         BigDecimal remainingAmount,
         BigDecimal flexibleBudget,
         LocalDateTime updatedAt
@@ -32,6 +33,7 @@ public record MonthlySummaryResponse(
                 summary.getTotalExtras(),
                 summary.getCashBalance(),
                 summary.getSavingsBalance(),
+                summary.getSavingsYield(),
                 summary.getRemainingAmount(),
                 summary.getFlexibleBudget(),
                 summary.getUpdatedAt()

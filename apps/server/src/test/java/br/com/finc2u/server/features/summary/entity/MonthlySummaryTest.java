@@ -56,7 +56,11 @@ class MonthlySummaryTest {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(totals(1000, 600, 400, 0, 0), BigDecimal.valueOf(350));
+        summary.resolveTotals(
+                totals(1000, 600, 400, 0, 0),
+                BigDecimal.valueOf(350),
+                null
+        );
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(summary.getCashBalance()));
     }
@@ -66,7 +70,9 @@ class MonthlySummaryTest {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(totals(1000, 600, 400, 0, 0), null);
+        summary.resolveTotals(totals(1000, 600, 400, 0, 0),
+                null,
+                null);
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getCashBalance()));
     }
@@ -83,7 +89,8 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 0),
-                BigDecimal.valueOf(200)
+                BigDecimal.valueOf(200),
+                null
         );
 
         assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
@@ -99,7 +106,8 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 800),
-                BigDecimal.valueOf(200)
+                BigDecimal.valueOf(200),
+                null
         );
 
         assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getFlexibleBudget()));
@@ -112,7 +120,8 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 200),
-                BigDecimal.ZERO
+                BigDecimal.ZERO,
+                null
         );
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(summary.getTotalExpenses()));
@@ -130,7 +139,8 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO
+                BigDecimal.ZERO,
+                null
         );
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
@@ -143,10 +153,41 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO
+                BigDecimal.ZERO,
+                null
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsBalance()));
+    }
+
+    // ---- resolveTotals: savingsYield (rendimento da poupança) ----
+
+    @Test
+    void resolveTotals_shouldComputeSavingsYield_fromPreviousMonthSavingsBalance() {
+        // savingsYield = savingsBalance(1500) - previousMonthSavingsBalance(1200) = 300
+        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
+        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+
+        summary.resolveTotals(
+                totals(0, 0, 0, 0, 0),
+                null,
+                BigDecimal.valueOf(1200)
+        );
+
+        assertEquals(0, BigDecimal.valueOf(300).compareTo(summary.getSavingsYield()));
+    }
+
+    @Test
+    void resolveTotals_shouldSetSavingsYieldToZero_whenNoPreviousMonth() {
+        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
+        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+
+        summary.resolveTotals(totals(0, 0, 0, 0, 0),
+                null,
+                null
+        );
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsYield()));
     }
 
 }
