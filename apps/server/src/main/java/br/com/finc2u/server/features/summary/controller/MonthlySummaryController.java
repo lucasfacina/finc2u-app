@@ -22,12 +22,21 @@ public class MonthlySummaryController {
 
     @PostMapping
     public ResponseEntity<MonthlySummaryResponse> createOrUpdate(@Valid @RequestBody MonthlySummaryRequest monthlySummaryRequest) {
+        boolean isNew = !monthlySummaryService.existsByUserAndPeriod(
+                monthlySummaryRequest.userId(),
+                monthlySummaryRequest.month(),
+                monthlySummaryRequest.year()
+        );
         MonthlySummary monthlySummary = monthlySummaryService.calculateOrRecalculate(
                 monthlySummaryRequest.userId(),
                 monthlySummaryRequest.month(),
                 monthlySummaryRequest.year()
         );
-        return new ResponseEntity<>(MonthlySummaryResponse.from(monthlySummary), HttpStatus.CREATED);
+        return new ResponseEntity<>(MonthlySummaryResponse.from(monthlySummary),
+                isNew
+                        ? HttpStatus.CREATED
+                        : HttpStatus.OK
+        );
     }
 
     @GetMapping("/history")

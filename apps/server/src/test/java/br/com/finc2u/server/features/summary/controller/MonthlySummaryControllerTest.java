@@ -29,9 +29,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(controllers = {MonthlySummaryController.class, GlobalExceptionHandler.class})
 class MonthlySummaryControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @MockBean  private MonthlySummaryService monthlySummaryService;
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired
+    private MockMvc mockMvc;
+    @MockBean
+    private MonthlySummaryService monthlySummaryService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private UUID userId;
     private MonthlySummary summary;
@@ -64,8 +67,9 @@ class MonthlySummaryControllerTest {
     }
 
     @Test
-    void createOrUpdate_shouldReturnCreated() throws Exception {
+    void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
+        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(false);
         when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
 
         mockMvc.perform(post("/monthly-summary")
@@ -74,6 +78,20 @@ class MonthlySummaryControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.month").value(MONTH))
                 .andExpect(jsonPath("$.year").value(YEAR))
+                .andExpect(jsonPath("$.totalExpenses").value(800));
+    }
+
+    @Test
+    void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
+        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
+        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(true);
+        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
+
+        mockMvc.perform(post("/monthly-summary")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.month").value(MONTH))
                 .andExpect(jsonPath("$.totalExpenses").value(800));
     }
 
@@ -99,6 +117,7 @@ class MonthlySummaryControllerTest {
     }
 
     @Test
+    @SuppressWarnings("DataFlowIssue")
     void createOrUpdate_shouldReturnBadRequest_whenYearIsInvalid() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, 1999);
 

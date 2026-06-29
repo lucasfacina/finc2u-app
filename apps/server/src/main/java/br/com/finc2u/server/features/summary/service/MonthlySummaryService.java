@@ -76,6 +76,11 @@ public class MonthlySummaryService {
                 .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsByUserAndPeriod(UUID userId, Integer month, Integer year) {
+        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year).isPresent();
+    }
+
     @Transactional
     public void delete(UUID userId, Integer month, Integer year) {
         MonthlySummary summary = getByUserAndPeriod(userId, month, year);
