@@ -12,6 +12,7 @@ import br.com.finc2u.server.features.summary.entity.MonthlySummaryId;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
+import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,8 @@ class MonthlySummaryServiceTest {
     private ExtraRepository extraRepository;
     @Mock
     private UserService userService;
+    @Mock
+    private SalaryHistoryService salaryHistoryService;
 
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
@@ -92,6 +95,8 @@ class MonthlySummaryServiceTest {
         when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR)).thenReturn(Optional.ofNullable(existing));
         when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, 5, YEAR)).thenReturn(Optional.ofNullable(prevMonth));
         when(monthlySummaryRepository.save(any(MonthlySummary.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class), any(BigDecimal.class)))
+                .thenReturn(BigDecimal.valueOf(3000));
     }
 
     @Test

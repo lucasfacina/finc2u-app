@@ -74,17 +74,19 @@ public class MonthlySummary {
     /*
      * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
      * compostos a partir dos totais agregados.
+     * -> baseSalary      = salário vigente no período (resolvido pelo service via SalaryHistory; fallback UserConfiguration)
      * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses  (projeção: quanto sobra ao fim do mês, descontando pago + pendente)
      * -> flexibleBudget  = totalIncome − totalPaid      (quanto ainda está disponível agora, só desconta o que já saiu)
      * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
-     * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe).
+     * -> savingsBalance vem do UserConfiguration (snapshot no momento do cálculo).
      */
     public void resolveTotals(
             MonthlySummaryTotals totals,
             BigDecimal previousMonthRemaining,
-            BigDecimal previousMonthSavingsBalance
+            BigDecimal previousMonthSavingsBalance,
+            BigDecimal baseSalaryForPeriod
     ) {
         this.cashBalance = previousMonthRemaining != null
                 ? previousMonthRemaining
@@ -96,7 +98,7 @@ public class MonthlySummary {
                 ? this.savingsBalance.subtract(previousMonthSavingsBalance)
                 : BigDecimal.ZERO;
 
-        this.baseSalary = user.baseSalaryOrZero();
+        this.baseSalary = baseSalaryForPeriod;
 
         this.totalIncome = this.baseSalary.add(totals.totalExtras()).add(this.cashBalance);
 

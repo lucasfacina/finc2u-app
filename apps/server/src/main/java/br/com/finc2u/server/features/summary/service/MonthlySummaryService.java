@@ -10,12 +10,14 @@ import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.vo.MonthlyPeriod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +30,7 @@ public class MonthlySummaryService {
     private final ExpenseRepository expenseRepository;
     private final ExtraRepository extraRepository;
     private final UserService userService;
+    private final SalaryHistoryService salaryHistoryService;
 
     /*
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: busca despesas/extras do mês,
@@ -49,11 +52,14 @@ public class MonthlySummaryService {
         MonthlySummary summary = monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
                 .orElseGet(() -> MonthlySummary.userIdForPeriod(user, month, year));
 
+        BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start(), user.baseSalaryOrZero());
+
         Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
         summary.resolveTotals(
                 totals,
                 previous.map(MonthlySummary::getRemainingAmount).orElse(null),
-                previous.map(MonthlySummary::getSavingsBalance).orElse(null)
+                previous.map(MonthlySummary::getSavingsBalance).orElse(null),
+                baseSalary
         );
 
         return monthlySummaryRepository.save(summary);

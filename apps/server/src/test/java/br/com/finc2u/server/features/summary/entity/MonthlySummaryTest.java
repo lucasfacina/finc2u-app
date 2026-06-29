@@ -37,8 +37,7 @@ class MonthlySummaryTest {
     @Test
     void userIdForPeriod_shouldBuildSummaryWithCorrectId() {
         UUID userId = UUID.randomUUID();
-        User user = User.builder()
-                .build();
+        User user = User.builder().build();
         user.setId(userId);
 
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
@@ -59,7 +58,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(1000, 600, 400, 0, 0),
                 BigDecimal.valueOf(350),
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(summary.getCashBalance()));
@@ -70,9 +70,12 @@ class MonthlySummaryTest {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(totals(1000, 600, 400, 0, 0),
+        summary.resolveTotals(
+                totals(1000, 600, 400, 0, 0),
                 null,
-                null);
+                null,
+                BigDecimal.valueOf(3000)
+        );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getCashBalance()));
     }
@@ -90,7 +93,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 0),
                 BigDecimal.valueOf(200),
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(summary.getBaseSalary()));
@@ -110,7 +114,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 800),
                 BigDecimal.valueOf(200),
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(3100).compareTo(summary.getFlexibleBudget()));
@@ -125,7 +130,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 200),
                 BigDecimal.ZERO,
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(summary.getTotalExpenses()));
@@ -144,7 +150,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
                 BigDecimal.ZERO,
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
@@ -158,7 +165,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
                 BigDecimal.ZERO,
-                null
+                null,
+                BigDecimal.ZERO
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsBalance()));
@@ -175,7 +183,8 @@ class MonthlySummaryTest {
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
                 null,
-                BigDecimal.valueOf(1200)
+                BigDecimal.valueOf(1200),
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(300).compareTo(summary.getSavingsYield()));
@@ -186,12 +195,33 @@ class MonthlySummaryTest {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(totals(0, 0, 0, 0, 0),
+        summary.resolveTotals(
+                totals(0, 0, 0, 0, 0),
                 null,
-                null
+                null,
+                BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsYield()));
+    }
+
+    // ---- resolveTotals: baseSalary histórico ----
+
+    @Test
+    void resolveTotals_shouldUseBaseSalaryForPeriod_asSnapshot() {
+        // baseSalary passado = 3500 (salário vigente no período, resolvido pelo service)
+        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 8, 2026);
+
+        summary.resolveTotals(
+                totals(0, 0, 0, 0, 0),
+                null,
+                null,
+                BigDecimal.valueOf(3500)
+        );
+
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(summary.getBaseSalary()));
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(summary.getTotalIncome()));
     }
 
 }
