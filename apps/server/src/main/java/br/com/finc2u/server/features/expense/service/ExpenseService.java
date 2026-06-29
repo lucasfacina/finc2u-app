@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
+import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.tag.service.TagService;
@@ -54,9 +55,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public List<Expense> getWithFilters(UUID userId, ExpenseFilter filter) {
         userService.getById(userId);
-        return expenseRepository.findByUserId(userId).stream()
-                .filter(filter::matches)
-                .toList();
+        return expenseRepository.findAll(ExpenseSpecification.ofFilter(userId, filter));
     }
 
     @Transactional

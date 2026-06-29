@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -204,7 +205,8 @@ class ExpenseServiceTest {
     @Test
     void getWithFilters_shouldReturnFilteredExpenses() {
         when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.findByUserId(userId)).thenReturn(List.of(expense));
+        Specification<Expense> anySpec = any();
+        when(expenseRepository.findAll(anySpec)).thenReturn(List.of(expense));
 
         ExpenseFilter filter = new ExpenseFilter(expense.getDueDate().getMonthValue(), null, null, null, null, null, null);
         List<Expense> response = expenseService.getWithFilters(userId, filter);
