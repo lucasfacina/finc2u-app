@@ -83,7 +83,7 @@ class ExtraControllerTest {
     }
 
     @Test
-    void getByUserId_shouldReturnOk() throws Exception {
+    void getAllByUserId_shouldReturnOk() throws Exception {
         when(extraService.getByUser(userId)).thenReturn(List.of(extra));
 
         mockMvc.perform(get("/extras")

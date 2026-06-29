@@ -27,7 +27,7 @@ public class ExtraController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ExtraResponse>> getByUserId(@RequestParam UUID userId) {
+    public ResponseEntity<List<ExtraResponse>> getAllByUserId(@RequestParam UUID userId) {
         List<ExtraResponse> extraResponse = extraService.getByUser(userId)
                 .stream()
                 .map(ExtraResponse::from)
