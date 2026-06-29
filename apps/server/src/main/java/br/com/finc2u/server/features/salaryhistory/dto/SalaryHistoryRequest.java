@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.salaryhistory.dto;
 
+import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -18,4 +19,12 @@ public record SalaryHistoryRequest(
         @NotNull
         LocalDate effectiveFrom
 ) {
+
+    public SalaryHistory toEntity() {
+        return SalaryHistory.builder()
+                .baseSalary(this.baseSalary())
+                .effectiveFrom(this.effectiveFrom())
+                .build();
+    }
+
 }
