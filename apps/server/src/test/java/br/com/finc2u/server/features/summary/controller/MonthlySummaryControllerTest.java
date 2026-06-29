@@ -67,7 +67,7 @@ class MonthlySummaryControllerTest {
     @Test
     void createOrUpdate_shouldReturnCreated() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR, null);
-        when(monthlySummaryService.calculateOrUpdate(eq(userId), eq(MONTH), eq(YEAR), any())).thenReturn(summary);
+        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR), any())).thenReturn(summary);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)

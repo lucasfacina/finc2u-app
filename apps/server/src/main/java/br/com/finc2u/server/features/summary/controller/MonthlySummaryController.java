@@ -22,7 +22,7 @@ public class MonthlySummaryController {
 
     @PostMapping
     public ResponseEntity<MonthlySummaryResponse> createOrUpdate(@Valid @RequestBody MonthlySummaryRequest monthlySummaryRequest) {
-        MonthlySummary monthlySummary = monthlySummaryService.calculateOrUpdate(
+        MonthlySummary monthlySummary = monthlySummaryService.calculateOrRecalculate(
                 monthlySummaryRequest.userId(),
                 monthlySummaryRequest.month(),
                 monthlySummaryRequest.year(),
