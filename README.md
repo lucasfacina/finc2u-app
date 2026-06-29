@@ -61,32 +61,43 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 
 ### Despesas — `/expenses`
 
-| Método | Endpoint                   | Descrição                    | Parâmetros                                                                               |
-|--------|----------------------------|------------------------------|------------------------------------------------------------------------------------------|
-| POST   | `/expenses`                | Criar despesa                | `userId` (query), Body: `ExpenseRequest`                                                 |
-| GET    | `/expenses`                | Listar despesas do usuário   | `userId`* (query)                                                                        |
+| Método | Endpoint                   | Descrição                    | Parâmetros                                                                                    |
+|--------|----------------------------|------------------------------|-----------------------------------------------------------------------------------------------|
+| POST   | `/expenses`                | Criar despesa                | `userId` (query), Body: `ExpenseRequest`                                                      |
+| GET    | `/expenses`                | Listar despesas do usuário   | `userId`* (query)                                                                             |
 | GET    | `/expenses/filters`        | Listar despesas com filtros  | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
-| GET    | `/expenses/{id}`           | Buscar despesa por ID        | `id` (path)                                                                              |
-| GET    | `/expenses/projections`    | Projeção de parcelas futuras | `userId`* (query)                                                                        |
-| PUT    | `/expenses/{id}`           | Atualizar despesa            | `id` (path), Body: `ExpenseRequest`                                                      |
-| PATCH  | `/expenses/{id}/status`    | Atualizar status da despesa  | `id` (path), `status` (query)                                                            |
-| DELETE | `/expenses/{id}`           | Deletar despesa              | `id` (path)                                                                              |
+| GET    | `/expenses/{id}`           | Buscar despesa por ID        | `id` (path)                                                                                   |
+| GET    | `/expenses/projections`    | Projeção de parcelas futuras | `userId`* (query)                                                                             |
+| PUT    | `/expenses/{id}`           | Atualizar despesa            | `id` (path), Body: `ExpenseRequest`                                                           |
+| PATCH  | `/expenses/{id}/status`    | Atualizar status da despesa  | `id` (path), `status` (query)                                                                 |
+| DELETE | `/expenses/{id}`           | Deletar despesa              | `id` (path)                                                                                   |
 
 ### Ganhos Extras — `/extras`
 
-| Método | Endpoint       | Descrição                       | Parâmetros                         |
-|--------|----------------|---------------------------------|------------------------------------|
+| Método | Endpoint       | Descrição                       | Parâmetros                             |
+|--------|----------------|---------------------------------|----------------------------------------|
 | POST   | `/extras`      | Registrar ganho extra           | `userId` (query), Body: `ExtraRequest` |
-| GET    | `/extras`      | Listar ganhos extras do usuário | `userId`* (query)                  |
-| GET    | `/extras/{id}` | Buscar ganho extra por ID       | `id` (path)                        |
-| PUT    | `/extras/{id}` | Atualizar ganho extra           | `id` (path), Body: `ExtraRequest`  |
-| DELETE | `/extras/{id}` | Deletar ganho extra             | `id` (path)                        |
+| GET    | `/extras`      | Listar ganhos extras do usuário | `userId`* (query)                      |
+| GET    | `/extras/{id}` | Buscar ganho extra por ID       | `id` (path)                            |
+| PUT    | `/extras/{id}` | Atualizar ganho extra           | `id` (path), Body: `ExtraRequest`      |
+| DELETE | `/extras/{id}` | Deletar ganho extra             | `id` (path)                            |
 
 ### Resumo Mensal — `/monthly-summary`
 
 | Método | Endpoint                                        | Descrição                              | Parâmetros                               |
 |--------|-------------------------------------------------|----------------------------------------|------------------------------------------|
-| POST   | `/monthly-summary`                              | (Re)calcular ou atualizar resumo       | Body: `MonthlySummaryRequest`            |
+| POST   | `/monthly-summary`                              | (Re)calcular ou atualizar resumo       | Body: `{ userId, month, year }`          |
 | GET    | `/monthly-summary/history`                      | Listar histórico de resumos do usuário | `userId`* (query)                        |
 | GET    | `/monthly-summary/{userId}/{year}/{month}`      | Buscar resumo por período              | `userId`, `year`, `month` (path)         |
 | DELETE | `/monthly-summary/{userId}/{year}/{month}`      | Deletar resumo de um período           | `userId`, `year`, `month` (path)         |
+
+### Histórico de Salários — `/salary-history`
+
+| Método | Endpoint           | Descrição                             | Parâmetros                                                          |
+|--------|--------------------|---------------------------------------|---------------------------------------------------------------------|
+| POST   | `/salary-history`       | Registrar novo salário com vigência   | Body: `{ userId, baseSalary, effectiveFrom }` (data: YYYY-MM-DD)  |
+| GET    | `/salary-history`       | Listar histórico de salários          | `userId`* (query)                                                  |
+| GET    | `/salary-history/{id}`  | Buscar entrada por ID                 | `id` (path)                                                        |
+| PUT    | `/salary-history/{id}`  | Corrigir salário ou data de vigência  | `id` (path), Body: `{ userId, baseSalary, effectiveFrom }`         |
+| DELETE | `/salary-history/{id}`  | Remover entrada                       | `id` (path)                                                        |
+
