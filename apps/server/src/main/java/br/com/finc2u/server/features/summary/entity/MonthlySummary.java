@@ -82,11 +82,10 @@ public class MonthlySummary {
     /*
      * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
      * compostos a partir dos totais agregados.
-     * -> totalIncome     = baseSalary + totalExtras + cashBalance
+     * -> totalIncome     = baseSalary + totalExtras  (cashBalance é só acompanhamento, não compõe renda)
      * -> remainingAmount = totalIncome − totalExpenses
-     * -> flexibleBudget  = totalIncome − totalFixed
-     * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe);
-     * -> totalFixed entra só no orçamento flexível (não é persistido como coluna).
+     * -> flexibleBudget  = totalIncome − totalExpenses  (quanto ainda pode gastar com base em tudo gasto)
+     * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe).
      * -> previousMonthRemaining restante do mês anterior, usado no auto-fill do caixa (pode ser nulo).
      */
     public void resolveTotals(
@@ -97,14 +96,14 @@ public class MonthlySummary {
         this.cashBalance = resolveCashBalance(requestedCashBalance, previousMonthRemaining);
         this.savingsBalance = user.savingsBalanceOrZero();
 
-        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras()).add(this.cashBalance);
+        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras());
 
         this.totalExpenses = totals.totalExpenses();
         this.totalPaid = totals.totalPaid();
         this.totalPending = totals.totalPending();
         this.totalExtras = totals.totalExtras();
         this.remainingAmount = totalIncome.subtract(totals.totalExpenses());
-        this.flexibleBudget = totalIncome.subtract(totals.totalFixed());
+        this.flexibleBudget = totalIncome.subtract(totals.totalExpenses());
     }
 
     @Override

@@ -167,7 +167,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void calculateOrRecalculate_shouldIncludeExtras_inTotalExtrasAndRemainingAmount() {
-        // totalIncome = baseSalary(3000) + extras(500) + cashBalance(0) = 3500
+        // totalIncome = baseSalary(3000) + extras(500) = 3500  (cashBalance não compõe renda)
         // remainingAmount = 3500 - totalExpenses(0) = 3500
         stubRepositories(
                 List.of(),
