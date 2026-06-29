@@ -76,11 +76,12 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 
 | Método | Endpoint       | Descrição                       | Parâmetros                             |
 |--------|----------------|---------------------------------|----------------------------------------|
-| POST   | `/extras`      | Registrar ganho extra           | `userId` (query), Body: `ExtraRequest` |
-| GET    | `/extras`      | Listar ganhos extras do usuário | `userId`* (query)                      |
-| GET    | `/extras/{id}` | Buscar ganho extra por ID       | `id` (path)                            |
-| PUT    | `/extras/{id}` | Atualizar ganho extra           | `id` (path), Body: `ExtraRequest`      |
-| DELETE | `/extras/{id}` | Deletar ganho extra             | `id` (path)                            |
+| POST   | `/extras`              | Registrar ganho extra              | `userId` (query), Body: `ExtraRequest`                     |
+| GET    | `/extras`              | Listar ganhos extras do usuário    | `userId`* (query)                                          |
+| GET    | `/extras/period`       | Listar ganhos extras por período   | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
+| GET    | `/extras/{id}`         | Buscar ganho extra por ID          | `id` (path)                                                |
+| PUT    | `/extras/{id}`         | Atualizar ganho extra              | `id` (path), Body: `ExtraRequest`                          |
+| DELETE | `/extras/{id}`         | Deletar ganho extra                | `id` (path)                                                |
 
 ### Resumo Mensal — `/monthly-summary`
 
