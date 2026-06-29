@@ -114,7 +114,7 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(800).compareTo(result.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalPaid()));
@@ -139,7 +139,7 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(200).compareTo(result.getTotalExpenses()));
     }
@@ -159,7 +159,7 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(400).compareTo(result.getTotalPaid()));
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getTotalPending()));
@@ -176,7 +176,7 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalExtras()));
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getRemainingAmount()));
@@ -197,13 +197,13 @@ class MonthlySummaryServiceTest {
                 previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
 
     @Test
-    void calculateOrRecalculate_shouldUseRequestedCashBalance_overPreviousMonth() {
+    void calculateOrRecalculate_shouldUsePreviousMonthRemaining_asCashBalance() {
         MonthlySummary previousSummary = MonthlySummary.builder()
                 .id(new MonthlySummaryId(userId, 5, YEAR))
                 .user(user)
@@ -217,9 +217,9 @@ class MonthlySummaryServiceTest {
                 previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, BigDecimal.valueOf(999));
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
-        assertEquals(0, BigDecimal.valueOf(999).compareTo(result.getCashBalance()));
+        assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
 
     @Test
@@ -231,7 +231,7 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(result.getSavingsBalance()));
     }
@@ -251,9 +251,9 @@ class MonthlySummaryServiceTest {
                 null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR, null);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
-        assertEquals(0, BigDecimal.valueOf(100).compareTo(result.getCashBalance()));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getCashBalance()));
         verify(monthlySummaryRepository, times(1)).save(any(MonthlySummary.class));
     }
 

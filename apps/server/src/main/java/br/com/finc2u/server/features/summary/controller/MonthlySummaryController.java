@@ -25,8 +25,7 @@ public class MonthlySummaryController {
         MonthlySummary monthlySummary = monthlySummaryService.calculateOrRecalculate(
                 monthlySummaryRequest.userId(),
                 monthlySummaryRequest.month(),
-                monthlySummaryRequest.year(),
-                monthlySummaryRequest.cashBalance()
+                monthlySummaryRequest.year()
         );
         return new ResponseEntity<>(MonthlySummaryResponse.from(monthlySummary), HttpStatus.CREATED);
     }

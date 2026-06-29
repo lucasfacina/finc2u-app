@@ -66,37 +66,23 @@ public class MonthlySummary {
                 .build();
     }
 
-    /**
-     * Resolve o caixa do período: usa o valor informado se houver; senão preserva o já persistido neste
-     * resumo; senão faz auto-fill com o restante do mês anterior (zero se não houver).
-     */
-    private BigDecimal resolveCashBalance(BigDecimal requested, BigDecimal previousMonthRemaining) {
-        if (requested != null) return requested;
-        if (this.cashBalance != null) return this.cashBalance;
-
-        return previousMonthRemaining != null
-                ? previousMonthRemaining
-                : BigDecimal.ZERO;
-    }
-
     /*
      * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
      * compostos a partir dos totais agregados.
-     * -> totalIncome     = baseSalary + totalExtras  (cashBalance é só acompanhamento, não compõe renda)
+     * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
+     * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses
      * -> flexibleBudget  = totalIncome − totalExpenses  (quanto ainda pode gastar com base em tudo gasto)
      * -> baseSalary e savingsBalance vêm da entidade User associado (acessores null-safe).
-     * -> previousMonthRemaining restante do mês anterior, usado no auto-fill do caixa (pode ser nulo).
      */
     public void resolveTotals(
             MonthlySummaryTotals totals,
-            BigDecimal requestedCashBalance,
             BigDecimal previousMonthRemaining
     ) {
-        this.cashBalance = resolveCashBalance(requestedCashBalance, previousMonthRemaining);
+        this.cashBalance = previousMonthRemaining != null ? previousMonthRemaining : BigDecimal.ZERO;
         this.savingsBalance = user.savingsBalanceOrZero();
 
-        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras());
+        BigDecimal totalIncome = user.baseSalaryOrZero().add(totals.totalExtras()).add(this.cashBalance);
 
         this.totalExpenses = totals.totalExpenses();
         this.totalPaid = totals.totalPaid();

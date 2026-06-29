@@ -3,9 +3,7 @@ package br.com.finc2u.server.features.summary.dto;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 public record MonthlySummaryRequest(
@@ -18,9 +16,6 @@ public record MonthlySummaryRequest(
 
         @NotNull(message = "O ano é obrigatório")
         @Min(2000)
-        Integer year,
-
-        @PositiveOrZero(message = "O caixa não pode ser negativo")
-        BigDecimal cashBalance
+        Integer year
 ) {
 }

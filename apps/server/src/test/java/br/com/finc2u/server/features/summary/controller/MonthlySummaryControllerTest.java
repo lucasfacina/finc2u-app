@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -66,8 +65,8 @@ class MonthlySummaryControllerTest {
 
     @Test
     void createOrUpdate_shouldReturnCreated() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR, null);
-        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR), any())).thenReturn(summary);
+        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
+        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +79,7 @@ class MonthlySummaryControllerTest {
 
     @Test
     void createOrUpdate_shouldReturnBadRequest_whenUserIdIsNull() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(null, MONTH, YEAR, null);
+        MonthlySummaryRequest request = new MonthlySummaryRequest(null, MONTH, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +90,7 @@ class MonthlySummaryControllerTest {
     @Test
     @SuppressWarnings("DataFlowIssue")
     void createOrUpdate_shouldReturnBadRequest_whenMonthIsInvalid() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, 0, YEAR, null);
+        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, 0, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -100,8 +99,8 @@ class MonthlySummaryControllerTest {
     }
 
     @Test
-    void createOrUpdate_shouldReturnBadRequest_whenCashBalanceIsNegative() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR, BigDecimal.valueOf(-1));
+    void createOrUpdate_shouldReturnBadRequest_whenYearIsInvalid() throws Exception {
+        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, 1999);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -35,7 +35,7 @@ public class MonthlySummaryService {
      * resumo + o restante do mês anterior, e delega o cálculo à própria entidade.
      */
     @Transactional
-    public MonthlySummary calculateOrRecalculate(UUID userId, Integer month, Integer year, BigDecimal requestedCashBalance) {
+    public MonthlySummary calculateOrRecalculate(UUID userId, Integer month, Integer year) {
         User user = userService.getById(userId);
         MonthlyPeriod period = MonthlyPeriod.of(month, year);
 
@@ -49,7 +49,7 @@ public class MonthlySummaryService {
         MonthlySummary summary = monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
                 .orElseGet(() -> MonthlySummary.userIdForPeriod(user, month, year));
 
-        summary.resolveTotals(totals, requestedCashBalance, previousMonthRemaining(userId, period));
+        summary.resolveTotals(totals, previousMonthRemaining(userId, period));
 
         return monthlySummaryRepository.save(summary);
     }

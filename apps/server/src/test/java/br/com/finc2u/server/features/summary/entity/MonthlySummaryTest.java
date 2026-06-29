@@ -49,112 +49,60 @@ class MonthlySummaryTest {
         assertSame(user, summary.getUser());
     }
 
-    // ---- resolveTotals: prioridade do cashBalance ----
+    // ---- resolveTotals: cashBalance automático (carryover do mês anterior) ----
 
     @Test
-    void resolveTotals_shouldUseRequestedCashBalance_whenProvided() {
+    void resolveTotals_shouldSetCashBalance_fromPreviousMonthRemaining() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                BigDecimal.valueOf(500),
-                null
-        );
-
-        assertEquals(0, BigDecimal.valueOf(500).compareTo(summary.getCashBalance()));
-    }
-
-    @Test
-    void resolveTotals_shouldPreserveExistingCashBalance_whenNoRequestAndAlreadySet() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
-        summary.setCashBalance(BigDecimal.valueOf(200));
-
-        summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                null,
-                null
-        );
-
-        assertEquals(0, BigDecimal.valueOf(200).compareTo(summary.getCashBalance()));
-    }
-
-    @Test
-    void resolveTotals_shouldUsePreviousMonthRemaining_whenNoCashBalanceSet() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
-
-        summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                null,
-                BigDecimal.valueOf(350)
-        );
+        summary.resolveTotals(totals(1000, 600, 400, 0, 0), BigDecimal.valueOf(350));
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(summary.getCashBalance()));
     }
 
     @Test
-    void resolveTotals_shouldUseZero_whenNoCashBalanceAndNoPreviousMonth() {
+    void resolveTotals_shouldSetCashBalanceToZero_whenNoPreviousMonth() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
-        summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                null,
-                null
-        );
+        summary.resolveTotals(totals(1000, 600, 400, 0, 0), null);
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getCashBalance()));
-    }
-
-    @Test
-    void resolveTotals_requestedCashBalance_shouldTakePrecedenceOverExistingAndPrevious() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
-        summary.setCashBalance(BigDecimal.valueOf(200));
-
-        summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                BigDecimal.valueOf(999),
-                BigDecimal.valueOf(111)
-        );
-
-        assertEquals(0, BigDecimal.valueOf(999).compareTo(summary.getCashBalance()));
     }
 
     // ---- resolveTotals: fórmulas ----
 
     @Test
     void resolveTotals_shouldComputeRemainingAmount() {
-        // totalIncome = baseSalary(3000) + totalExtras(500) = 3500  (cashBalance não compõe renda)
-        // remainingAmount = totalIncome(3500) - totalExpenses(1000) = 2500
+        // cashBalance = 200 (carryover do mês anterior)
+        // totalIncome = baseSalary(3000) + totalExtras(500) + cashBalance(200) = 3700
+        // remainingAmount = totalIncome(3700) - totalExpenses(1000) = 2700
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 0),
-                BigDecimal.valueOf(200),
-                null
+                BigDecimal.valueOf(200)
         );
 
-        assertEquals(0, BigDecimal.valueOf(2500).compareTo(summary.getRemainingAmount()));
+        assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
     }
 
     @Test
     void resolveTotals_shouldComputeFlexibleBudget() {
-        // totalIncome = baseSalary(3000) + totalExtras(500) = 3500
-        // flexibleBudget = totalIncome(3500) - totalExpenses(1000) = 2500
+        // cashBalance = 200 (carryover do mês anterior)
+        // totalIncome = baseSalary(3000) + totalExtras(500) + cashBalance(200) = 3700
+        // flexibleBudget = totalIncome(3700) - totalExpenses(1000) = 2700
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 800),
-                BigDecimal.valueOf(200),
-                null
+                BigDecimal.valueOf(200)
         );
 
-        assertEquals(0, BigDecimal.valueOf(2500).compareTo(summary.getFlexibleBudget()));
+        assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getFlexibleBudget()));
     }
 
     @Test
@@ -164,8 +112,7 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 200),
-                BigDecimal.ZERO,
-                null
+                BigDecimal.ZERO
         );
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(summary.getTotalExpenses()));
@@ -183,8 +130,7 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO,
-                null
+                BigDecimal.ZERO
         );
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
@@ -197,8 +143,7 @@ class MonthlySummaryTest {
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO,
-                null
+                BigDecimal.ZERO
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsBalance()));
