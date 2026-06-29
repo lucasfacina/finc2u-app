@@ -24,6 +24,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
     @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserId(UUID userId);
 
+    boolean existsByUserId(UUID userId);
+
     List<Expense> findByCardAccountId(UUID cardAccountId);
 
     List<Expense> findByPaymentStatus(PaymentStatus status);
@@ -48,6 +50,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
     List<Expense> findByValueGreaterThanEqual(BigDecimal value);
 
+    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByExpenseTypeAndUserId(ExpenseType type, UUID userId);
 
 }
