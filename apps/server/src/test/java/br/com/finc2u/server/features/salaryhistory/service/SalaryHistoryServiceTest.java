@@ -89,7 +89,7 @@ class SalaryHistoryServiceTest {
         List<SalaryHistory> result = salaryHistoryService.getByUser(userId);
 
         assertEquals(2, result.size());
-        assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(0).getBaseSalary()));
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getFirst().getBaseSalary()));
     }
 
     @Test
