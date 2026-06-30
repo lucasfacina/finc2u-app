@@ -75,6 +75,7 @@ public class ExpenseService {
     public Expense updateStatus(UUID id, PaymentStatus status) {
         Expense expense = getById(id);
         expense.setPaymentStatus(status);
+
         return expenseRepository.save(expense);
     }
 

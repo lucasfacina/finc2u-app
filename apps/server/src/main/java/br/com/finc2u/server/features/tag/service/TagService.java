@@ -20,7 +20,7 @@ public class TagService {
     @Transactional
     public Tag create(Tag tag) {
         if (tagRepository.findByNameIgnoreCase(tag.getName()).isPresent()) {
-            throw new BusinessException("Tag já cadastrada");
+            throw new BusinessException("Tag já cadastrada!");
         }
 
         return tagRepository.save(tag);
@@ -49,7 +49,7 @@ public class TagService {
         tagRepository.findByNameIgnoreCase(tagUpdated.getName())
                 .filter(existing -> !existing.getId().equals(id))
                 .ifPresent(__ -> {
-                    throw new BusinessException("Tag já cadastrada");
+                    throw new BusinessException("Tag já cadastrada!");
                 });
 
         tag.setName(tagUpdated.getName());

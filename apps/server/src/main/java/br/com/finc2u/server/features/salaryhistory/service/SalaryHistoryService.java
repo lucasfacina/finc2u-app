@@ -60,17 +60,18 @@ public class SalaryHistoryService {
 
     @Transactional
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
-        SalaryHistory history = getById(id);
+        SalaryHistory salaryHistory = getById(id);
         salaryHistoryRepository
-                .findByUserIdAndEffectiveFrom(history.getUser().getId(), historyData.getEffectiveFrom())
+                .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
                 .filter(conflict -> !conflict.getId().equals(id))
                 .ifPresent(conflict -> {
-                    throw new BusinessException("Já existe um registro de salário com vigência em " + historyData.getEffectiveFrom() + " para este usuário.");
+                    throw new BusinessException("Já existe um registro de salário com vigência em " +
+                            historyData.getEffectiveFrom() + " para este usuário.");
                 });
-        history.setBaseSalary(historyData.getBaseSalary());
-        history.setEffectiveFrom(historyData.getEffectiveFrom());
+        salaryHistory.setBaseSalary(historyData.getBaseSalary());
+        salaryHistory.setEffectiveFrom(historyData.getEffectiveFrom());
 
-        return salaryHistoryRepository.save(history);
+        return salaryHistoryRepository.save(salaryHistory);
     }
 
     @Transactional
