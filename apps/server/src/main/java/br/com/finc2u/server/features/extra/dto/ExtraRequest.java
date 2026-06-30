@@ -9,14 +9,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ExtraRequest(
-        @NotBlank(message = "Descrição é obrigatória")
+        @NotBlank(message = "Descrição é obrigatória!")
         String description,
 
-        @NotNull(message = "Valor é obrigatório")
-        @Positive(message = "Valor deve ser positivo")
+        @NotNull(message = "Valor é obrigatório!")
+        @Positive(message = "Valor deve ser positivo.")
         BigDecimal value,
 
-        @NotNull(message = "Data é obrigatória")
+        @NotNull(message = "Data é obrigatória!")
         LocalDate date
 ) {
 

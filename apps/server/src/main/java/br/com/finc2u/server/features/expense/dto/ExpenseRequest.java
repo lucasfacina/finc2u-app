@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.UUID;
 
 public record ExpenseRequest(
-        @NotBlank(message = "Descrição é obrigatória")
+        @NotBlank(message = "Descrição é obrigatória!")
         String description,
 
-        @NotNull(message = "Valor é obrigatório")
-        @Positive(message = "Valor deve ser positivo")
+        @NotNull(message = "Valor é obrigatório!")
+        @Positive(message = "Valor deve ser positivo.")
         BigDecimal value,
 
-        @NotNull(message = "Tipo de despesa é obrigatório")
+        @NotNull(message = "Tipo de despesa é obrigatório!")
         ExpenseType expenseType,
 
         // Opcional: quando ausente e houver cartão, é calculado a partir de purchaseDate + fechamento/vencimento do cartão.

@@ -9,14 +9,14 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 public record SalaryHistoryRequest(
-        @NotNull
+        @NotNull(message = "O ID do usuário é obrigatório!")
         UUID userId,
 
-        @NotNull
-        @Positive
+        @NotNull(message = "O salário base é obrigatório!")
+        @Positive(message = "O salário base deve ser positivo.")
         BigDecimal baseSalary,
 
-        @NotNull
+        @NotNull(message = "O campo 'efetivo a partir de' é obrigatório!")
         LocalDate effectiveFrom
 ) {
 
