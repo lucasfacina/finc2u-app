@@ -58,7 +58,7 @@ public class GlobalExceptionHandlerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.message").value("Erro interno no servidor."))
-                .andExpect(jsonPath("$.detail").value("Erro inesperado"))
+                .andExpect(jsonPath("$.detail").value("Erro inesperado."))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
