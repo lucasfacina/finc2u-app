@@ -24,6 +24,7 @@ public class ExtraService {
     public Extra create(Extra extra, UUID userId) {
         User user = userService.getById(userId);
         extra.setUser(user);
+
         return extraRepository.save(extra);
     }
 
@@ -51,6 +52,7 @@ public class ExtraService {
         extra.setDescription(updates.getDescription());
         extra.setValue(updates.getValue());
         extra.setDate(updates.getDate());
+
         return extraRepository.save(extra);
     }
 

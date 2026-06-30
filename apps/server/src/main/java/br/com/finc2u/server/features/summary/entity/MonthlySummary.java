@@ -49,23 +49,26 @@ public class MonthlySummary {
     private LocalDateTime updatedAt;
 
     public Integer getMonth() {
-        return id != null ? id.getMonth() : null;
+        return id != null
+                ? id.getMonth()
+                : null;
     }
 
     public Integer getYear() {
-        return id != null ? id.getYear() : null;
+        return id != null
+                ? id.getYear()
+                : null;
     }
 
-    /**
-     * Cria um resumo novo (id composto + usuário) para o período, ainda não calculado.
-     */
+    // Cria um resumo novo (id composto + usuário) para o período, ainda não calculado.
     public static MonthlySummary userIdForPeriod(User user, Integer month, Integer year) {
         return MonthlySummary.builder()
                 .id(MonthlySummaryId.builder()
                         .userId(user.getId())
                         .month(month)
                         .year(year)
-                        .build())
+                        .build()
+                )
                 .user(user)
                 .build();
     }
@@ -108,11 +111,11 @@ public class MonthlySummary {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        MonthlySummary other = (MonthlySummary) o;
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null) return false;
+        if (Hibernate.getClass(this) != Hibernate.getClass(object)) return false;
+        MonthlySummary other = (MonthlySummary) object;
         return Objects.equals(id, other.id);
     }
 

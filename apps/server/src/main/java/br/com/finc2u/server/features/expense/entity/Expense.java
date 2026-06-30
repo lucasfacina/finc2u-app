@@ -89,7 +89,7 @@ public class Expense extends BaseModel {
         }
     }
 
-    /* Valida regras de PARCELED: mínimo de parcelas, parcela inicial padrão e auto-PAID na última. */
+    // Valida regras de PARCELED: mínimo de parcelas, parcela inicial padrão e auto-PAID na última.
     public void applyInstallmentRules() {
         if (expenseType == ExpenseType.PARCELED) {
             if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS) {
@@ -120,9 +120,8 @@ public class Expense extends BaseModel {
         applyInstallmentRules();
     }
 
-    /**
-     * Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior a hoje).
-     */
+
+    // Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior a hoje).
     public void markPaidIfOverdue() {
         if (paymentStatus == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(LocalDate.now())) {
             paymentStatus = PaymentStatus.PAID;

@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 @Component
 public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
 
-    /**
-     * Monta as parcelas virtuais (não persistidas) restantes de uma despesa parcelada — uma por mês
+    /*
+     * Monta as parcelas virtuais (não persistidas) restantes de uma despesa parcelada, uma por mês
      * subsequente ao vencimento atual; já na última parcela, retorna lista vazia.
      */
     private static List<Expense> remainingInstallmentsOf(Expense source) {

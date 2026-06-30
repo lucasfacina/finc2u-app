@@ -39,6 +39,7 @@ public record ExpenseRequest(
         // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
         UUID cardAccountId,
 
+        // Opcional: tags associadas à despesa (para fins de categorização/relatórios)
         List<UUID> tagIds
 ) {
 

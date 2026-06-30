@@ -34,7 +34,6 @@ public class CardAccount extends BaseModel {
     @OneToMany(mappedBy = "cardAccount")
     private List<Expense> expenseList;
 
-
     /*
      * Determina o vencimento da fatura em que a compra cai.
      * Até o dia de fechamento, a compra entra na fatura que fecha no mês corrente; depois, na do mês seguinte.

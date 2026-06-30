@@ -1,6 +1,5 @@
 package br.com.finc2u.server.features.expense.scripts.seeders;
 
-
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;

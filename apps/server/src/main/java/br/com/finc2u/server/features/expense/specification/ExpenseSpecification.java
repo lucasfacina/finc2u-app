@@ -10,6 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+/*
+ * Fornece métodos para criar Specifications do JPA para filtrar entidades Expense. Ela permite a filtragem com base no
+ * ID do usuário, período de datas, status de pagamento, tipo de despesa, ID da conta do cartão e faixa de preço.
+ */
 public class ExpenseSpecification {
 
     private ExpenseSpecification() {

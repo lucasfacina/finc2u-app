@@ -37,11 +37,17 @@ public class CardSeeder implements Seeder {
     private List<CardAccount> createSeedCards(User user) {
         List<CardAccount> cards = List.of(
                 CardAccount.builder()
-                        .cardName("Nubank").closingDate(9).dueDate(15)
-                        .user(user).build(),
+                        .cardName("Nubank")
+                        .closingDate(9)
+                        .dueDate(15)
+                        .user(user)
+                        .build(),
                 CardAccount.builder()
-                        .cardName("Mercado Pago").closingDate(9).dueDate(14)
-                        .user(user).build()
+                        .cardName("Mercado Pago")
+                        .closingDate(9)
+                        .dueDate(14)
+                        .user(user)
+                        .build()
         );
 
         return cardAccountRepository.saveAll(cards);

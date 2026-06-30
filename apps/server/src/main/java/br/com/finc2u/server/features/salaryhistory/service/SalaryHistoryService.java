@@ -30,6 +30,7 @@ public class SalaryHistoryService {
                     history.getEffectiveFrom() + " para este usuário.");
         }
         history.setUser(user);
+
         return salaryHistoryRepository.save(history);
     }
 
@@ -68,6 +69,7 @@ public class SalaryHistoryService {
                 });
         history.setBaseSalary(historyData.getBaseSalary());
         history.setEffectiveFrom(historyData.getEffectiveFrom());
+
         return salaryHistoryRepository.save(history);
     }
 
