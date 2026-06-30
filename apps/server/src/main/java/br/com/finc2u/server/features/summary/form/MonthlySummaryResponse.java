@@ -20,7 +20,6 @@ public record MonthlySummaryResponse(
         BigDecimal savingsBalance,
         BigDecimal savingsYield,
         BigDecimal remainingAmount,
-        BigDecimal flexibleBudget,
         LocalDateTime updatedAt
 ) {
 
@@ -39,7 +38,6 @@ public record MonthlySummaryResponse(
                 summary.getSavingsBalance(),
                 summary.getSavingsYield(),
                 summary.getRemainingAmount(),
-                summary.getFlexibleBudget(),
                 summary.getUpdatedAt()
         );
     }

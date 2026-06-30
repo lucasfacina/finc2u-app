@@ -62,7 +62,6 @@ class MonthlySummaryControllerTest {
                 .cashBalance(BigDecimal.valueOf(100))
                 .savingsBalance(BigDecimal.valueOf(1000))
                 .remainingAmount(BigDecimal.valueOf(2500))
-                .flexibleBudget(BigDecimal.valueOf(2900))
                 .build();
     }
 

@@ -31,7 +31,6 @@ public class MonthlySummary {
     private BigDecimal savingsBalance;
     private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
-    private BigDecimal flexibleBudget;
 
     @EmbeddedId
     private MonthlySummaryId id;
@@ -77,8 +76,7 @@ public class MonthlySummary {
      * -> baseSalary      = salário vigente no período (resolvido pelo service via SalaryHistory; fallback UserConfiguration)
      * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
-     * -> remainingAmount = totalIncome − totalExpenses  (projeção: quanto sobra ao fim do mês, descontando pago + pendente)
-     * -> flexibleBudget  = totalIncome − totalPaid      (quanto ainda está disponível agora, só desconta o que já saiu)
+     * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
      * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
      * -> savingsBalance vem do UserConfiguration (snapshot no momento do cálculo).
      */
@@ -107,7 +105,6 @@ public class MonthlySummary {
         this.totalPending = totals.totalPending();
         this.totalExtras = totals.totalExtras();
         this.remainingAmount = this.totalIncome.subtract(totals.totalExpenses());
-        this.flexibleBudget = this.totalIncome.subtract(totals.totalPaid());
     }
 
     @Override
