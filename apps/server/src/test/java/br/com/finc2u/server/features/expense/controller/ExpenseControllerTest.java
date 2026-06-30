@@ -88,7 +88,8 @@ class ExpenseControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(expenseService.create(any(Expense.class), eq(userId), eq(cardAccountId), any(), any())).thenReturn(expense);
+        when(expenseService.create(any(Expense.class), eq(userId), eq(cardAccountId), any(), any()))
+                .thenReturn(expense);
 
         mockMvc.perform(post("/expenses")
                         .param("userId", userId.toString())
@@ -112,7 +113,8 @@ class ExpenseControllerTest {
 
     @Test
     void getWithFilters_shouldBindQueryParamsIntoFilter() throws Exception {
-        when(expenseService.getWithFilters(eq(userId), any())).thenReturn(List.of(expense));
+        when(expenseService.getWithFilters(eq(userId), any()))
+                .thenReturn(List.of(expense));
 
         mockMvc.perform(get("/expenses/filters")
                         .param("userId", userId.toString())
@@ -140,7 +142,8 @@ class ExpenseControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(expenseService.getById(expenseId)).thenReturn(expense);
+        when(expenseService.getById(expenseId))
+                .thenReturn(expense);
 
         mockMvc.perform(get("/expenses/{id}", expenseId))
                 .andExpect(status().isOk())
@@ -149,7 +152,8 @@ class ExpenseControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(expenseService.update(eq(expenseId), any(Expense.class), eq(cardAccountId), any(), any())).thenReturn(expense);
+        when(expenseService.update(eq(expenseId), any(Expense.class), eq(cardAccountId), any(), any()))
+                .thenReturn(expense);
 
         mockMvc.perform(put("/expenses/{id}", expenseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -160,7 +164,8 @@ class ExpenseControllerTest {
 
     @Test
     void updateStatus_shouldReturnOk() throws Exception {
-        when(expenseService.updateStatus(expenseId, PaymentStatus.PAID)).thenReturn(expense);
+        when(expenseService.updateStatus(expenseId, PaymentStatus.PAID))
+                .thenReturn(expense);
 
         mockMvc.perform(patch("/expenses/{id}/status", expenseId)
                         .param("status", "PAID"))

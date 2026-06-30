@@ -53,7 +53,8 @@ class MonthlySummaryControllerTest {
                         .userId(userId)
                         .month(MONTH)
                         .year(YEAR)
-                        .build())
+                        .build()
+                )
                 .user(user)
                 .totalExpenses(BigDecimal.valueOf(800))
                 .totalPaid(BigDecimal.valueOf(500))
@@ -68,8 +69,10 @@ class MonthlySummaryControllerTest {
     @Test
     void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(false);
-        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
+        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
+                .thenReturn(false);
+        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
+                .thenReturn(summary);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,8 +86,10 @@ class MonthlySummaryControllerTest {
     @Test
     void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(true);
-        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
+        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
+                .thenReturn(true);
+        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
+                .thenReturn(summary);
 
         mockMvc.perform(post("/monthly-summary")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -128,7 +133,8 @@ class MonthlySummaryControllerTest {
 
     @Test
     void getHistoryByUserId_shouldReturnOk() throws Exception {
-        when(monthlySummaryService.getByUser(userId)).thenReturn(List.of(summary));
+        when(monthlySummaryService.getByUser(userId))
+                .thenReturn(List.of(summary));
 
         mockMvc.perform(get("/monthly-summary/history")
                         .param("userId", userId.toString()))
@@ -139,7 +145,8 @@ class MonthlySummaryControllerTest {
 
     @Test
     void getPeriodByUserId_shouldReturnOk() throws Exception {
-        when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR))).thenReturn(summary);
+        when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
+                .thenReturn(summary);
 
         mockMvc.perform(get("/monthly-summary/{userId}/{year}/{month}", userId, YEAR, MONTH))
                 .andExpect(status().isOk())

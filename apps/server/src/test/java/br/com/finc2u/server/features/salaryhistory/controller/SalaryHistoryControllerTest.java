@@ -109,7 +109,8 @@ class SalaryHistoryControllerTest {
 
     @Test
     void getByUserId_shouldReturnOk() throws Exception {
-        when(salaryHistoryService.getByUser(userId)).thenReturn(List.of(history));
+        when(salaryHistoryService.getByUser(userId))
+                .thenReturn(List.of(history));
 
         mockMvc.perform(get("/salary-history")
                         .param("userId", userId.toString()))
@@ -119,7 +120,8 @@ class SalaryHistoryControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(salaryHistoryService.getById(historyId)).thenReturn(history);
+        when(salaryHistoryService.getById(historyId))
+                .thenReturn(history);
 
         mockMvc.perform(get("/salary-history/{id}", historyId))
                 .andExpect(status().isOk())

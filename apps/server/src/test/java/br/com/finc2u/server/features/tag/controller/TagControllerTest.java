@@ -51,7 +51,8 @@ class TagControllerTest {
     @Test
     void create_shouldReturnCreated() throws Exception {
         TagRequest request = new TagRequest("Alimentação", null);
-        when(tagService.create(any(Tag.class))).thenReturn(tag);
+        when(tagService.create(any(Tag.class)))
+                .thenReturn(tag);
 
         mockMvc.perform(post("/tags")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -74,7 +75,8 @@ class TagControllerTest {
 
     @Test
     void getAll_shouldReturnOk() throws Exception {
-        when(tagService.getAll()).thenReturn(List.of(tag));
+        when(tagService.getAll())
+                .thenReturn(List.of(tag));
 
         mockMvc.perform(get("/tags"))
                 .andExpect(status().isOk())
@@ -83,7 +85,8 @@ class TagControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(tagService.getById(tagId)).thenReturn(tag);
+        when(tagService.getById(tagId))
+                .thenReturn(tag);
 
         mockMvc.perform(get("/tags/{id}", tagId))
                 .andExpect(status().isOk())
@@ -93,7 +96,8 @@ class TagControllerTest {
     @Test
     void update_shouldReturnOk() throws Exception {
         TagRequest request = new TagRequest("Alimentação", null);
-        when(tagService.update(eq(tagId), any(Tag.class))).thenReturn(tag);
+        when(tagService.update(eq(tagId), any(Tag.class)))
+                .thenReturn(tag);
 
         mockMvc.perform(put("/tags/{id}", tagId)
                         .contentType(MediaType.APPLICATION_JSON)

@@ -71,7 +71,8 @@ class ExtraControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(extraService.create(any(Extra.class), eq(userId))).thenReturn(extra);
+        when(extraService.create(any(Extra.class), eq(userId)))
+                .thenReturn(extra);
 
         mockMvc.perform(post("/extras")
                         .param("userId", userId.toString())
@@ -84,7 +85,8 @@ class ExtraControllerTest {
 
     @Test
     void getAllByUserId_shouldReturnOk() throws Exception {
-        when(extraService.getByUser(userId)).thenReturn(List.of(extra));
+        when(extraService.getByUser(userId))
+                .thenReturn(List.of(extra));
 
         mockMvc.perform(get("/extras")
                         .param("userId", userId.toString()))
@@ -94,7 +96,8 @@ class ExtraControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(extraService.getById(extraId)).thenReturn(extra);
+        when(extraService.getById(extraId))
+                .thenReturn(extra);
 
         mockMvc.perform(get("/extras/{id}", extraId))
                 .andExpect(status().isOk())
@@ -103,7 +106,8 @@ class ExtraControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(extraService.update(eq(extraId), any(Extra.class))).thenReturn(extra);
+        when(extraService.update(eq(extraId), any(Extra.class)))
+                .thenReturn(extra);
 
         mockMvc.perform(put("/extras/{id}", extraId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -117,7 +121,8 @@ class ExtraControllerTest {
         LocalDate start = LocalDate.of(2026, 5, 1);
         LocalDate end = LocalDate.of(2026, 5, 31);
 
-        when(extraService.getByUserAndPeriod(userId, start, end)).thenReturn(List.of(extra));
+        when(extraService.getByUserAndPeriod(userId, start, end))
+                .thenReturn(List.of(extra));
 
         mockMvc.perform(get("/extras/period")
                         .param("userId", userId.toString())

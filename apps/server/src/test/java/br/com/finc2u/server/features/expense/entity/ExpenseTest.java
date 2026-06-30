@@ -42,7 +42,8 @@ public class ExpenseTest {
                 .cardAccount(card)
                 .build();
 
-        assertThrows(BusinessException.class, () -> expense.resolveDueDate(LocalDate.of(2026, 5, 1)));
+        assertThrows(BusinessException.class,
+                () -> expense.resolveDueDate(LocalDate.of(2026, 5, 1)));
     }
 
     @Test

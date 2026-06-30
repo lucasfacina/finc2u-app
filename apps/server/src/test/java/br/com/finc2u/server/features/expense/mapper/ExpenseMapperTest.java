@@ -40,7 +40,8 @@ public class ExpenseMapperTest {
         CardAccount card = CardAccount.builder()
                 .build();
         card.setId(cardId);
-        when(cardAccountService.getById(cardId)).thenReturn(card);
+        when(cardAccountService.getById(cardId))
+                .thenReturn(card);
 
         Expense expense = Expense.builder()
                 .build();
@@ -66,7 +67,8 @@ public class ExpenseMapperTest {
         List<UUID> ids = List.of(UUID.randomUUID());
         List<Tag> tags = List.of(Tag.builder()
                 .build());
-        when(tagService.getByIds(ids)).thenReturn(tags);
+        when(tagService.getByIds(ids))
+                .thenReturn(tags);
 
         Expense expense = Expense.builder()
                 .build();
@@ -90,6 +92,7 @@ public class ExpenseMapperTest {
     void applyEditableFields_shouldCopyScalarFields_butNotAssociations() {
         CardAccount card = CardAccount.builder().
                 build();
+
         Expense target = Expense.builder()
                 .description("antigo")
                 .value(BigDecimal.valueOf(10))

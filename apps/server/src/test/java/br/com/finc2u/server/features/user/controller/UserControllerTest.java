@@ -51,7 +51,8 @@ class UserControllerTest {
                 .userConfiguration(UserConfiguration.builder()
                         .baseSalary(BigDecimal.valueOf(5000))
                         .savingsBalance(BigDecimal.valueOf(1000))
-                        .build())
+                        .build()
+                )
                 .build();
         user.setId(userId);
 
@@ -64,7 +65,8 @@ class UserControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(userService.create(any(User.class))).thenReturn(user);
+        when(userService.create(any(User.class)))
+                .thenReturn(user);
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,7 +94,8 @@ class UserControllerTest {
 
     @Test
     void getAll_shouldReturnOk() throws Exception {
-        when(userService.getAll()).thenReturn(List.of(user));
+        when(userService.getAll())
+                .thenReturn(List.of(user));
 
         mockMvc.perform(get("/users"))
                 .andExpect(status().isOk())
@@ -101,7 +104,8 @@ class UserControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(userService.getById(userId)).thenReturn(user);
+        when(userService.getById(userId))
+                .thenReturn(user);
 
         mockMvc.perform(get("/users/{id}", userId))
                 .andExpect(status().isOk())
@@ -110,7 +114,8 @@ class UserControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(userService.update(eq(userId), any(User.class))).thenReturn(user);
+        when(userService.update(eq(userId), any(User.class)))
+                .thenReturn(user);
 
         mockMvc.perform(put("/users/{id}", userId)
                         .contentType(MediaType.APPLICATION_JSON)

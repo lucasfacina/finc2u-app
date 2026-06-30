@@ -81,8 +81,10 @@ class ExpenseServiceTest {
 
     @Test
     void create_shouldReturnExpense_whenValid() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+                .thenReturn(expense);
 
         Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
 
@@ -98,8 +100,10 @@ class ExpenseServiceTest {
         expense.setTotalInstallment(3);
         expense.setPaymentStatus(PaymentStatus.PENDING);
 
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.save(any(Expense.class))).thenReturn(expense);
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+                .thenReturn(expense);
 
         Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
 
@@ -111,8 +115,10 @@ class ExpenseServiceTest {
         expense.setExpenseType(ExpenseType.PARCELED);
         expense.setTotalInstallment(null);
 
-        when(userService.getById(userId)).thenReturn(user);
-        assertThrows(BusinessException.class, () -> expenseService.create(expense, userId, cardAccountId, null, null));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        assertThrows(BusinessException.class,
+                () -> expenseService.create(expense, userId, cardAccountId, null, null));
     }
 
     @Test
@@ -121,10 +127,18 @@ class ExpenseServiceTest {
         cardAccount.setDueDate(15);
         expense.setDueDate(null);
 
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(expense, userId, cardAccountId, LocalDate.of(2026, 5, 20), null);
+        Expense response = expenseService.create(
+                expense,
+                userId,
+                cardAccountId,
+                LocalDate.of(2026, 5, 20),
+                null
+        );
 
         assertEquals(LocalDate.of(2026, 6, 15), response.getDueDate());
     }
@@ -134,7 +148,8 @@ class ExpenseServiceTest {
         expense.setCardAccount(null);
         expense.setDueDate(null);
 
-        when(userService.getById(userId)).thenReturn(user);
+        when(userService.getById(userId))
+                .thenReturn(user);
 
         assertThrows(BusinessException.class,
                 () -> expenseService.create(expense, userId, null, null, null));
@@ -145,10 +160,18 @@ class ExpenseServiceTest {
         expense.setPaymentStatus(null);
         expense.setDueDate(LocalDate.now().minusDays(1));
 
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
+        Expense response = expenseService.create(
+                expense,
+                userId,
+                cardAccountId,
+                null,
+                null
+        );
 
         assertEquals(PaymentStatus.PAID, response.getPaymentStatus());
     }
@@ -158,17 +181,26 @@ class ExpenseServiceTest {
         expense.setPaymentStatus(null);
         expense.setDueDate(LocalDate.now().plusDays(5));
 
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
+        Expense response = expenseService.create(
+                expense,
+                userId,
+                cardAccountId,
+                null,
+                null
+        );
 
         assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
     }
 
     @Test
     void getById_shouldReturnExpense_whenIdExists() {
-        when(expenseRepository.findById(expenseId)).thenReturn(Optional.of(expense));
+        when(expenseRepository.findById(expenseId))
+                .thenReturn(Optional.of(expense));
 
         Expense response = expenseService.getById(expenseId);
 
@@ -178,15 +210,18 @@ class ExpenseServiceTest {
 
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
-        when(expenseRepository.findById(expenseId)).thenReturn(Optional.empty());
+        when(expenseRepository.findById(expenseId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> expenseService.getById(expenseId));
     }
 
     @Test
     void getByUser_shouldReturnListOfExpenses() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.findByUserId(userId)).thenReturn(List.of(expense));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.findByUserId(userId))
+                .thenReturn(List.of(expense));
 
         List<Expense> response = expenseService.getByUser(userId);
 
@@ -196,7 +231,8 @@ class ExpenseServiceTest {
 
     @Test
     void getByUser_shouldThrowResourceNotFoundException_whenUserDoesNotExist() {
-        when(userService.getById(userId)).thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+        when(userService.getById(userId))
+                .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
 
         assertThrows(ResourceNotFoundException.class, () -> expenseService.getByUser(userId));
         verify(expenseRepository, never()).findByUserId(any());
@@ -204,11 +240,21 @@ class ExpenseServiceTest {
 
     @Test
     void getWithFilters_shouldReturnFilteredExpenses() {
-        when(userService.getById(userId)).thenReturn(user);
+        when(userService.getById(userId))
+                .thenReturn(user);
         Specification<Expense> anySpec = any();
-        when(expenseRepository.findAll(anySpec)).thenReturn(List.of(expense));
+        when(expenseRepository.findAll(anySpec))
+                .thenReturn(List.of(expense));
 
-        ExpenseFilter filter = new ExpenseFilter(expense.getDueDate().getMonthValue(), null, null, null, null, null, null);
+        ExpenseFilter filter =
+                new ExpenseFilter(expense.getDueDate().getMonthValue(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                );
         List<Expense> response = expenseService.getWithFilters(userId, filter);
 
         assertNotNull(response);

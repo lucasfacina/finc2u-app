@@ -23,7 +23,8 @@ class UserTest {
         User user = User.builder()
                 .userConfiguration(UserConfiguration.builder()
                         .baseSalary(null)
-                        .build())
+                        .build()
+                )
                 .build();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(user.baseSalaryOrZero()));
@@ -34,7 +35,8 @@ class UserTest {
         User user = User.builder()
                 .userConfiguration(UserConfiguration.builder()
                         .baseSalary(BigDecimal.valueOf(3000))
-                        .build())
+                        .build()
+                )
                 .build();
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(user.baseSalaryOrZero()));
@@ -55,7 +57,8 @@ class UserTest {
         User user = User.builder()
                 .userConfiguration(UserConfiguration.builder()
                         .savingsBalance(null)
-                        .build())
+                        .build()
+                )
                 .build();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(user.savingsBalanceOrZero()));
@@ -66,7 +69,8 @@ class UserTest {
         User user = User.builder()
                 .userConfiguration(UserConfiguration.builder()
                         .savingsBalance(BigDecimal.valueOf(1500))
-                        .build())
+                        .build()
+                )
                 .build();
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(user.savingsBalanceOrZero()));

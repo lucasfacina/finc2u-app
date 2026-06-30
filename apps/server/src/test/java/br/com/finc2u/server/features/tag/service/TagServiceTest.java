@@ -43,8 +43,10 @@ class TagServiceTest {
 
     @Test
     void create_shouldReturnTag_whenNameIsUnique() {
-        when(tagRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.empty());
-        when(tagRepository.save(any(Tag.class))).thenReturn(tag);
+        when(tagRepository.findByNameIgnoreCase(anyString()))
+                .thenReturn(Optional.empty());
+        when(tagRepository.save(any(Tag.class)))
+                .thenReturn(tag);
 
         Tag response = tagService.create(tag);
 
@@ -55,7 +57,8 @@ class TagServiceTest {
 
     @Test
     void create_shouldThrowBusinessException_whenNameAlreadyExists() {
-        when(tagRepository.findByNameIgnoreCase(anyString())).thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase(anyString()))
+                .thenReturn(Optional.of(tag));
 
         assertThrows(BusinessException.class, () -> tagService.create(tag));
         verify(tagRepository, never()).save(any(Tag.class));
@@ -63,7 +66,8 @@ class TagServiceTest {
 
     @Test
     void getById_shouldReturnTag_whenIdExists() {
-        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.of(tag));
 
         Tag response = tagService.getById(tagId);
 
@@ -73,14 +77,16 @@ class TagServiceTest {
 
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
-        when(tagRepository.findById(tagId)).thenReturn(Optional.empty());
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> tagService.getById(tagId));
     }
 
     @Test
     void getAll_shouldReturnListOfTags() {
-        when(tagRepository.findAll()).thenReturn(List.of(tag));
+        when(tagRepository.findAll())
+                .thenReturn(List.of(tag));
 
         List<Tag> response = tagService.getAll();
 
@@ -92,7 +98,8 @@ class TagServiceTest {
     @Test
     void getByIds_shouldReturnListOfTags() {
         List<UUID> ids = List.of(tagId);
-        when(tagRepository.findAllById(ids)).thenReturn(List.of(tag));
+        when(tagRepository.findAllById(ids))
+                .thenReturn(List.of(tag));
 
         List<Tag> response = tagService.getByIds(ids);
 
@@ -103,10 +110,15 @@ class TagServiceTest {
 
     @Test
     void update_shouldReturnUpdatedTag_whenTagExists() {
-        Tag tagUpdates = Tag.builder().name("Lazer").build();
-        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
-        when(tagRepository.findByNameIgnoreCase("Lazer")).thenReturn(Optional.empty());
-        when(tagRepository.save(any(Tag.class))).thenReturn(tag);
+        Tag tagUpdates = Tag.builder()
+                .name("Lazer")
+                .build();
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Lazer"))
+                .thenReturn(Optional.empty());
+        when(tagRepository.save(any(Tag.class)))
+                .thenReturn(tag);
 
         Tag response = tagService.update(tagId, tagUpdates);
 
@@ -117,12 +129,18 @@ class TagServiceTest {
 
     @Test
     void update_shouldThrowBusinessException_whenNameAlreadyExistsOnAnotherTag() {
-        Tag other = Tag.builder().name("Lazer").build();
+        Tag other = Tag.builder()
+                .name("Lazer")
+                .build();
         other.setId(UUID.randomUUID());
 
-        Tag tagUpdates = Tag.builder().name("Lazer").build();
-        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
-        when(tagRepository.findByNameIgnoreCase("Lazer")).thenReturn(Optional.of(other));
+        Tag tagUpdates = Tag.builder()
+                .name("Lazer")
+                .build();
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Lazer")).
+                thenReturn(Optional.of(other));
 
         assertThrows(BusinessException.class, () -> tagService.update(tagId, tagUpdates));
         verify(tagRepository, never()).save(any(Tag.class));
@@ -130,10 +148,15 @@ class TagServiceTest {
 
     @Test
     void update_shouldAllowSameName_whenRenameToOwnCurrentName() {
-        Tag tagUpdates = Tag.builder().name("Alimentação").build();
-        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
-        when(tagRepository.findByNameIgnoreCase("Alimentação")).thenReturn(Optional.of(tag));
-        when(tagRepository.save(any(Tag.class))).thenReturn(tag);
+        Tag tagUpdates = Tag.builder()
+                .name("Alimentação")
+                .build();
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.of(tag));
+        when(tagRepository.findByNameIgnoreCase("Alimentação"))
+                .thenReturn(Optional.of(tag));
+        when(tagRepository.save(any(Tag.class)))
+                .thenReturn(tag);
 
         assertDoesNotThrow(() -> tagService.update(tagId, tagUpdates));
         verify(tagRepository, times(1)).save(any(Tag.class));
@@ -141,7 +164,8 @@ class TagServiceTest {
 
     @Test
     void delete_shouldCallDelete_whenTagExists() {
-        when(tagRepository.findById(tagId)).thenReturn(Optional.of(tag));
+        when(tagRepository.findById(tagId))
+                .thenReturn(Optional.of(tag));
         doNothing().when(tagRepository).delete(tag);
 
         tagService.delete(tagId);

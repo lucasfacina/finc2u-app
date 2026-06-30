@@ -71,7 +71,8 @@ class CardAccountControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(cardAccountService.create(any(CardAccount.class), eq(userId))).thenReturn(cardAccount);
+        when(cardAccountService.create(any(CardAccount.class), eq(userId)))
+                .thenReturn(cardAccount);
 
         mockMvc.perform(post("/card-accounts")
                         .param("userId", userId.toString())
@@ -100,7 +101,8 @@ class CardAccountControllerTest {
 
     @Test
     void getByUser_shouldReturnOk() throws Exception {
-        when(cardAccountService.getByUser(userId)).thenReturn(List.of(cardAccount));
+        when(cardAccountService.getByUser(userId))
+                .thenReturn(List.of(cardAccount));
 
         mockMvc.perform(get("/card-accounts")
                         .param("userId", userId.toString()))
@@ -110,7 +112,8 @@ class CardAccountControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(cardAccountService.getById(cardId)).thenReturn(cardAccount);
+        when(cardAccountService.getById(cardId))
+                .thenReturn(cardAccount);
 
         mockMvc.perform(get("/card-accounts/{id}", cardId))
                 .andExpect(status().isOk())
@@ -119,7 +122,8 @@ class CardAccountControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(cardAccountService.update(eq(cardId), any(CardAccount.class))).thenReturn(cardAccount);
+        when(cardAccountService.update(eq(cardId), any(CardAccount.class)))
+                .thenReturn(cardAccount);
 
         mockMvc.perform(put("/card-accounts/{id}", cardId)
                         .contentType(MediaType.APPLICATION_JSON)

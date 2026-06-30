@@ -59,8 +59,10 @@ public class CardAccountServiceTest {
 
     @Test
     void create_shouldReturnSavedCardAccount_whenUserExists() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(cardAccountRepository.save(any(CardAccount.class))).thenReturn(cardAccount);
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(cardAccountRepository.save(any(CardAccount.class)))
+                .thenReturn(cardAccount);
 
         CardAccount response = cardAccountService.create(cardAccount, userId);
 
@@ -72,7 +74,8 @@ public class CardAccountServiceTest {
 
     @Test
     void getById_shouldReturnCardAccount_whenIdExists() {
-        when(cardAccountRepository.findById(cardId)).thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.findById(cardId))
+                .thenReturn(Optional.of(cardAccount));
 
         CardAccount response = cardAccountService.getById(cardId);
 
@@ -82,15 +85,18 @@ public class CardAccountServiceTest {
 
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
-        when(cardAccountRepository.findById(cardId)).thenReturn(Optional.empty());
+        when(cardAccountRepository.findById(cardId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> cardAccountService.getById(cardId));
     }
 
     @Test
     void getByUser_shouldReturnListOfCardAccount_whenUserExists() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(cardAccountRepository.findByUserIdOrderByCardNameAsc(userId)).thenReturn(List.of(cardAccount));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(cardAccountRepository.findByUserIdOrderByCardNameAsc(userId))
+                .thenReturn(List.of(cardAccount));
 
         List<CardAccount> response = cardAccountService.getByUser(userId);
 
@@ -106,8 +112,10 @@ public class CardAccountServiceTest {
                 .cardName("C6Bank")
                 .build();
 
-        when(cardAccountRepository.findById(cardId)).thenReturn(Optional.of(cardAccount));
-        when(cardAccountRepository.save(any(CardAccount.class))).thenReturn(cardAccount);
+        when(cardAccountRepository.findById(cardId))
+                .thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.save(any(CardAccount.class)))
+                .thenReturn(cardAccount);
 
         CardAccount response = cardAccountService.update(cardId, updates);
 
@@ -118,7 +126,8 @@ public class CardAccountServiceTest {
 
     @Test
     void delete_shouldCallDelete_whenExists() {
-        when(cardAccountRepository.findById(cardId)).thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.findById(cardId))
+                .thenReturn(Optional.of(cardAccount));
         doNothing().when(cardAccountRepository).delete(cardAccount);
 
         cardAccountService.delete(cardId);

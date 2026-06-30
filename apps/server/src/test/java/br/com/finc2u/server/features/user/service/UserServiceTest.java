@@ -43,15 +43,18 @@ public class UserServiceTest {
                 .userConfiguration(UserConfiguration.builder()
                         .baseSalary(BigDecimal.valueOf(5000))
                         .savingsBalance(BigDecimal.valueOf(1000))
-                        .build())
+                        .build()
+                )
                 .build();
         user.setId(userId);
     }
 
     @Test
     void create_shouldReturnUser_whenEmailIsUnique() {
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findByEmail(anyString()))
+                .thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class)))
+                .thenReturn(user);
 
         User response = userService.create(user);
 
@@ -63,7 +66,8 @@ public class UserServiceTest {
 
     @Test
     void create_shouldThrowBusinessException_whenEmailAlreadyExists() {
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail(anyString()))
+                .thenReturn(Optional.of(user));
 
         assertThrows(BusinessException.class, () -> userService.create(user));
         verify(userRepository, never()).save(any(User.class));
@@ -71,7 +75,8 @@ public class UserServiceTest {
 
     @Test
     void getById_shouldReturnUser_whenIdExists() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
 
         User response = userService.getById(userId);
 
@@ -81,14 +86,16 @@ public class UserServiceTest {
 
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getById(userId));
     }
 
     @Test
     void getAll_shouldReturnListOfUser() {
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll())
+                .thenReturn(List.of(user));
 
         List<User> response = userService.getAll();
 
@@ -99,8 +106,10 @@ public class UserServiceTest {
 
     @Test
     void update_shouldReturnUpdatedUser_whenUserExists() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userRepository.save(any(User.class))).thenReturn(user);
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class)))
+                .thenReturn(user);
 
         User response = userService.update(userId, user);
 
@@ -111,7 +120,8 @@ public class UserServiceTest {
 
     @Test
     void delete_shouldCallDelete_whenUserExists() {
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findById(userId))
+                .thenReturn(Optional.of(user));
         doNothing().when(userRepository).delete(user);
 
         userService.delete(userId);

@@ -7,12 +7,12 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.extra.entity.Extra;
 import br.com.finc2u.server.features.extra.repository.ExtraRepository;
+import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.entity.MonthlySummaryId;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
-import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,8 @@ class MonthlySummaryServiceTest {
                 .userConfiguration(UserConfiguration.builder()
                         .baseSalary(BigDecimal.valueOf(3000))
                         .savingsBalance(BigDecimal.valueOf(1000))
-                        .build())
+                        .build()
+                )
                 .build();
         user.setId(userId);
     }
@@ -89,12 +90,18 @@ class MonthlySummaryServiceTest {
             MonthlySummary existing,
             MonthlySummary prevMonth) {
 
-        when(userService.getById(userId)).thenReturn(user);
-        when(expenseRepository.findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class))).thenReturn(expenses);
-        when(extraRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class))).thenReturn(extras);
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR)).thenReturn(Optional.ofNullable(existing));
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, 5, YEAR)).thenReturn(Optional.ofNullable(prevMonth));
-        when(monthlySummaryRepository.save(any(MonthlySummary.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(expenseRepository.findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(expenses);
+        when(extraRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(extras);
+        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+                .thenReturn(Optional.ofNullable(existing));
+        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, 5, YEAR))
+                .thenReturn(Optional.ofNullable(prevMonth));
+        when(monthlySummaryRepository.save(any(MonthlySummary.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
         when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class), any(BigDecimal.class)))
                 .thenReturn(BigDecimal.valueOf(3000));
     }
@@ -268,7 +275,8 @@ class MonthlySummaryServiceTest {
                 .id(new MonthlySummaryId(userId, MONTH, YEAR))
                 .user(user)
                 .build();
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR)).thenReturn(Optional.ofNullable(summary));
+        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+                .thenReturn(Optional.ofNullable(summary));
 
         MonthlySummary result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
 
@@ -279,7 +287,8 @@ class MonthlySummaryServiceTest {
 
     @Test
     void getByUserAndPeriod_shouldThrow_whenNotFound() {
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR)).thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
                 () -> monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR));
@@ -291,7 +300,8 @@ class MonthlySummaryServiceTest {
                 .id(new MonthlySummaryId(userId, MONTH, YEAR))
                 .user(user)
                 .build();
-        when(monthlySummaryRepository.findByUserId(userId)).thenReturn(List.of(summary));
+        when(monthlySummaryRepository.findByUserId(userId))
+                .thenReturn(List.of(summary));
 
         List<MonthlySummary> result = monthlySummaryService.getByUser(userId);
 

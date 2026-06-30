@@ -59,8 +59,10 @@ class ExtraServiceTest {
 
     @Test
     void create_shouldAssociateUserAndSave() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(extraRepository.save(any(Extra.class))).thenReturn(extra);
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(extraRepository.save(any(Extra.class)))
+                .thenReturn(extra);
 
         Extra result = extraService.create(extra, userId);
 
@@ -71,7 +73,8 @@ class ExtraServiceTest {
 
     @Test
     void getById_shouldReturnExtra_whenExists() {
-        when(extraRepository.findById(extraId)).thenReturn(Optional.of(extra));
+        when(extraRepository.findById(extraId))
+                .thenReturn(Optional.of(extra));
 
         Extra result = extraService.getById(extraId);
 
@@ -81,15 +84,18 @@ class ExtraServiceTest {
 
     @Test
     void getById_shouldThrow_whenNotFound() {
-        when(extraRepository.findById(extraId)).thenReturn(Optional.empty());
+        when(extraRepository.findById(extraId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> extraService.getById(extraId));
     }
 
     @Test
     void getByUser_shouldReturnList() {
-        when(userService.getById(userId)).thenReturn(user);
-        when(extraRepository.findByUserId(userId)).thenReturn(List.of(extra));
+        when(userService.getById(userId))
+                .thenReturn(user);
+        when(extraRepository.findByUserId(userId))
+                .thenReturn(List.of(extra));
 
         List<Extra> result = extraService.getByUser(userId);
 
@@ -105,8 +111,10 @@ class ExtraServiceTest {
                 .date(LocalDate.of(2026, 5, 20))
                 .build();
 
-        when(extraRepository.findById(extraId)).thenReturn(Optional.of(extra));
-        when(extraRepository.save(any(Extra.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(extraRepository.findById(extraId))
+                .thenReturn(Optional.of(extra));
+        when(extraRepository.save(any(Extra.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         Extra result = extraService.update(extraId, updates);
 
@@ -118,7 +126,8 @@ class ExtraServiceTest {
 
     @Test
     void delete_shouldCallRepositoryDelete() {
-        when(extraRepository.findById(extraId)).thenReturn(Optional.of(extra));
+        when(extraRepository.findById(extraId))
+                .thenReturn(Optional.of(extra));
         doNothing().when(extraRepository).delete(extra);
 
         extraService.delete(extraId);
@@ -128,7 +137,8 @@ class ExtraServiceTest {
 
     @Test
     void delete_shouldThrow_whenNotFound() {
-        when(extraRepository.findById(extraId)).thenReturn(Optional.empty());
+        when(extraRepository.findById(extraId))
+                .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> extraService.delete(extraId));
     }
