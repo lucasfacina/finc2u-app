@@ -18,7 +18,7 @@ public record MonthlyPeriod(int month, int year) {
     public LocalDate start() {
         return LocalDate.of(year, month, 1);
     }
-    
+
     public LocalDate end() {
         return start().with(TemporalAdjusters.lastDayOfMonth());
     }
