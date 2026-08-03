@@ -35,7 +35,7 @@ public class ExceptionTestController {
     // HTTP 500
     @GetMapping("/generic")
     public void throwGenericException() {
-        throw new RuntimeException("Erro inesperado");
+        throw new RuntimeException("Erro inesperado.");
     }
 
     // HTTP 400 — enum inválido em @RequestParam
