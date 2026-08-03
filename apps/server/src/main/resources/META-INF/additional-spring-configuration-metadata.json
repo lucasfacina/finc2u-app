@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "app.seeders.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Ativa o DatabaseSeeder (CommandLineRunner) que popula o banco em desenvolvimento. Deve ser false em produção.",
+      "defaultValue": false
+    }
+  ]
+}
