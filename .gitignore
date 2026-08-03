@@ -40,7 +40,7 @@ docs/
 CLAUDE.md
 
 ### Banco de dados local ###
-dados/
+data/
 
 ### Logs e outputs locais do Maven ###
 dependency-tree.txt
