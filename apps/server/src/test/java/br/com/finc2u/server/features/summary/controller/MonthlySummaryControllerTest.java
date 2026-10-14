@@ -3,7 +3,6 @@ package br.com.finc2u.server.features.summary.controller;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
-import br.com.finc2u.server.features.summary.entity.MonthlySummaryId;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
 import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,12 +48,8 @@ class MonthlySummaryControllerTest {
         user.setId(userId);
 
         summary = MonthlySummary.builder()
-                .id(MonthlySummaryId.builder()
-                        .userId(userId)
-                        .month(MONTH)
-                        .year(YEAR)
-                        .build()
-                )
+                .month(MONTH)
+                .year(YEAR)
                 .user(user)
                 .totalExpenses(BigDecimal.valueOf(800))
                 .totalPaid(BigDecimal.valueOf(500))

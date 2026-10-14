@@ -32,19 +32,18 @@ class MonthlySummaryTest {
         );
     }
 
-    // ---- userIdForPeriod ----
+    // ---- forPeriod ----
 
     @Test
-    void userIdForPeriod_shouldBuildSummaryWithCorrectId() {
+    void forPeriod_shouldBuildSummaryWithPeriodAndUser() {
         UUID userId = UUID.randomUUID();
         User user = User.builder().build();
         user.setId(userId);
 
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
-        assertEquals(userId, summary.getId().getUserId());
-        assertEquals(6, summary.getId().getMonth());
-        assertEquals(2026, summary.getId().getYear());
+        assertEquals(6, summary.getMonth());
+        assertEquals(2026, summary.getYear());
         assertSame(user, summary.getUser());
     }
 
@@ -53,7 +52,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldSetCashBalance_fromPreviousMonthRemaining() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 0, 0),
@@ -68,7 +67,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldSetCashBalanceToZero_whenNoPreviousMonth() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 0, 0),
@@ -88,7 +87,7 @@ class MonthlySummaryTest {
         // totalIncome = baseSalary(3000) + totalExtras(500) + cashBalance(200) = 3700
         // remainingAmount = totalIncome(3700) - totalExpenses(1000) = 2700
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 0),
@@ -105,7 +104,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldPopulateAllTotalsFields() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(1000, 600, 400, 500, 200),
@@ -125,7 +124,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldSnapshotSavingsBalance_fromUserConfiguration() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
@@ -140,7 +139,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldUseZeroSavings_whenUserHasNoConfiguration() {
         User user = userWith(null, null);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
@@ -158,7 +157,7 @@ class MonthlySummaryTest {
     void resolveTotals_shouldComputeSavingsYield_fromPreviousMonthSavingsBalance() {
         // savingsYield = savingsBalance(1500) - previousMonthSavingsBalance(1200) = 300
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
@@ -173,7 +172,7 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldSetSavingsYieldToZero_whenNoPreviousMonth() {
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 6, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),
@@ -191,7 +190,7 @@ class MonthlySummaryTest {
     void resolveTotals_shouldUseBaseSalaryForPeriod_asSnapshot() {
         // baseSalary passado = 3500 (salário vigente no período, resolvido pelo service)
         User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
-        MonthlySummary summary = MonthlySummary.userIdForPeriod(user, 8, 2026);
+        MonthlySummary summary = MonthlySummary.forPeriod(user, 8, 2026);
 
         summary.resolveTotals(
                 totals(0, 0, 0, 0, 0),

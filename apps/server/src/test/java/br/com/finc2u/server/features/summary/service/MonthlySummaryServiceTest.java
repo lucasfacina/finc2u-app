@@ -9,7 +9,6 @@ import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
-import br.com.finc2u.server.features.summary.entity.MonthlySummaryId;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
@@ -96,9 +95,9 @@ class MonthlySummaryServiceTest {
                 .thenReturn(expenses);
         when(extraIncomeRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(extraIncomes);
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
                 .thenReturn(Optional.ofNullable(existing));
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, 5, YEAR))
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 5, YEAR))
                 .thenReturn(Optional.ofNullable(prevMonth));
         when(monthlySummaryRepository.save(any(MonthlySummary.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
@@ -197,7 +196,8 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldAutoFillCashBalance_fromPreviousMonthRemaining() {
         MonthlySummary previousSummary = MonthlySummary.builder()
-                .id(new MonthlySummaryId(userId, 5, YEAR))
+                .month(5)
+                .year(YEAR)
                 .user(user)
                 .remainingAmount(BigDecimal.valueOf(350))
                 .build();
@@ -217,7 +217,8 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldUsePreviousMonthRemaining_asCashBalance() {
         MonthlySummary previousSummary = MonthlySummary.builder()
-                .id(new MonthlySummaryId(userId, 5, YEAR))
+                .month(5)
+                .year(YEAR)
                 .user(user)
                 .remainingAmount(BigDecimal.valueOf(350))
                 .build();
@@ -251,7 +252,8 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrUpdate_shouldRecalculateExistingSummary_whenAlreadyExists() {
         MonthlySummary existing = MonthlySummary.builder()
-                .id(new MonthlySummaryId(userId, MONTH, YEAR))
+                .month(MONTH)
+                .year(YEAR)
                 .user(user)
                 .cashBalance(BigDecimal.valueOf(100))
                 .build();
@@ -272,10 +274,11 @@ class MonthlySummaryServiceTest {
     @Test
     void getByUserAndPeriod_shouldReturnSummary_whenExists() {
         MonthlySummary summary = MonthlySummary.builder()
-                .id(new MonthlySummaryId(userId, MONTH, YEAR))
+                .month(MONTH)
+                .year(YEAR)
                 .user(user)
                 .build();
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
                 .thenReturn(Optional.ofNullable(summary));
 
         MonthlySummary result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
@@ -287,7 +290,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void getByUserAndPeriod_shouldThrow_whenNotFound() {
-        when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
                 .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
@@ -297,7 +300,8 @@ class MonthlySummaryServiceTest {
     @Test
     void getByUser_shouldReturnList() {
         MonthlySummary summary = MonthlySummary.builder()
-                .id(new MonthlySummaryId(userId, MONTH, YEAR))
+                .month(MONTH)
+                .year(YEAR)
                 .user(user)
                 .build();
         when(monthlySummaryRepository.findByUserId(userId))
