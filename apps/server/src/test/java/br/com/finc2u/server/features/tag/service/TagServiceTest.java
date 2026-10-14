@@ -98,7 +98,7 @@ class TagServiceTest {
     @Test
     void getByIds_shouldReturnListOfTags() {
         List<UUID> ids = List.of(tagId);
-        when(tagRepository.findAllById(ids))
+        when(tagRepository.findAllById(anyIterable()))
                 .thenReturn(List.of(tag));
 
         List<Tag> response = tagService.getByIds(ids);
@@ -106,6 +106,40 @@ class TagServiceTest {
         assertNotNull(response);
         assertEquals(1, response.size());
         assertEquals(tagId, response.getFirst().getId());
+    }
+
+    @Test
+    void getByIds_shouldThrowResourceNotFoundException_whenSomeIdDoesNotExist() {
+        UUID missingId = UUID.randomUUID();
+        when(tagRepository.findAllById(anyIterable()))
+                .thenReturn(List.of(tag));
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> tagService.getByIds(List.of(tagId, missingId))
+        );
+
+        assertTrue(exception.getMessage().contains(missingId.toString()));
+        assertFalse(exception.getMessage().contains(tagId.toString()));
+    }
+
+    @Test
+    void getByIds_shouldNotFail_whenRequestHasDuplicatedIds() {
+        when(tagRepository.findAllById(anyIterable()))
+                .thenReturn(List.of(tag));
+
+        List<Tag> response = tagService.getByIds(List.of(tagId, tagId));
+
+        assertEquals(1, response.size());
+        assertEquals(tagId, response.getFirst().getId());
+    }
+
+    @Test
+    void getByIds_shouldReturnEmptyList_whenIdsIsEmpty() {
+        List<Tag> response = tagService.getByIds(List.of());
+
+        assertTrue(response.isEmpty());
+        verifyNoInteractions(tagRepository);
     }
 
     @Test
