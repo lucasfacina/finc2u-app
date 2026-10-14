@@ -23,14 +23,15 @@ public record UserRequest(
 ) {
 
     public User toEntity() {
-        return User.builder()
+        User user = User.builder()
                 .name(this.name)
                 .email(this.email)
-                .userConfiguration(new UserConfiguration(
-                        this.baseSalary,
-                        this.savingsBalance
-                ))
                 .build();
+        user.setUserConfiguration(UserConfiguration.builder()
+                .baseSalary(this.baseSalary)
+                .savingsBalance(this.savingsBalance)
+                .build());
+        return user;
     }
 
 }

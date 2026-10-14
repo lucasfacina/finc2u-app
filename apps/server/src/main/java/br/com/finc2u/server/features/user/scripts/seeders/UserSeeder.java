@@ -44,16 +44,14 @@ public class UserSeeder implements Seeder {
     }
 
     private User createSeedUser() {
-        UserConfiguration configuration = new UserConfiguration(
-                new BigDecimal("3000.00"),
-                new BigDecimal("5000.00")
-        );
-
         User user = User.builder()
                 .name("Lucas Facina")
                 .email(SEED_EMAIL)
-                .userConfiguration(configuration)
                 .build();
+        user.setUserConfiguration(UserConfiguration.builder()
+                .baseSalary(new BigDecimal("3000.00"))
+                .savingsBalance(new BigDecimal("5000.00"))
+                .build());
 
         return userRepository.save(user);
     }

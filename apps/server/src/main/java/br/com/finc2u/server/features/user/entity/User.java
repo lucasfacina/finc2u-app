@@ -25,7 +25,7 @@ public class User extends BaseModel {
     @Column(unique = true)
     private String email;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserConfiguration userConfiguration;
 
     @JsonIgnore
@@ -39,6 +39,13 @@ public class User extends BaseModel {
     @JsonIgnore
     @OneToMany(mappedBy = "user")
     private List<MonthlySummary> monthlySummaryList;
+
+    public void setUserConfiguration(UserConfiguration userConfiguration) {
+        this.userConfiguration = userConfiguration;
+        if (userConfiguration != null) {
+            userConfiguration.setUser(this);
+        }
+    }
 
     // Salário-base configurado ou zero quando não há configuração/valor
     public BigDecimal baseSalaryOrZero() {
