@@ -10,6 +10,8 @@ import lombok.Setter;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/test/exceptions")
 public class ExceptionTestController {
@@ -32,10 +34,15 @@ public class ExceptionTestController {
         throw new DataIntegrityViolationException("Violação de integridade referencial.");
     }
 
-    // HTTP 500
+    // HTTP 500 — a mensagem simula um detalhe interno que não pode chegar ao cliente
     @GetMapping("/generic")
     public void throwGenericException() {
-        throw new RuntimeException("Erro inesperado.");
+        throw new RuntimeException("Falha interna: conexão recusada em tb_expense.");
+    }
+
+    // HTTP 400 — parâmetro obrigatório ausente
+    @GetMapping("/missing-param")
+    public void throwMissingParameter(@RequestParam UUID userId) {
     }
 
     // HTTP 400 — enum inválido em @RequestParam

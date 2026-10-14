@@ -7,10 +7,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {ExceptionTestController.class, GlobalExceptionHandler.class})
 public class GlobalExceptionHandlerTest {
@@ -33,7 +31,7 @@ public class GlobalExceptionHandlerTest {
     @Test
     void shouldHandleBusinessException() throws Exception {
         mockMvc.perform(get("/test/exceptions/business"))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.status").value(422))
                 .andExpect(jsonPath("$.message").value("Erro de negócio."))
                 .andExpect(jsonPath("$.detail").value("Regra de negócio violada."))
@@ -51,14 +49,61 @@ public class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
-    // HTTP 500
+    // HTTP 500 — detalhe fixo; a mensagem interna da exceção não chega ao cliente
     @Test
-    void shouldHandleGenericException() throws Exception {
+    void shouldHandleGenericException_withoutExposingInternalMessage() throws Exception {
         mockMvc.perform(get("/test/exceptions/generic"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
                 .andExpect(jsonPath("$.message").value("Erro interno no servidor."))
-                .andExpect(jsonPath("$.detail").value("Erro inesperado."))
+                .andExpect(jsonPath("$.detail").value("Ocorreu um erro inesperado. Tente novamente mais tarde."))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("tb_expense"))))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // HTTP 400 — parâmetro obrigatório ausente
+    @Test
+    void shouldHandleMissingServletRequestParameterException() throws Exception {
+        mockMvc.perform(get("/test/exceptions/missing-param"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Parâmetro obrigatório ausente."))
+                .andExpect(jsonPath("$.detail").value("O parâmetro 'userId' é obrigatório."))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // HTTP 404 — rota inexistente
+    @Test
+    void shouldHandleNoResourceFoundException() throws Exception {
+        mockMvc.perform(get("/test/exceptions/rota-inexistente"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Rota não encontrada."))
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("test/exceptions/rota-inexistente")))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // HTTP 405 — método HTTP não suportado pela rota
+    @Test
+    void shouldHandleHttpRequestMethodNotSupportedException() throws Exception {
+        mockMvc.perform(delete("/test/exceptions/business"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.status").value(405))
+                .andExpect(jsonPath("$.message").value("Método HTTP não suportado."))
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("DELETE")))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // HTTP 415 — Content-Type não suportado
+    @Test
+    void shouldHandleHttpMediaTypeNotSupportedException() throws Exception {
+        mockMvc.perform(post("/test/exceptions/validation")
+                        .contentType(MediaType.TEXT_PLAIN)
+                        .content("name"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.status").value(415))
+                .andExpect(jsonPath("$.message").value("Tipo de conteúdo não suportado."))
+                .andExpect(jsonPath("$.detail").value(Matchers.containsString("text/plain")))
                 .andExpect(jsonPath("$.timestamp").exists());
     }
 
