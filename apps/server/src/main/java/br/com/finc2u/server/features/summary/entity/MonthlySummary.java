@@ -2,24 +2,29 @@ package br.com.finc2u.server.features.summary.entity;
 
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.Hibernate;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Objects;
 
 @Entity
-@Table(name = "tb_monthly_summary")
+@Table(
+        name = "tb_monthly_summary",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "summary_month", "summary_year"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MonthlySummary {
+public class MonthlySummary extends BaseModel {
+
+    @Column(name = "summary_month", nullable = false)
+    private Integer month;
+
+    @Column(name = "summary_year", nullable = false)
+    private Integer year;
 
     private BigDecimal baseSalary;
     private BigDecimal totalIncome;
@@ -32,44 +37,16 @@ public class MonthlySummary {
     private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
 
-    @EmbeddedId
-    private MonthlySummaryId id;
-
     @ManyToOne
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    public Integer getMonth() {
-        return id != null
-                ? id.getMonth()
-                : null;
-    }
-
-    public Integer getYear() {
-        return id != null
-                ? id.getYear()
-                : null;
-    }
-
-    // Cria um resumo novo (id composto + usuário) para o período, ainda não calculado.
-    public static MonthlySummary userIdForPeriod(User user, Integer month, Integer year) {
+    // Cria um resumo novo para o período, ainda não calculado.
+    public static MonthlySummary forPeriod(User user, Integer month, Integer year) {
         return MonthlySummary.builder()
-                .id(MonthlySummaryId.builder()
-                        .userId(user.getId())
-                        .month(month)
-                        .year(year)
-                        .build()
-                )
                 .user(user)
+                .month(month)
+                .year(year)
                 .build();
     }
 
@@ -108,20 +85,6 @@ public class MonthlySummary {
         this.totalPending = totals.totalPending();
         this.totalExtras = totals.totalExtras();
         this.remainingAmount = this.totalIncome.subtract(totals.totalExpenses());
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (this == object) return true;
-        if (object == null) return false;
-        if (Hibernate.getClass(this) != Hibernate.getClass(object)) return false;
-        MonthlySummary other = (MonthlySummary) object;
-        return Objects.equals(id, other.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id);
     }
 
 }

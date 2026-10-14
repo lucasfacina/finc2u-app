@@ -49,8 +49,8 @@ public class MonthlySummaryService {
 
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
-        MonthlySummary summary = monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
-                .orElseGet(() -> MonthlySummary.userIdForPeriod(user, month, year));
+        MonthlySummary summary = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
+                .orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
 
         BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start(), user.baseSalaryOrZero());
 
@@ -72,13 +72,13 @@ public class MonthlySummaryService {
 
     @Transactional(readOnly = true)
     public MonthlySummary getByUserAndPeriod(UUID userId, Integer month, Integer year) {
-        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
+        return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
                 .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
     }
 
     @Transactional(readOnly = true)
     public boolean existsByUserAndPeriod(UUID userId, Integer month, Integer year) {
-        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year).isPresent();
+        return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year).isPresent();
     }
 
     @Transactional
@@ -89,7 +89,7 @@ public class MonthlySummaryService {
 
     private Optional<MonthlySummary> findPreviousMonth(UUID userId, MonthlyPeriod period) {
         MonthlyPeriod previous = period.previous();
-        return monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, previous.month(), previous.year());
+        return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, previous.month(), previous.year());
     }
 
 }
