@@ -4,9 +4,34 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class UserTest {
+
+    // ---- setUserConfiguration ----
+
+    @Test
+    void setUserConfiguration_shouldLinkConfigurationBackToUser() {
+        User user = User.builder()
+                .build();
+        UserConfiguration configuration = UserConfiguration.builder()
+                .build();
+
+        user.setUserConfiguration(configuration);
+
+        assertSame(configuration, user.getUserConfiguration());
+        assertSame(user, configuration.getUser());
+    }
+
+    @Test
+    void setUserConfiguration_shouldAcceptNull() {
+        User user = User.builder()
+                .build();
+
+        user.setUserConfiguration(null);
+
+        assertNull(user.getUserConfiguration());
+    }
 
     // ---- baseSalaryOrZero ----
 
