@@ -14,6 +14,4 @@ public interface CardAccountRepository extends JpaRepository<CardAccount, UUID> 
 
     List<CardAccount> findByUserIdOrderByCardNameAsc(UUID userId);
 
-    List<CardAccount> findByUserIdAndCardNameContainingIgnoreCase(UUID userId, String cardName);
-
 }
