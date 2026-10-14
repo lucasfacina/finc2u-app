@@ -3,7 +3,7 @@ package br.com.finc2u.server.features.summary.vo;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.extra.entity.Extra;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,14 +18,14 @@ public record MonthlySummaryTotals(
 ) {
 
     // Agrega os totais a partir das listas de despesas e extras do período.
-    public static MonthlySummaryTotals from(List<Expense> expenses, List<Extra> extras) {
+    public static MonthlySummaryTotals from(List<Expense> expenses, List<ExtraIncome> extraIncomes) {
         return new MonthlySummaryTotals(
                 summarizeExpenses(expenses, expense -> true),
                 summarizeExpenses(expenses, expense -> expense.getPaymentStatus() == PaymentStatus.PAID),
                 summarizeExpenses(expenses, expense -> expense.getPaymentStatus() == PaymentStatus.PENDING),
 
-                extras.stream()
-                        .map(Extra::getValue)
+                extraIncomes.stream()
+                        .map(ExtraIncome::getValue)
                         .reduce(BigDecimal.ZERO, BigDecimal::add),
 
                 summarizeExpenses(expenses, expense -> expense.getExpenseType() == ExpenseType.FIXED));

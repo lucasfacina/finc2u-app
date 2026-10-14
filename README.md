@@ -72,16 +72,16 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 | PATCH  | `/expenses/{id}/status`    | Atualizar status da despesa  | `id` (path), `status` (query)                                                                 |
 | DELETE | `/expenses/{id}`           | Deletar despesa              | `id` (path)                                                                                   |
 
-### Ganhos Extras — `/extras`
+### Ganhos Extras — `/extra-incomes`
 
 | Método | Endpoint       | Descrição                       | Parâmetros                             |
 |--------|----------------|---------------------------------|----------------------------------------|
-| POST   | `/extras`              | Registrar ganho extra              | `userId` (query), Body: `ExtraRequest`                     |
-| GET    | `/extras`              | Listar ganhos extras do usuário    | `userId`* (query)                                          |
-| GET    | `/extras/period`       | Listar ganhos extras por período   | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
-| GET    | `/extras/{id}`         | Buscar ganho extra por ID          | `id` (path)                                                |
-| PUT    | `/extras/{id}`         | Atualizar ganho extra              | `id` (path), Body: `ExtraRequest`                          |
-| DELETE | `/extras/{id}`         | Deletar ganho extra                | `id` (path)                                                |
+| POST   | `/extra-incomes`              | Registrar ganho extra              | `userId` (query), Body: `ExtraIncomeRequest`                     |
+| GET    | `/extra-incomes`              | Listar ganhos extras do usuário    | `userId`* (query)                                          |
+| GET    | `/extra-incomes/period`       | Listar ganhos extras por período   | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
+| GET    | `/extra-incomes/{id}`         | Buscar ganho extra por ID          | `id` (path)                                                |
+| PUT    | `/extra-incomes/{id}`         | Atualizar ganho extra              | `id` (path), Body: `ExtraIncomeRequest`                          |
+| DELETE | `/extra-incomes/{id}`         | Deletar ganho extra                | `id` (path)                                                |
 
 ### Resumo Mensal — `/monthly-summary`
 

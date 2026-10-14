@@ -22,12 +22,12 @@ class MonthlySummaryTest {
                 .build();
     }
 
-    private static MonthlySummaryTotals totals(double expenses, double paid, double pending, double extras, double fixed) {
+    private static MonthlySummaryTotals totals(double expenses, double paid, double pending, double extraIncomes, double fixed) {
         return new MonthlySummaryTotals(
                 BigDecimal.valueOf(expenses),
                 BigDecimal.valueOf(paid),
                 BigDecimal.valueOf(pending),
-                BigDecimal.valueOf(extras),
+                BigDecimal.valueOf(extraIncomes),
                 BigDecimal.valueOf(fixed)
         );
     }

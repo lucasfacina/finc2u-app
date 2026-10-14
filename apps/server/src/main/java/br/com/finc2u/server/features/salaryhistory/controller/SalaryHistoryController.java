@@ -28,11 +28,11 @@ public class SalaryHistoryController {
 
     @GetMapping
     public ResponseEntity<List<SalaryHistoryResponse>> getByUserId(@RequestParam UUID userId) {
-        List<SalaryHistoryResponse> extraResponse = salaryHistoryService.getByUser(userId)
+        List<SalaryHistoryResponse> extraIncomeResponse = salaryHistoryService.getByUser(userId)
                 .stream()
                 .map(SalaryHistoryResponse::from)
                 .toList();
-        return ResponseEntity.ok(extraResponse);
+        return ResponseEntity.ok(extraIncomeResponse);
     }
 
     @GetMapping("/{id}")

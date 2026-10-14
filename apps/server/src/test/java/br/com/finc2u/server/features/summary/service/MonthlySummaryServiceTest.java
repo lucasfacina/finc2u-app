@@ -5,8 +5,8 @@ import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
-import br.com.finc2u.server.features.extra.entity.Extra;
-import br.com.finc2u.server.features.extra.repository.ExtraRepository;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.entity.MonthlySummaryId;
@@ -40,7 +40,7 @@ class MonthlySummaryServiceTest {
     @Mock
     private ExpenseRepository expenseRepository;
     @Mock
-    private ExtraRepository extraRepository;
+    private ExtraIncomeRepository extraIncomeRepository;
     @Mock
     private UserService userService;
     @Mock
@@ -76,8 +76,8 @@ class MonthlySummaryServiceTest {
                 .build();
     }
 
-    private Extra extraOf(BigDecimal value) {
-        return Extra.builder()
+    private ExtraIncome extraIncomeOf(BigDecimal value) {
+        return ExtraIncome.builder()
                 .value(value)
                 .date(LocalDate.of(YEAR, MONTH, 10))
                 .user(user)
@@ -86,7 +86,7 @@ class MonthlySummaryServiceTest {
 
     private void stubRepositories(
             List<Expense> expenses,
-            List<Extra> extras,
+            List<ExtraIncome> extraIncomes,
             MonthlySummary existing,
             MonthlySummary prevMonth) {
 
@@ -94,8 +94,8 @@ class MonthlySummaryServiceTest {
                 .thenReturn(user);
         when(expenseRepository.findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(expenses);
-        when(extraRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(extras);
+        when(extraIncomeRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(extraIncomes);
         when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, MONTH, YEAR))
                 .thenReturn(Optional.ofNullable(existing));
         when(monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, 5, YEAR))
@@ -183,7 +183,7 @@ class MonthlySummaryServiceTest {
         // remainingAmount = 3500 - totalExpenses(0) = 3500
         stubRepositories(
                 List.of(),
-                List.of(extraOf(BigDecimal.valueOf(500))),
+                List.of(extraIncomeOf(BigDecimal.valueOf(500))),
                 null,
                 null
         );

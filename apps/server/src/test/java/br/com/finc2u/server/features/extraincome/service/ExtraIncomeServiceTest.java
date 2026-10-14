@@ -1,8 +1,8 @@
-package br.com.finc2u.server.features.extra.service;
+package br.com.finc2u.server.features.extraincome.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
-import br.com.finc2u.server.features.extra.entity.Extra;
-import br.com.finc2u.server.features.extra.repository.ExtraRepository;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,81 +23,81 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ExtraServiceTest {
+class ExtraIncomeServiceTest {
 
     @Mock
-    private ExtraRepository extraRepository;
+    private ExtraIncomeRepository extraIncomeRepository;
 
     @Mock
     private UserService userService;
 
     @InjectMocks
-    private ExtraService extraService;
+    private ExtraIncomeService extraIncomeService;
 
-    private UUID extraId;
+    private UUID extraIncomeId;
     private UUID userId;
     private User user;
-    private Extra extra;
+    private ExtraIncome extraIncome;
 
     @BeforeEach
     void setUp() {
-        extraId = UUID.randomUUID();
+        extraIncomeId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
         user = User.builder()
                 .build();
         user.setId(userId);
 
-        extra = Extra.builder()
+        extraIncome = ExtraIncome.builder()
                 .description("Freela site")
                 .value(BigDecimal.valueOf(800))
                 .date(LocalDate.of(2026, 5, 10))
                 .user(user)
                 .build();
-        extra.setId(extraId);
+        extraIncome.setId(extraIncomeId);
     }
 
     @Test
     void create_shouldAssociateUserAndSave() {
         when(userService.getById(userId))
                 .thenReturn(user);
-        when(extraRepository.save(any(Extra.class)))
-                .thenReturn(extra);
+        when(extraIncomeRepository.save(any(ExtraIncome.class)))
+                .thenReturn(extraIncome);
 
-        Extra result = extraService.create(extra, userId);
+        ExtraIncome result = extraIncomeService.create(extraIncome, userId);
 
         assertNotNull(result);
         assertEquals(user, result.getUser());
-        verify(extraRepository, times(1)).save(extra);
+        verify(extraIncomeRepository, times(1)).save(extraIncome);
     }
 
     @Test
     void getById_shouldReturnExtra_whenExists() {
-        when(extraRepository.findById(extraId))
-                .thenReturn(Optional.of(extra));
+        when(extraIncomeRepository.findById(extraIncomeId))
+                .thenReturn(Optional.of(extraIncome));
 
-        Extra result = extraService.getById(extraId);
+        ExtraIncome result = extraIncomeService.getById(extraIncomeId);
 
         assertNotNull(result);
-        assertEquals(extraId, result.getId());
+        assertEquals(extraIncomeId, result.getId());
     }
 
     @Test
     void getById_shouldThrow_whenNotFound() {
-        when(extraRepository.findById(extraId))
+        when(extraIncomeRepository.findById(extraIncomeId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> extraService.getById(extraId));
+        assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.getById(extraIncomeId));
     }
 
     @Test
     void getByUser_shouldReturnList() {
         when(userService.getById(userId))
                 .thenReturn(user);
-        when(extraRepository.findByUserId(userId))
-                .thenReturn(List.of(extra));
+        when(extraIncomeRepository.findByUserId(userId))
+                .thenReturn(List.of(extraIncome));
 
-        List<Extra> result = extraService.getByUser(userId);
+        List<ExtraIncome> result = extraIncomeService.getByUser(userId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -105,42 +105,42 @@ class ExtraServiceTest {
 
     @Test
     void update_shouldUpdateFieldsAndSave() {
-        Extra updates = Extra.builder()
+        ExtraIncome updates = ExtraIncome.builder()
                 .description("Freela app")
                 .value(BigDecimal.valueOf(1200))
                 .date(LocalDate.of(2026, 5, 20))
                 .build();
 
-        when(extraRepository.findById(extraId))
-                .thenReturn(Optional.of(extra));
-        when(extraRepository.save(any(Extra.class)))
+        when(extraIncomeRepository.findById(extraIncomeId))
+                .thenReturn(Optional.of(extraIncome));
+        when(extraIncomeRepository.save(any(ExtraIncome.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        Extra result = extraService.update(extraId, updates);
+        ExtraIncome result = extraIncomeService.update(extraIncomeId, updates);
 
         assertEquals("Freela app", result.getDescription());
         assertEquals(0, BigDecimal.valueOf(1200).compareTo(result.getValue()));
         assertEquals(LocalDate.of(2026, 5, 20), result.getDate());
-        verify(extraRepository, times(1)).save(extra);
+        verify(extraIncomeRepository, times(1)).save(extraIncome);
     }
 
     @Test
     void delete_shouldCallRepositoryDelete() {
-        when(extraRepository.findById(extraId))
-                .thenReturn(Optional.of(extra));
-        doNothing().when(extraRepository).delete(extra);
+        when(extraIncomeRepository.findById(extraIncomeId))
+                .thenReturn(Optional.of(extraIncome));
+        doNothing().when(extraIncomeRepository).delete(extraIncome);
 
-        extraService.delete(extraId);
+        extraIncomeService.delete(extraIncomeId);
 
-        verify(extraRepository, times(1)).delete(extra);
+        verify(extraIncomeRepository, times(1)).delete(extraIncome);
     }
 
     @Test
     void delete_shouldThrow_whenNotFound() {
-        when(extraRepository.findById(extraId))
+        when(extraIncomeRepository.findById(extraIncomeId))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> extraService.delete(extraId));
+        assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.delete(extraIncomeId));
     }
 
 }

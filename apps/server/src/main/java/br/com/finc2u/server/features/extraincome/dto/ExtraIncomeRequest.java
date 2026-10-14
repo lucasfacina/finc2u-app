@@ -1,6 +1,6 @@
-package br.com.finc2u.server.features.extra.dto;
+package br.com.finc2u.server.features.extraincome.dto;
 
-import br.com.finc2u.server.features.extra.entity.Extra;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-public record ExtraRequest(
+public record ExtraIncomeRequest(
         @NotBlank(message = "Descrição é obrigatória!")
         String description,
 
@@ -20,8 +20,8 @@ public record ExtraRequest(
         LocalDate date
 ) {
 
-    public Extra toEntity() {
-        return Extra.builder()
+    public ExtraIncome toEntity() {
+        return ExtraIncome.builder()
                 .description(this.description())
                 .value(this.value())
                 .date(this.date())

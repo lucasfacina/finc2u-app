@@ -1,10 +1,10 @@
-package br.com.finc2u.server.features.extra.controller;
+package br.com.finc2u.server.features.extraincome.controller;
 
 
 import br.com.finc2u.server.config.GlobalExceptionHandler;
-import br.com.finc2u.server.features.extra.dto.ExtraRequest;
-import br.com.finc2u.server.features.extra.entity.Extra;
-import br.com.finc2u.server.features.extra.service.ExtraService;
+import br.com.finc2u.server.features.extraincome.dto.ExtraIncomeRequest;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,41 +28,41 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {ExtraController.class, GlobalExceptionHandler.class})
-class ExtraControllerTest {
+@WebMvcTest(controllers = {ExtraIncomeController.class, GlobalExceptionHandler.class})
+class ExtraIncomeControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockitoBean
-    private ExtraService extraService;
+    private ExtraIncomeService extraIncomeService;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private UUID extraId;
+    private UUID extraIncomeId;
     private UUID userId;
-    private Extra extra;
-    private ExtraRequest request;
+    private ExtraIncome extraIncome;
+    private ExtraIncomeRequest request;
 
     @BeforeEach
     void setUp() {
-        extraId = UUID.randomUUID();
+        extraIncomeId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
         User user = User.builder()
                 .build();
         user.setId(userId);
 
-        extra = Extra.builder()
+        extraIncome = ExtraIncome.builder()
                 .description("Freela site")
                 .value(BigDecimal.valueOf(800))
                 .date(LocalDate.of(2026, 5, 10))
                 .user(user)
                 .build();
-        extra.setId(extraId);
+        extraIncome.setId(extraIncomeId);
 
-        request = new ExtraRequest(
+        request = new ExtraIncomeRequest(
                 "Freela site",
                 BigDecimal.valueOf(800),
                 LocalDate.of(2026, 5, 10)
@@ -71,24 +71,24 @@ class ExtraControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(extraService.create(any(Extra.class), eq(userId)))
-                .thenReturn(extra);
+        when(extraIncomeService.create(any(ExtraIncome.class), eq(userId)))
+                .thenReturn(extraIncome);
 
-        mockMvc.perform(post("/extras")
+        mockMvc.perform(post("/extra-incomes")
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(extraId.toString()))
+                .andExpect(jsonPath("$.id").value(extraIncomeId.toString()))
                 .andExpect(jsonPath("$.description").value("Freela site"));
     }
 
     @Test
     void getAllByUserId_shouldReturnOk() throws Exception {
-        when(extraService.getByUser(userId))
-                .thenReturn(List.of(extra));
+        when(extraIncomeService.getByUser(userId))
+                .thenReturn(List.of(extraIncome));
 
-        mockMvc.perform(get("/extras")
+        mockMvc.perform(get("/extra-incomes")
                         .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].description").value("Freela site"));
@@ -96,20 +96,20 @@ class ExtraControllerTest {
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(extraService.getById(extraId))
-                .thenReturn(extra);
+        when(extraIncomeService.getById(extraIncomeId))
+                .thenReturn(extraIncome);
 
-        mockMvc.perform(get("/extras/{id}", extraId))
+        mockMvc.perform(get("/extra-incomes/{id}", extraIncomeId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(extraId.toString()));
+                .andExpect(jsonPath("$.id").value(extraIncomeId.toString()));
     }
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(extraService.update(eq(extraId), any(Extra.class)))
-                .thenReturn(extra);
+        when(extraIncomeService.update(eq(extraIncomeId), any(ExtraIncome.class)))
+                .thenReturn(extraIncome);
 
-        mockMvc.perform(put("/extras/{id}", extraId)
+        mockMvc.perform(put("/extra-incomes/{id}", extraIncomeId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -121,10 +121,10 @@ class ExtraControllerTest {
         LocalDate start = LocalDate.of(2026, 5, 1);
         LocalDate end = LocalDate.of(2026, 5, 31);
 
-        when(extraService.getByUserAndPeriod(userId, start, end))
-                .thenReturn(List.of(extra));
+        when(extraIncomeService.getByUserAndPeriod(userId, start, end))
+                .thenReturn(List.of(extraIncome));
 
-        mockMvc.perform(get("/extras/period")
+        mockMvc.perform(get("/extra-incomes/period")
                         .param("userId", userId.toString())
                         .param("startDate", start.toString())
                         .param("endDate", end.toString()))
@@ -134,9 +134,9 @@ class ExtraControllerTest {
 
     @Test
     void delete_shouldReturnNoContent() throws Exception {
-        doNothing().when(extraService).delete(extraId);
+        doNothing().when(extraIncomeService).delete(extraIncomeId);
 
-        mockMvc.perform(delete("/extras/{id}", extraId))
+        mockMvc.perform(delete("/extra-incomes/{id}", extraIncomeId))
                 .andExpect(status().isNoContent());
     }
 

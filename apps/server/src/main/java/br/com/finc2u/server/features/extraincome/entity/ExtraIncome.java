@@ -1,4 +1,4 @@
-package br.com.finc2u.server.features.extra.entity;
+package br.com.finc2u.server.features.extraincome.entity;
 
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
@@ -9,13 +9,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "tb_extra")
+@Table(name = "tb_extra_income")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Extra extends BaseModel {
+public class ExtraIncome extends BaseModel {
 
     private String description;
 

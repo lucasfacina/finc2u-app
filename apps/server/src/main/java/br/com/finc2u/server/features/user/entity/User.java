@@ -1,7 +1,7 @@
 package br.com.finc2u.server.features.user.entity;
 
 import br.com.finc2u.server.features.card.entity.CardAccount;
-import br.com.finc2u.server.features.extra.entity.Extra;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.shared.model.BaseModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -34,7 +34,7 @@ public class User extends BaseModel {
 
     @JsonIgnore
     @OneToMany(mappedBy = "user")
-    private List<Extra> extraList;
+    private List<ExtraIncome> extraIncomeList;
 
     @JsonIgnore
     @OneToMany(mappedBy = "user")

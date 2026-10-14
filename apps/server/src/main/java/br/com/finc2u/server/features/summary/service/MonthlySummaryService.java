@@ -4,8 +4,8 @@ package br.com.finc2u.server.features.summary.service;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
-import br.com.finc2u.server.features.extra.entity.Extra;
-import br.com.finc2u.server.features.extra.repository.ExtraRepository;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
@@ -28,7 +28,7 @@ public class MonthlySummaryService {
 
     private final MonthlySummaryRepository monthlySummaryRepository;
     private final ExpenseRepository expenseRepository;
-    private final ExtraRepository extraRepository;
+    private final ExtraIncomeRepository extraIncomeRepository;
     private final UserService userService;
     private final SalaryHistoryService salaryHistoryService;
 
@@ -43,11 +43,11 @@ public class MonthlySummaryService {
         MonthlyPeriod period = MonthlyPeriod.of(month, year);
 
         List<Expense> expenses = expenseRepository.findByUserIdAndDueDateBetween(userId, period.start(), period.end());
-        List<Extra> extras = extraRepository.findByUserIdAndDateBetween(userId, period.start(), period.end());
+        List<ExtraIncome> extraIncomes = extraIncomeRepository.findByUserIdAndDateBetween(userId, period.start(), period.end());
 
         expenses.forEach(Expense::markPaidIfOverdue);
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extras);
+        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
         MonthlySummary summary = monthlySummaryRepository.findByUserIdAndIdMonthAndIdYear(userId, month, year)
                 .orElseGet(() -> MonthlySummary.userIdForPeriod(user, month, year));

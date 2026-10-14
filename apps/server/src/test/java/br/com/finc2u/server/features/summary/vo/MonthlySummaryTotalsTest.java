@@ -3,7 +3,7 @@ package br.com.finc2u.server.features.summary.vo;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.extra.entity.Extra;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -21,8 +21,8 @@ class MonthlySummaryTotalsTest {
                 .build();
     }
 
-    private static Extra extra(BigDecimal value) {
-        return Extra.builder()
+    private static ExtraIncome extraIncome(BigDecimal value) {
+        return ExtraIncome.builder()
                 .value(value)
                 .build();
     }
@@ -80,9 +80,9 @@ class MonthlySummaryTotalsTest {
 
     @Test
     void from_shouldSumAllExtras() {
-        List<Extra> extras = List.of(extra(BigDecimal.valueOf(500)), extra(BigDecimal.valueOf(300)));
+        List<ExtraIncome> extraIncomes = List.of(extraIncome(BigDecimal.valueOf(500)), extraIncome(BigDecimal.valueOf(300)));
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(List.of(), extras);
+        MonthlySummaryTotals totals = MonthlySummaryTotals.from(List.of(), extraIncomes);
 
         assertEquals(0, BigDecimal.valueOf(800).compareTo(totals.totalExtras()));
     }

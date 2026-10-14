@@ -1,7 +1,7 @@
-package br.com.finc2u.server.features.extra.scripts.seeders;
+package br.com.finc2u.server.features.extraincome.scripts.seeders;
 
-import br.com.finc2u.server.features.extra.entity.Extra;
-import br.com.finc2u.server.features.extra.repository.ExtraRepository;
+import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +13,9 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class ExtraSeeder implements Seeder {
+public class ExtraIncomeSeeder implements Seeder {
 
-    private final ExtraRepository extraRepository;
+    private final ExtraIncomeRepository extraIncomeRepository;
 
     private static final LocalDate COMPETENCIA = LocalDate.of(2026, 6, 15);
 
@@ -26,14 +26,14 @@ public class ExtraSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        List<Extra> extras = List.of(
-                Extra.builder()
+        List<ExtraIncome> extraIncomes = List.of(
+                ExtraIncome.builder()
                         .description("Mãe")
                         .value(new BigDecimal("4470.00"))
                         .date(COMPETENCIA)
                         .user(context.getUser())
                         .build(),
-                Extra.builder()
+                ExtraIncome.builder()
                         .description("Tio Luiz")
                         .value(new BigDecimal("305.50"))
                         .date(COMPETENCIA)
@@ -41,11 +41,11 @@ public class ExtraSeeder implements Seeder {
                         .build()
         );
 
-        if (extraRepository.existsByUserId(context.getUser().getId())) {
+        if (extraIncomeRepository.existsByUserId(context.getUser().getId())) {
             return;
         }
 
-        extraRepository.saveAll(extras);
+        extraIncomeRepository.saveAll(extraIncomes);
     }
 
 }
