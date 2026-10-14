@@ -7,16 +7,11 @@ import jakarta.validation.constraints.Size;
 public record TagRequest(
         @NotBlank(message = "Nome é obrigatório!")
         @Size(max = 60, message = "Nome deve conter no máximo 60 caracteres.")
-        String name,
-
-        Long colorCode
+        String name
 ) {
 
     public Tag toEntity() {
-        return Tag.builder()
-                .name(this.name())
-                .colorCode(this.colorCode())
-                .build();
+        return Tag.of(this.name());
     }
 
 }

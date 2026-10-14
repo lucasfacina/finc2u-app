@@ -20,13 +20,17 @@ import java.util.List;
 @Builder
 public class Tag extends BaseModel {
 
-    private Long colorCode;
-
     @Column(unique = true)
     private String name;
 
     @JsonIgnore
     @ManyToMany(mappedBy = "tags")
     private List<Expense> expenseList;
+
+    public static Tag of(String name) {
+        return Tag.builder()
+                .name(name)
+                .build();
+    }
 
 }

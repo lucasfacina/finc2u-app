@@ -36,26 +36,11 @@ public class TagSeeder implements Seeder {
 
     private List<Tag> createSeedTags() {
         return List.of(
-                Tag.builder()
-                        .name("Alimentação")
-                        .colorCode(4280391411L)
-                        .build(),
-                Tag.builder().
-                        name("Transporte")
-                        .colorCode(4278190335L)
-                        .build(),
-                Tag.builder()
-                        .name("Assinaturas")
-                        .colorCode(4287365120L)
-                        .build(),
-                Tag.builder()
-                        .name("Saúde")
-                        .colorCode(4278255360L)
-                        .build(),
-                Tag.builder()
-                        .name("Lazer")
-                        .colorCode(4294902015L)
-                        .build()
+                Tag.of("Alimentação"),
+                Tag.of("Transporte"),
+                Tag.of("Assinaturas"),
+                Tag.of("Saúde"),
+                Tag.of("Lazer")
         );
     }
 
