@@ -1,19 +1,27 @@
 # Finc2U App
-Aplicação de gestão financeira pessoal, desenvolvida como atividade de fixação de estágio e pré-projeto de TCC.
+Aplicação de gestão financeira pessoal, nascida como atividade de fixação de estágio (já entregue) e hoje base do
+backend do TCC: um módulo de sugestões de educação financeira por motor de regras (Drools). O plano de evolução está
+em `docs/Finc2UApp_Roadmap_TCC.md`.
 
 ## Stack Tecnológica
 * Java 21
-* Spring Boot 3.3.13 (Web, Data JPA, Validation)
+* Spring Boot 4.1 (Web MVC, Data JPA, Validation)
 * H2 Database (desenvolvimento) / PostgreSQL (produção/TCC)
+* Documentação da API: OpenAPI + Swagger UI (springdoc)
 * Maven & Lombok
-  
+
 ## Como Executar Localmente
 1. Certifique-se de ter o Java 21 instalado.
 2. Clone o repositório.
 3. Execute o projeto via IDE (IntelliJ/Eclipse) ou via terminal com o Maven Wrapper:
    `./mvnw spring-boot:run`
 4. A aplicação estará disponível em `http://localhost:8080`.
-5. O console do banco de dados H2 pode ser acessado em `http://localhost:8080/h2-console` (URL: `jdbc:h2:file:./dados/finc2udb`, User: `sa`, Senha em branco).
+5. A documentação interativa da API (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` — dá para testar
+   todos os endpoints por ela. A especificação OpenAPI está em `http://localhost:8080/v3/api-docs`.
+6. O console do banco de dados H2 pode ser acessado em `http://localhost:8080/h2-console` (URL: `jdbc:h2:file:./data/finc2udb`, User: `sa`, Senha em branco).
+
+> O banco de desenvolvimento é um arquivo em `./data/` (relativo ao diretório de execução). Para recriá-lo do zero
+> (os seeders repopulam tudo), apague a pasta `data/` e suba a aplicação novamente.
 
 ## Executar Testes
 
@@ -74,14 +82,14 @@ Esta versão não possui autenticação real. O `userId` é passado como `@Reque
 
 ### Ganhos Extras — `/extra-incomes`
 
-| Método | Endpoint       | Descrição                       | Parâmetros                             |
-|--------|----------------|---------------------------------|----------------------------------------|
-| POST   | `/extra-incomes`              | Registrar ganho extra              | `userId` (query), Body: `ExtraIncomeRequest`                     |
-| GET    | `/extra-incomes`              | Listar ganhos extras do usuário    | `userId`* (query)                                          |
-| GET    | `/extra-incomes/period`       | Listar ganhos extras por período   | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
-| GET    | `/extra-incomes/{id}`         | Buscar ganho extra por ID          | `id` (path)                                                |
-| PUT    | `/extra-incomes/{id}`         | Atualizar ganho extra              | `id` (path), Body: `ExtraIncomeRequest`                          |
-| DELETE | `/extra-incomes/{id}`         | Deletar ganho extra                | `id` (path)                                                |
+| Método | Endpoint                | Descrição                        | Parâmetros                                                    |
+|--------|-------------------------|----------------------------------|---------------------------------------------------------------|
+| POST   | `/extra-incomes`        | Registrar ganho extra            | `userId` (query), Body: `ExtraIncomeRequest`                  |
+| GET    | `/extra-incomes`        | Listar ganhos extras do usuário  | `userId`* (query)                                             |
+| GET    | `/extra-incomes/period` | Listar ganhos extras por período | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
+| GET    | `/extra-incomes/{id}`   | Buscar ganho extra por ID        | `id` (path)                                                   |
+| PUT    | `/extra-incomes/{id}`   | Atualizar ganho extra            | `id` (path), Body: `ExtraIncomeRequest`                       |
+| DELETE | `/extra-incomes/{id}`   | Deletar ganho extra              | `id` (path)                                                   |
 
 ### Resumo Mensal — `/monthly-summary`
 
