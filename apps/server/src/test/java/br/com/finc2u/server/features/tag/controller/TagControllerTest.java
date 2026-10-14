@@ -50,7 +50,7 @@ class TagControllerTest {
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        TagRequest request = new TagRequest("Alimentação", null);
+        TagRequest request = new TagRequest("Alimentação");
         when(tagService.create(any(Tag.class)))
                 .thenReturn(tag);
 
@@ -64,7 +64,7 @@ class TagControllerTest {
 
     @Test
     void create_shouldReturnBadRequest_whenInvalidInput() throws Exception {
-        TagRequest invalidRequest = new TagRequest("", null);
+        TagRequest invalidRequest = new TagRequest("");
 
         mockMvc.perform(post("/tags")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -95,7 +95,7 @@ class TagControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        TagRequest request = new TagRequest("Alimentação", null);
+        TagRequest request = new TagRequest("Alimentação");
         when(tagService.update(eq(tagId), any(Tag.class)))
                 .thenReturn(tag);
 
