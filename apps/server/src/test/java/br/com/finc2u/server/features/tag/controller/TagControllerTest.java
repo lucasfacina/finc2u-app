@@ -4,14 +4,14 @@ import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.tag.dto.TagRequest;
 import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.tag.service.TagService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +30,7 @@ class TagControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private TagService tagService;
 
     @Autowired

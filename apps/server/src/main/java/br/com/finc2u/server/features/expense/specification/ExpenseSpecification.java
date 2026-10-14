@@ -13,6 +13,7 @@ import java.util.UUID;
 /*
  * Fornece métodos para criar Specifications do JPA para filtrar entidades Expense. Ela permite a filtragem com base no
  * ID do usuário, período de datas, status de pagamento, tipo de despesa, ID da conta do cartão e faixa de preço.
+ * Critério não informado vira Specification.unrestricted() (sem restrição) — o Spring Data JPA 4 não aceita null.
  */
 public class ExpenseSpecification {
 
@@ -36,7 +37,7 @@ public class ExpenseSpecification {
     }
 
     private static Specification<Expense> inPeriod(Integer month, Integer year) {
-        if (year == null) return null;
+        if (year == null) return Specification.unrestricted();
         LocalDate start, end;
         if (month != null) {
             start = LocalDate.of(year, month, 1);
@@ -50,31 +51,31 @@ public class ExpenseSpecification {
     }
 
     private static Specification<Expense> hasStatus(PaymentStatus status) {
-        if (status == null) return null;
+        if (status == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("paymentStatus"), status);
     }
 
     private static Specification<Expense> hasType(ExpenseType type) {
-        if (type == null) return null;
+        if (type == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("expenseType"), type);
     }
 
     private static Specification<Expense> hasCard(UUID cardAccountId) {
-        if (cardAccountId == null) return null;
+        if (cardAccountId == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("cardAccount").get("id"), cardAccountId);
     }
 
     private static Specification<Expense> minPrice(BigDecimal min) {
-        if (min == null) return null;
+        if (min == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.greaterThanOrEqualTo(root.get("value"), min);
     }
 
     private static Specification<Expense> maxPrice(BigDecimal max) {
-        if (max == null) return null;
+        if (max == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
                 criteriaBuilder.lessThanOrEqualTo(root.get("value"), max);
     }
