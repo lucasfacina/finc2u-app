@@ -1,0 +1,24 @@
+# ==========================================
+# PERFIL DE TESTES (H2 EM MEMÓRIA)
+# ==========================================
+# Sobrepõe o application.yml de main no classpath de testes: os testes nunca
+# gravam no banco de desenvolvimento (./data) nem executam os seeders.
+spring:
+  application:
+    name: finc2u-app
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+    driverClassName: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+app:
+  seeders:
+    enabled: false
