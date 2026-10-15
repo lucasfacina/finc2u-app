@@ -4,7 +4,9 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ErrorResponse;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +32,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException exception) {
         HttpStatus status = HttpStatus.NOT_FOUND;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                exception.getMessage(),
-                "O recurso solicitado não foi encontrado.",
-                LocalDateTime.now()
+            status.value(),
+            exception.getMessage(),
+            "O recurso solicitado não foi encontrado.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -43,10 +45,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
         HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                exception.getMessage(),
-                "Regra de negócio violada.",
-                LocalDateTime.now()
+            status.value(),
+            exception.getMessage(),
+            "Regra de negócio violada.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -57,10 +59,10 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         String detail = "Valor inválido '" + exception.getValue() + "' para o parâmetro '" + exception.getName() + "'.";
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Parâmetro inválido.",
-                detail,
-                LocalDateTime.now()
+            status.value(),
+            "Parâmetro inválido.",
+            detail,
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -70,10 +72,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable() {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Corpo da requisição inválido ou malformado.",
-                "Verifique o formato e os tipos dos campos enviados.",
-                LocalDateTime.now()
+            status.value(),
+            "Corpo da requisição inválido ou malformado.",
+            "Verifique o formato e os tipos dos campos enviados.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -83,27 +85,32 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException exception) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         String details = exception.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+            .map(error -> error.getField() + ": " + error.getDefaultMessage())
+            .collect(Collectors.joining(", "));
 
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Erro de validação.",
-                details,
-                LocalDateTime.now()
+            status.value(),
+            "Erro de validação.",
+            details,
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
 
     // HTTP 409
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException() {
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException exception) {
         HttpStatus status = HttpStatus.CONFLICT;
+        boolean unique = isUniqueViolation(exception);
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Operação não permitida, existem registros dependentes vinculados a este recurso.",
-                "Violação de integridade referencial.",
-                LocalDateTime.now()
+            status.value(),
+            unique
+                ? "Já existe um registro com estes dados."
+                : "Operação não permitida, existem registros dependentes vinculados a este recurso.",
+            unique
+                ? "Violação de unicidade."
+                : "Violação de integridade referencial.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -113,10 +120,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException exception) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Parâmetro obrigatório ausente.",
-                "O parâmetro '" + exception.getParameterName() + "' é obrigatório.",
-                LocalDateTime.now()
+            status.value(),
+            "Parâmetro obrigatório ausente.",
+            "O parâmetro '" + exception.getParameterName() + "' é obrigatório.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -126,10 +133,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException exception) {
         HttpStatus status = HttpStatus.NOT_FOUND;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Rota não encontrada.",
-                "Nenhum endpoint corresponde a '" + exception.getResourcePath() + "'.",
-                LocalDateTime.now()
+            status.value(),
+            "Rota não encontrada.",
+            "Nenhum endpoint corresponde a '" + exception.getResourcePath() + "'.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -139,13 +146,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
         HttpStatus status = HttpStatus.METHOD_NOT_ALLOWED;
         String supported = exception.getSupportedMethods() != null
-                ? String.join(", ", exception.getSupportedMethods())
-                : "-";
+            ? String.join(", ", exception.getSupportedMethods())
+            : "-";
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Método HTTP não suportado.",
-                "O método '" + exception.getMethod() + "' não é suportado nesta rota. Métodos aceitos: " + supported + ".",
-                LocalDateTime.now()
+            status.value(),
+            "Método HTTP não suportado.",
+            "O método '" + exception.getMethod() + "' não é suportado nesta rota. Métodos aceitos: " + supported + ".",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -155,13 +162,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException exception) {
         HttpStatus status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
         String supported = exception.getSupportedMediaTypes().stream()
-                .map(MediaType::toString)
-                .collect(Collectors.joining(", "));
+            .map(MediaType::toString)
+            .collect(Collectors.joining(", "));
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Tipo de conteúdo não suportado.",
-                "O Content-Type '" + exception.getContentType() + "' não é suportado. Tipos aceitos: " + supported + ".",
-                LocalDateTime.now()
+            status.value(),
+            "Tipo de conteúdo não suportado.",
+            "O Content-Type '" + exception.getContentType() + "' não é suportado. Tipos aceitos: " + supported + ".",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
     }
@@ -173,12 +180,26 @@ public class GlobalExceptionHandler {
 
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorResponse error = new ErrorResponse(
-                status.value(),
-                "Erro interno no servidor.",
-                "Ocorreu um erro inesperado. Tente novamente mais tarde.",
-                LocalDateTime.now()
+            status.value(),
+            "Erro interno no servidor.",
+            "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+            LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
+    }
+
+    // Unicidade × dependência: percorre a cadeia de causas, pois o Spring pode traduzir a mesma violação de formas diferentes.
+    private static boolean isUniqueViolation(DataIntegrityViolationException exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof DuplicateKeyException) {
+                return true;
+            }
+            if (cause instanceof ConstraintViolationException violation
+                && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
