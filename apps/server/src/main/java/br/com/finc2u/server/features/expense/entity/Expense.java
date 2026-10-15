@@ -89,14 +89,26 @@ public class Expense extends BaseModel {
         }
     }
 
-    // Valida regras de PARCELED: mínimo de parcelas e parcela inicial padrão. O status não depende da parcela.
+    /*
+     * Valida regras de PARCELED: total entre o mínimo e o teto de parcelas, parcela atual a partir da primeira (padrão:
+     * a primeira) e nunca acima do total. O status não depende da parcela. O teto e o piso impedem que a projeção de
+     * parcelas futuras gere uma quantidade absurda de objetos (ex.: parcela atual negativa).
+     */
     public void applyInstallmentRules() {
         if (expenseType == ExpenseType.PARCELED) {
             if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS) {
                 throw new BusinessException("Total de parcelas deve ser pelo menos 1 para despesas parceladas");
             }
+            if (totalInstallment > BusinessConstants.MAX_INSTALLMENTS) {
+                throw new BusinessException(
+                    "Total de parcelas (" + totalInstallment + ") não pode ser maior que " + BusinessConstants.MAX_INSTALLMENTS + "."
+                );
+            }
             if (currentInstallment == null) {
                 currentInstallment = BusinessConstants.DEFAULT_FIRST_INSTALLMENT;
+            }
+            if (currentInstallment < BusinessConstants.DEFAULT_FIRST_INSTALLMENT) {
+                throw new BusinessException("Parcela atual (" + currentInstallment + ") deve ser pelo menos 1.");
             }
             if (currentInstallment > totalInstallment) {
                 throw new BusinessException(
