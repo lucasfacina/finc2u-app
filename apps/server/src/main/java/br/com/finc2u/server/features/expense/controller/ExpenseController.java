@@ -49,7 +49,7 @@ public class ExpenseController {
     }
 
     @GetMapping("/filters")
-    public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, ExpenseFilter filter) {
+    public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid ExpenseFilter filter) {
         List<Expense> expenses = expenseService.getWithFilters(userId, filter);
         return ResponseEntity.ok(expenses.stream().map(ExpenseResponse::from).toList());
     }
