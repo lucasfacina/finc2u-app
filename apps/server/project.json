@@ -19,7 +19,9 @@
         "db:pg:status",
         "db:pg:logs",
         "db:pg:psql",
-        "db:pg:reset"
+        "db:pg:reset",
+        "db:pg:backup",
+        "db:pg:restore"
       ]
     }
   },
@@ -117,6 +119,20 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-reset.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:backup": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/pg-backup.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:restore": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/pg-restore.sh",
         "cwd": "{workspaceRoot}"
       }
     }
