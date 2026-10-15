@@ -29,22 +29,16 @@ public class ExpenseController {
 
     @PostMapping
     public ResponseEntity<ExpenseResponse> create(@RequestParam UUID userId, @Valid @RequestBody ExpenseRequest expenseRequest) {
-        Expense savedExpense = expenseService.create(
-                expenseRequest.toEntity(),
-                userId,
-                expenseRequest.cardAccountId(),
-                expenseRequest.purchaseDate(),
-                expenseRequest.tagIds()
-        );
+        Expense savedExpense = expenseService.create(userId, expenseRequest.toCommand());
         return new ResponseEntity<>(ExpenseResponse.from(savedExpense), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<ExpenseResponse>> getAllByUserId(@RequestParam UUID userId) {
         List<ExpenseResponse> expenseResponse = expenseService.getByUser(userId)
-                .stream()
-                .map(ExpenseResponse::from)
-                .toList();
+            .stream()
+            .map(ExpenseResponse::from)
+            .toList();
         return ResponseEntity.ok(expenseResponse);
     }
 
@@ -63,25 +57,19 @@ public class ExpenseController {
     @GetMapping("/projections")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         Map<YearMonth, List<ExpenseResponse>> expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId)
-                .entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey, entry -> entry.getValue()
-                                .stream()
-                                .map(ExpenseResponse::from)
-                                .toList()
-                ));
+            .entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey, entry -> entry.getValue()
+                    .stream()
+                    .map(ExpenseResponse::from)
+                    .toList()
+            ));
         return ResponseEntity.ok(expenseResponse);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<ExpenseResponse> update(@PathVariable UUID id, @Valid @RequestBody ExpenseRequest expenseRequest) {
-        Expense updatedExpense = expenseService.update(
-                id,
-                expenseRequest.toEntity(),
-                expenseRequest.cardAccountId(),
-                expenseRequest.purchaseDate(),
-                expenseRequest.tagIds()
-        );
+        Expense updatedExpense = expenseService.update(id, expenseRequest.toCommand());
         return ResponseEntity.ok(ExpenseResponse.from(updatedExpense));
     }
 
