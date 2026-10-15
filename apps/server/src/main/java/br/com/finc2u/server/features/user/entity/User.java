@@ -1,15 +1,10 @@
 package br.com.finc2u.server.features.user.entity;
 
-import br.com.finc2u.server.features.card.entity.CardAccount;
-import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
-import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.shared.model.BaseModel;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Entity
 @Table(name = "tb_user")
@@ -28,18 +23,6 @@ public class User extends BaseModel {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserConfiguration userConfiguration;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user")
-    private List<CardAccount> cardAccountList;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "user")
-    private List<ExtraIncome> extraIncomeList;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "user")
-    private List<MonthlySummary> monthlySummaryList;
-
     public void setUserConfiguration(UserConfiguration userConfiguration) {
         this.userConfiguration = userConfiguration;
         if (userConfiguration != null) {
@@ -50,15 +33,15 @@ public class User extends BaseModel {
     // Salário-base configurado ou zero quando não há configuração/valor
     public BigDecimal baseSalaryOrZero() {
         return userConfiguration != null && userConfiguration.getBaseSalary() != null
-                ? userConfiguration.getBaseSalary()
-                : BigDecimal.ZERO;
+            ? userConfiguration.getBaseSalary()
+            : BigDecimal.ZERO;
     }
 
     // Saldo de poupança configurado ou zero quando não há configuração/valor.
     public BigDecimal savingsBalanceOrZero() {
         return userConfiguration != null && userConfiguration.getSavingsBalance() != null
-                ? userConfiguration.getSavingsBalance()
-                : BigDecimal.ZERO;
+            ? userConfiguration.getSavingsBalance()
+            : BigDecimal.ZERO;
     }
 
 }

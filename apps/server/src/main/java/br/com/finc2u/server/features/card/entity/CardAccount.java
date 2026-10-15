@@ -1,18 +1,14 @@
 package br.com.finc2u.server.features.card.entity;
 
-import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
 
 @Entity
 @Table(name = "tb_card_account")
@@ -30,10 +26,6 @@ public class CardAccount extends BaseModel {
     @ManyToOne
     private User user;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "cardAccount")
-    private List<Expense> expenseList;
-
     /*
      * Determina o vencimento da fatura em que a compra cai.
      * Até o dia de fechamento, a compra entra na fatura que fecha no mês corrente; depois, na do mês seguinte.
@@ -50,8 +42,8 @@ public class CardAccount extends BaseModel {
         }
 
         YearMonth dueMonth = dueDay < closingDay
-                ? closingMonth.plusMonths(1)
-                : closingMonth;
+            ? closingMonth.plusMonths(1)
+            : closingMonth;
 
         int day = Math.min(dueDay, dueMonth.lengthOfMonth());
         return dueMonth.atDay(day);
