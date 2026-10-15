@@ -38,6 +38,7 @@ build/
 ### Documentação e contexto local (não versionar) ###
 docs/
 CLAUDE.md
+.claude/
 
 ### Banco de dados local ###
 data/
