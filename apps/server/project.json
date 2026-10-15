@@ -9,7 +9,10 @@
         "test",
         "build",
         "verify",
-        "clean"
+        "clean",
+        "deps:updates",
+        "deps:audit",
+        "api:export"
       ],
       "Database": [
         "db:h2:reset",
@@ -165,6 +168,27 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/flyway.sh migrate",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "deps:updates": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/deps-updates.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "deps:audit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/deps-audit.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "api:export": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/api-export.sh",
         "cwd": "{workspaceRoot}"
       }
     }
