@@ -5,16 +5,16 @@ import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
-import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
+import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.tag.service.TagService;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,13 +29,14 @@ public class ExpenseService {
     private final ExpenseMapper expenseMapper;
 
     @Transactional
-    public Expense create(Expense expense, UUID userId, UUID cardAccountId, LocalDate purchaseDate, List<UUID> tagIds) {
+    public Expense create(UUID userId, ExpenseCommand command) {
+        var expense = command.expense();
         expense.setUser(userService.getById(userId));
 
-        expenseMapper.applyCardAccount(expense, cardAccountId);
-        expenseMapper.applyTags(expense, tagIds);
+        expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyTags(expense, command.tagIds());
 
-        expense.prepareForPersistence(purchaseDate);
+        expense.prepareForPersistence(command.purchaseDate());
 
         return expenseRepository.save(expense);
     }
@@ -43,7 +44,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public Expense getById(UUID id) {
         return expenseRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Despesa não encontrada com o ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Despesa não encontrada com o ID: " + id));
     }
 
     @Transactional(readOnly = true)
@@ -59,14 +60,14 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Expense update(UUID id, Expense updates, UUID cardAccountId, LocalDate purchaseDate, List<UUID> tagIds) {
-        Expense expense = getById(id);
+    public Expense update(UUID id, ExpenseCommand command) {
+        var expense = getById(id);
 
-        expenseMapper.applyCardAccount(expense, cardAccountId);
-        expenseMapper.applyTags(expense, tagIds);
-        expenseMapper.applyEditableFields(expense, updates);
+        expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyTags(expense, command.tagIds());
+        expenseMapper.applyEditableFields(expense, command.expense());
 
-        expense.prepareForPersistence(purchaseDate);
+        expense.prepareForPersistence(command.purchaseDate());
 
         return expenseRepository.save(expense);
     }
