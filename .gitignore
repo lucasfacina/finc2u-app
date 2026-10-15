@@ -45,3 +45,7 @@ data/
 ### Logs e outputs locais do Maven ###
 dependency-tree.txt
 effective-pom.xml
+
+### Node / Nx ###
+node_modules/
+.nx/
