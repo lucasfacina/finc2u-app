@@ -18,8 +18,8 @@ public class ExpenseTest {
     void resolveDueDate_shouldKeepManualDueDate_whenAlreadyInformed() {
         LocalDate manual = LocalDate.of(2026, 7, 10);
         Expense expense = Expense.builder()
-                .dueDate(manual)
-                .build();
+            .dueDate(manual)
+            .build();
 
         expense.resolveDueDate(LocalDate.of(2026, 5, 1));
 
@@ -29,7 +29,7 @@ public class ExpenseTest {
     @Test
     void resolveDueDate_ShouldThrow_WhenNoCardAndNoDueDate() {
         Expense expense = Expense.builder()
-                .build();
+            .build();
 
         assertThrows(BusinessException.class, () -> expense.resolveDueDate(null));
     }
@@ -37,24 +37,24 @@ public class ExpenseTest {
     @Test
     void resolveDueDate_ShouldThrow_WhenCardWithoutClosingOrDueConfigured() {
         CardAccount card = CardAccount.builder()
-                .build();
+            .build();
         Expense expense = Expense.builder()
-                .cardAccount(card)
-                .build();
+            .cardAccount(card)
+            .build();
 
         assertThrows(BusinessException.class,
-                () -> expense.resolveDueDate(LocalDate.of(2026, 5, 1)));
+            () -> expense.resolveDueDate(LocalDate.of(2026, 5, 1)));
     }
 
     @Test
     void resolveDueDate_ShouldCalculateFromCard_WhenDueDateNull() {
         CardAccount card = CardAccount.builder()
-                .closingDate(30)
-                .dueDate(15)
-                .build();
+            .closingDate(30)
+            .dueDate(15)
+            .build();
         Expense expense = Expense.builder()
-                .cardAccount(card)
-                .build();
+            .cardAccount(card)
+            .build();
 
         expense.resolveDueDate(LocalDate.of(2026, 5, 20));
 
@@ -66,8 +66,8 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldBePaid_whenNullAndDueDateNotInFuture() {
         Expense expense = Expense.builder()
-                .dueDate(LocalDate.now().minusDays(1))
-                .build();
+            .dueDate(LocalDate.now().minusDays(1))
+            .build();
 
         expense.resolveDefaultPaymentStatus();
 
@@ -77,8 +77,8 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldBePending_whenNullAndDueDateInFuture() {
         Expense expense = Expense.builder()
-                .dueDate(LocalDate.now().plusDays(5))
-                .build();
+            .dueDate(LocalDate.now().plusDays(5))
+            .build();
 
         expense.resolveDefaultPaymentStatus();
 
@@ -88,9 +88,9 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldKeepExistingStatus_whenAlreadySet() {
         Expense expense = Expense.builder()
-                .dueDate(LocalDate.now().minusDays(1))
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
+            .dueDate(LocalDate.now().minusDays(1))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
 
         expense.resolveDefaultPaymentStatus();
 
@@ -102,8 +102,8 @@ public class ExpenseTest {
     @Test
     void applyInstallmentRules_shouldThrow_whenParceledWithoutTotalInstallments() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.PARCELED)
-                .build();
+            .expenseType(ExpenseType.PARCELED)
+            .build();
 
         assertThrows(BusinessException.class, expense::applyInstallmentRules);
     }
@@ -111,9 +111,9 @@ public class ExpenseTest {
     @Test
     void applyInstallmentRules_shouldThrow_whenParceledWithTotalBelowMinimum() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.PARCELED)
-                .totalInstallment(0)
-                .build();
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(0)
+            .build();
 
         assertThrows(BusinessException.class, expense::applyInstallmentRules);
     }
@@ -121,23 +121,52 @@ public class ExpenseTest {
     @Test
     void applyInstallmentRules_shouldDefaultCurrentInstallment_whenNull() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.PARCELED)
-                .totalInstallment(3)
-                .build();
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(3)
+            .build();
 
         expense.applyInstallmentRules();
 
         assertEquals(1, expense.getCurrentInstallment());
     }
 
+    // A última parcela não vira PAID por ser a última: quem decide o status é o pagamento (D13).
     @Test
-    void applyInstallmentRules_shouldSetPaid_whenLastInstallment() {
+    void applyInstallmentRules_shouldKeepStatus_whenLastInstallment() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.PARCELED)
-                .currentInstallment(3)
-                .totalInstallment(3)
-                .paymentStatus(PaymentStatus.PENDING)
-                .build();
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(3)
+            .totalInstallment(3)
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        expense.applyInstallmentRules();
+
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
+    }
+
+    @Test
+    void applyInstallmentRules_shouldKeepStatus_whenSingleInstallmentPurchase() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(1)
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        expense.applyInstallmentRules();
+
+        assertEquals(1, expense.getCurrentInstallment());
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
+    }
+
+    @Test
+    void applyInstallmentRules_shouldKeepPaid_whenLastInstallmentWasInformedAsPaid() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(5)
+            .totalInstallment(5)
+            .paymentStatus(PaymentStatus.PAID)
+            .build();
 
         expense.applyInstallmentRules();
 
@@ -147,10 +176,10 @@ public class ExpenseTest {
     @Test
     void applyInstallmentRules_shouldThrow_whenCurrentInstallmentExceedsTotal() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.PARCELED)
-                .currentInstallment(10)
-                .totalInstallment(5)
-                .build();
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(10)
+            .totalInstallment(5)
+            .build();
 
         assertThrows(BusinessException.class, expense::applyInstallmentRules);
     }
@@ -158,8 +187,8 @@ public class ExpenseTest {
     @Test
     void applyInstallmentRules_shouldDoNothing_whenNotParceled() {
         Expense expense = Expense.builder()
-                .expenseType(ExpenseType.VARIABLE)
-                .build();
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
 
         expense.applyInstallmentRules();
 
@@ -171,13 +200,13 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldResolveDueDateFromCard() {
         CardAccount card = CardAccount.builder()
-                .closingDate(30)
-                .dueDate(15)
-                .build();
+            .closingDate(30)
+            .dueDate(15)
+            .build();
         Expense expense = Expense.builder()
-                .cardAccount(card)
-                .expenseType(ExpenseType.VARIABLE)
-                .build();
+            .cardAccount(card)
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
 
         expense.prepareForPersistence(LocalDate.of(2026, 5, 20));
 
@@ -187,13 +216,13 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldDefaultStatusFromResolvedDueDate() {
         Expense future = Expense.builder()
-                .dueDate(LocalDate.now().plusDays(5))
-                .expenseType(ExpenseType.VARIABLE)
-                .build();
+            .dueDate(LocalDate.now().plusDays(5))
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
         Expense past = Expense.builder()
-                .dueDate(LocalDate.now().minusDays(5))
-                .expenseType(ExpenseType.VARIABLE)
-                .build();
+            .dueDate(LocalDate.now().minusDays(5))
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
 
         future.prepareForPersistence(null);
         past.prepareForPersistence(null);
@@ -205,15 +234,28 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldApplyInstallmentRules() {
         Expense expense = Expense.builder()
-                .dueDate(LocalDate.now().plusDays(1))
-                .expenseType(ExpenseType.PARCELED)
-                .currentInstallment(3)
-                .totalInstallment(3)
-                .build();
+            .dueDate(LocalDate.now().plusDays(1))
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(3)
+            .build();
 
         expense.prepareForPersistence(null);
 
-        assertEquals(PaymentStatus.PAID, expense.getPaymentStatus());
+        assertEquals(1, expense.getCurrentInstallment());
     }
-    
+
+    @Test
+    void prepareForPersistence_shouldKeepFutureLastInstallmentPending() {
+        Expense expense = Expense.builder()
+            .dueDate(LocalDate.now().plusDays(1))
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(3)
+            .totalInstallment(3)
+            .build();
+
+        expense.prepareForPersistence(null);
+
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
+    }
+
 }
