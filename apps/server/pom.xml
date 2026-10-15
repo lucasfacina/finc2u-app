@@ -22,6 +22,7 @@
         <tomcat.version>11.0.27</tomcat.version>
         <logback.version>1.6.5</logback.version>
         <h2.version>2.5.252</h2.version>
+        <lombok.version>1.18.48</lombok.version>
     </properties>
 
     <dependencies>
