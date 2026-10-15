@@ -141,6 +141,61 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void getWithFilters_shouldReturnBadRequest_whenMonthIsOutOfRange() throws Exception {
+        mockMvc.perform(get("/expenses/filters")
+                        .param("userId", userId.toString())
+                        .param("month", "13")
+                        .param("year", "2026"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Erro de validação."));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void getWithFilters_shouldReturnBadRequest_whenMonthIsZero() throws Exception {
+        mockMvc.perform(get("/expenses/filters")
+                        .param("userId", userId.toString())
+                        .param("month", "0")
+                        .param("year", "2026"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void getWithFilters_shouldReturnBadRequest_whenYearIsBelowMinimum() throws Exception {
+        mockMvc.perform(get("/expenses/filters")
+                        .param("userId", userId.toString())
+                        .param("year", "1999"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void getWithFilters_shouldReturnBadRequest_whenMinPriceIsGreaterThanMaxPrice() throws Exception {
+        mockMvc.perform(get("/expenses/filters")
+                        .param("userId", userId.toString())
+                        .param("minPrice", "500")
+                        .param("maxPrice", "100"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void getWithFilters_shouldReturnOk_whenOnlyOnePriceBoundIsInformed() throws Exception {
+        when(expenseService.getWithFilters(eq(userId), any()))
+                .thenReturn(List.of(expense));
+
+        mockMvc.perform(get("/expenses/filters")
+                        .param("userId", userId.toString())
+                        .param("minPrice", "100"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void getById_shouldReturnOk() throws Exception {
         when(expenseService.getById(expenseId))
                 .thenReturn(expense);
