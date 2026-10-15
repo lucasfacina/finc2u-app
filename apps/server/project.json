@@ -21,7 +21,11 @@
         "db:pg:psql",
         "db:pg:reset",
         "db:pg:backup",
-        "db:pg:restore"
+        "db:pg:restore",
+        "db:pg:schema",
+        "db:flyway:info",
+        "db:flyway:validate",
+        "db:flyway:migrate"
       ]
     }
   },
@@ -133,6 +137,34 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-restore.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:schema": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/pg-schema.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:flyway:info": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/flyway.sh info",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:flyway:validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/flyway.sh validate",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:flyway:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/flyway.sh migrate",
         "cwd": "{workspaceRoot}"
       }
     }
