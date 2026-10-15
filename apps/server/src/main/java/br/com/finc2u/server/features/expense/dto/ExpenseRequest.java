@@ -1,12 +1,11 @@
 package br.com.finc2u.server.features.expense.dto;
 
+import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,7 +33,14 @@ public record ExpenseRequest(
     // Opcional: quando ausente, é definido por padrão pela data de vencimento (<= hoje → PAID, futuro → PENDING).
     PaymentStatus paymentStatus,
 
+    // Opcionais (só valem para PARCELED). Com valor informado, ficam entre 1 e o teto de parcelas; a relação
+    // parcela atual <= total é a guarda da entidade (422).
+    @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Parcela atual deve ser no mínimo 1.")
+    @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Parcela atual deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
     Integer currentInstallment,
+
+    @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Total de parcelas deve ser no mínimo 1.")
+    @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Total de parcelas deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
     Integer totalInstallment,
 
     // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
