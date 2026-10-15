@@ -9,6 +9,7 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.projection.FutureInstallmentProjection;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
+import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -63,69 +64,104 @@ class ExpenseControllerTest {
         cardAccount.setId(cardAccountId);
 
         expense = Expense.builder()
-                .description("Mercado")
-                .value(BigDecimal.valueOf(150.0))
-                .dueDate(LocalDate.now())
-                .expenseType(ExpenseType.VARIABLE)
-                .paymentStatus(PaymentStatus.PENDING)
-                .cardAccount(cardAccount)
-                .build();
+            .description("Mercado")
+            .value(BigDecimal.valueOf(150.0))
+            .dueDate(LocalDate.now())
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(PaymentStatus.PENDING)
+            .cardAccount(cardAccount)
+            .build();
         expense.setId(expenseId);
 
         request = new ExpenseRequest(
-                "Mercado",
-                BigDecimal.valueOf(150.0),
-                ExpenseType.VARIABLE,
-                LocalDate.now(),
-                null,
-                PaymentStatus.PENDING,
-                null,
-                null,
-                cardAccountId,
-                null
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            LocalDate.now(),
+            null,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            cardAccountId,
+            null
         );
     }
 
     @Test
     void create_shouldReturnCreated() throws Exception {
-        when(expenseService.create(any(Expense.class), eq(userId), eq(cardAccountId), any(), any()))
-                .thenReturn(expense);
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
 
         mockMvc.perform(post("/expenses")
-                        .param("userId", userId.toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(expenseId.toString()))
-                .andExpect(jsonPath("$.description").value("Mercado"));
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(expenseId.toString()))
+            .andExpect(jsonPath("$.description").value("Mercado"));
+    }
+
+    @Test
+    void create_shouldPassRequestDataToServiceAsCommand() throws Exception {
+        var tagId = UUID.randomUUID();
+        var purchaseDate = LocalDate.of(2026, 5, 20);
+        var requestWithReferences = new ExpenseRequest(
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            null,
+            purchaseDate,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            cardAccountId,
+            List.of(tagId)
+        );
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithReferences)))
+            .andExpect(status().isCreated());
+
+        var captor = ArgumentCaptor.forClass(ExpenseCommand.class);
+        verify(expenseService).create(eq(userId), captor.capture());
+
+        var command = captor.getValue();
+        assertEquals("Mercado", command.expense().getDescription());
+        assertEquals(cardAccountId, command.cardAccountId());
+        assertEquals(purchaseDate, command.purchaseDate());
+        assertEquals(List.of(tagId), command.tagIds());
     }
 
     @Test
     void getAllByUserId_shouldReturnOk() throws Exception {
         when(expenseService.getByUser(userId))
-                .thenReturn(List.of(expense));
+            .thenReturn(List.of(expense));
 
         mockMvc.perform(get("/expenses")
-                        .param("userId", userId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].description").value("Mercado"));
+                .param("userId", userId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].description").value("Mercado"));
     }
 
     @Test
     void getWithFilters_shouldBindQueryParamsIntoFilter() throws Exception {
         when(expenseService.getWithFilters(eq(userId), any()))
-                .thenReturn(List.of(expense));
+            .thenReturn(List.of(expense));
 
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("month", "5")
-                        .param("year", "2026")
-                        .param("status", "PAID")
-                        .param("type", "PARCELED")
-                        .param("cardAccountId", cardAccountId.toString())
-                        .param("minPrice", "100")
-                        .param("maxPrice", "500"))
-                .andExpect(status().isOk());
+                .param("userId", userId.toString())
+                .param("month", "5")
+                .param("year", "2026")
+                .param("status", "PAID")
+                .param("type", "PARCELED")
+                .param("cardAccountId", cardAccountId.toString())
+                .param("minPrice", "100")
+                .param("maxPrice", "500"))
+            .andExpect(status().isOk());
 
         ArgumentCaptor<ExpenseFilter> captor = ArgumentCaptor.forClass(ExpenseFilter.class);
         verify(expenseService).getWithFilters(eq(userId), captor.capture());
@@ -143,11 +179,11 @@ class ExpenseControllerTest {
     @Test
     void getWithFilters_shouldReturnBadRequest_whenMonthIsOutOfRange() throws Exception {
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("month", "13")
-                        .param("year", "2026"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Erro de validação."));
+                .param("userId", userId.toString())
+                .param("month", "13")
+                .param("year", "2026"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Erro de validação."));
 
         verifyNoInteractions(expenseService);
     }
@@ -155,10 +191,10 @@ class ExpenseControllerTest {
     @Test
     void getWithFilters_shouldReturnBadRequest_whenMonthIsZero() throws Exception {
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("month", "0")
-                        .param("year", "2026"))
-                .andExpect(status().isBadRequest());
+                .param("userId", userId.toString())
+                .param("month", "0")
+                .param("year", "2026"))
+            .andExpect(status().isBadRequest());
 
         verifyNoInteractions(expenseService);
     }
@@ -166,9 +202,9 @@ class ExpenseControllerTest {
     @Test
     void getWithFilters_shouldReturnBadRequest_whenYearIsBelowMinimum() throws Exception {
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("year", "1999"))
-                .andExpect(status().isBadRequest());
+                .param("userId", userId.toString())
+                .param("year", "1999"))
+            .andExpect(status().isBadRequest());
 
         verifyNoInteractions(expenseService);
     }
@@ -176,10 +212,10 @@ class ExpenseControllerTest {
     @Test
     void getWithFilters_shouldReturnBadRequest_whenMinPriceIsGreaterThanMaxPrice() throws Exception {
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("minPrice", "500")
-                        .param("maxPrice", "100"))
-                .andExpect(status().isBadRequest());
+                .param("userId", userId.toString())
+                .param("minPrice", "500")
+                .param("maxPrice", "100"))
+            .andExpect(status().isBadRequest());
 
         verifyNoInteractions(expenseService);
     }
@@ -187,44 +223,44 @@ class ExpenseControllerTest {
     @Test
     void getWithFilters_shouldReturnOk_whenOnlyOnePriceBoundIsInformed() throws Exception {
         when(expenseService.getWithFilters(eq(userId), any()))
-                .thenReturn(List.of(expense));
+            .thenReturn(List.of(expense));
 
         mockMvc.perform(get("/expenses/filters")
-                        .param("userId", userId.toString())
-                        .param("minPrice", "100"))
-                .andExpect(status().isOk());
+                .param("userId", userId.toString())
+                .param("minPrice", "100"))
+            .andExpect(status().isOk());
     }
 
     @Test
     void getById_shouldReturnOk() throws Exception {
         when(expenseService.getById(expenseId))
-                .thenReturn(expense);
+            .thenReturn(expense);
 
         mockMvc.perform(get("/expenses/{id}", expenseId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(expenseId.toString()));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(expenseId.toString()));
     }
 
     @Test
     void update_shouldReturnOk() throws Exception {
-        when(expenseService.update(eq(expenseId), any(Expense.class), eq(cardAccountId), any(), any()))
-                .thenReturn(expense);
+        when(expenseService.update(eq(expenseId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
 
         mockMvc.perform(put("/expenses/{id}", expenseId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.description").value("Mercado"));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.description").value("Mercado"));
     }
 
     @Test
     void updateStatus_shouldReturnOk() throws Exception {
         when(expenseService.updateStatus(expenseId, PaymentStatus.PAID))
-                .thenReturn(expense);
+            .thenReturn(expense);
 
         mockMvc.perform(patch("/expenses/{id}/status", expenseId)
-                        .param("status", "PAID"))
-                .andExpect(status().isOk());
+                .param("status", "PAID"))
+            .andExpect(status().isOk());
     }
 
     @Test
@@ -232,7 +268,7 @@ class ExpenseControllerTest {
         doNothing().when(expenseService).delete(expenseId);
 
         mockMvc.perform(delete("/expenses/{id}", expenseId))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
 }

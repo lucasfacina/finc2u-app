@@ -9,6 +9,7 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,35 +59,35 @@ class ExpenseServiceTest {
         userId = UUID.randomUUID();
 
         cardAccount = CardAccount.builder()
-                .cardName("Cartão Nu")
-                .build();
+            .cardName("Cartão Nu")
+            .build();
         cardAccount.setId(cardAccountId);
 
         user = User.builder()
-                .name("Lucas")
-                .build();
+            .name("Lucas")
+            .build();
         user.setId(userId);
 
         expense = Expense.builder()
-                .description("Mercado")
-                .value(BigDecimal.valueOf(150.0))
-                .dueDate(LocalDate.now())
-                .expenseType(ExpenseType.VARIABLE)
-                .paymentStatus(PaymentStatus.PENDING)
-                .user(user)
-                .cardAccount(cardAccount)
-                .build();
+            .description("Mercado")
+            .value(BigDecimal.valueOf(150.0))
+            .dueDate(LocalDate.now())
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(PaymentStatus.PENDING)
+            .user(user)
+            .cardAccount(cardAccount)
+            .build();
         expense.setId(expenseId);
     }
 
     @Test
     void create_shouldReturnExpense_whenValid() {
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.save(any(Expense.class)))
-                .thenReturn(expense);
+            .thenReturn(expense);
 
-        Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
+        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertNotNull(response);
         assertEquals(expense.getDescription(), response.getDescription());
@@ -94,20 +95,20 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void create_shouldSetPaidStatus_whenLastInstallmentOfParceled() {
+    void create_shouldKeepPendingStatus_whenLastInstallmentOfParceled() {
         expense.setExpenseType(ExpenseType.PARCELED);
         expense.setCurrentInstallment(3);
         expense.setTotalInstallment(3);
         expense.setPaymentStatus(PaymentStatus.PENDING);
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.save(any(Expense.class)))
-                .thenReturn(expense);
+            .thenReturn(expense);
 
-        Expense response = expenseService.create(expense, userId, cardAccountId, null, null);
+        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
 
-        assertEquals(PaymentStatus.PAID, response.getPaymentStatus());
+        assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
     }
 
     @Test
@@ -116,9 +117,9 @@ class ExpenseServiceTest {
         expense.setTotalInstallment(null);
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         assertThrows(BusinessException.class,
-                () -> expenseService.create(expense, userId, cardAccountId, null, null));
+            () -> expenseService.create(userId, command(expense, cardAccountId, null)));
     }
 
     @Test
@@ -128,16 +129,13 @@ class ExpenseServiceTest {
         expense.setDueDate(null);
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.save(any(Expense.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+            .thenAnswer(inv -> inv.getArgument(0));
 
         Expense response = expenseService.create(
-                expense,
-                userId,
-                cardAccountId,
-                LocalDate.of(2026, 5, 20),
-                null
+            userId,
+            command(expense, cardAccountId, LocalDate.of(2026, 5, 20))
         );
 
         assertEquals(LocalDate.of(2026, 6, 15), response.getDueDate());
@@ -149,10 +147,10 @@ class ExpenseServiceTest {
         expense.setDueDate(null);
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
 
         assertThrows(BusinessException.class,
-                () -> expenseService.create(expense, userId, null, null, null));
+            () -> expenseService.create(userId, command(expense, null, null)));
     }
 
     @Test
@@ -161,17 +159,11 @@ class ExpenseServiceTest {
         expense.setDueDate(LocalDate.now().minusDays(1));
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.save(any(Expense.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+            .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(
-                expense,
-                userId,
-                cardAccountId,
-                null,
-                null
-        );
+        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertEquals(PaymentStatus.PAID, response.getPaymentStatus());
     }
@@ -182,25 +174,51 @@ class ExpenseServiceTest {
         expense.setDueDate(LocalDate.now().plusDays(5));
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.save(any(Expense.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+            .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(
-                expense,
-                userId,
-                cardAccountId,
-                null,
-                null
-        );
+        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
     }
 
     @Test
+    void update_shouldApplyCommandThroughMapperAndSave() {
+        var tagId = UUID.randomUUID();
+        var updates = Expense.builder()
+            .description("Mercado do mês")
+            .build();
+        var command = new ExpenseCommand(updates, cardAccountId, null, List.of(tagId));
+
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        Expense response = expenseService.update(expenseId, command);
+
+        assertEquals(expenseId, response.getId());
+        verify(expenseMapper).applyCardAccount(expense, cardAccountId);
+        verify(expenseMapper).applyTags(expense, List.of(tagId));
+        verify(expenseMapper).applyEditableFields(expense, updates);
+        verify(expenseRepository).save(expense);
+    }
+
+    @Test
+    void update_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> expenseService.update(expenseId, command(expense, cardAccountId, null)));
+        verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
     void getById_shouldReturnExpense_whenIdExists() {
         when(expenseRepository.findById(expenseId))
-                .thenReturn(Optional.of(expense));
+            .thenReturn(Optional.of(expense));
 
         Expense response = expenseService.getById(expenseId);
 
@@ -211,7 +229,7 @@ class ExpenseServiceTest {
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
         when(expenseRepository.findById(expenseId))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> expenseService.getById(expenseId));
     }
@@ -219,9 +237,9 @@ class ExpenseServiceTest {
     @Test
     void getByUser_shouldReturnListOfExpenses() {
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.findByUserId(userId))
-                .thenReturn(List.of(expense));
+            .thenReturn(List.of(expense));
 
         List<Expense> response = expenseService.getByUser(userId);
 
@@ -232,7 +250,7 @@ class ExpenseServiceTest {
     @Test
     void getByUser_shouldThrowResourceNotFoundException_whenUserDoesNotExist() {
         when(userService.getById(userId))
-                .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
 
         assertThrows(ResourceNotFoundException.class, () -> expenseService.getByUser(userId));
         verify(expenseRepository, never()).findByUserId(any());
@@ -241,24 +259,28 @@ class ExpenseServiceTest {
     @Test
     void getWithFilters_shouldReturnFilteredExpenses() {
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         Specification<Expense> anySpec = any();
         when(expenseRepository.findAll(anySpec))
-                .thenReturn(List.of(expense));
+            .thenReturn(List.of(expense));
 
         ExpenseFilter filter =
-                new ExpenseFilter(expense.getDueDate().getMonthValue(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null
-                );
+            new ExpenseFilter(expense.getDueDate().getMonthValue(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            );
         List<Expense> response = expenseService.getWithFilters(userId, filter);
 
         assertNotNull(response);
         assertEquals(1, response.size());
+    }
+
+    private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
+        return new ExpenseCommand(expense, cardAccountId, purchaseDate, null);
     }
 
 }
