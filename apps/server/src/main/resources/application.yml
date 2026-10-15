@@ -27,6 +27,12 @@ spring:
 logging:
   level:
     org.hibernate.session.metrics: DEBUG
+# Definidos explicitamente (mesmo em dev) para o SpringDoc não avisar que os endpoints estão ativos por padrão.
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
 app:
   seeders:
     enabled: true
@@ -57,6 +63,12 @@ app:
 #     properties:
 #       hibernate:
 #         generate_statistics: false
+#
+# springdoc:
+#   api-docs:
+#     enabled: false
+#   swagger-ui:
+#     enabled: false
 #
 # app:
 #   seeders:
