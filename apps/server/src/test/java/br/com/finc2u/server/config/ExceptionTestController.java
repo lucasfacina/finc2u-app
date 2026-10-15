@@ -7,9 +7,13 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.exception.ConstraintViolationException;
+import org.hibernate.exception.ConstraintViolationException.ConstraintKind;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.SQLException;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +36,26 @@ public class ExceptionTestController {
     @GetMapping("/data-integrity")
     public void throwDataIntegrity() {
         throw new DataIntegrityViolationException("Violação de integridade referencial.");
+    }
+
+    // HTTP 409 — violação de unicidade (ex.: e-mail duplicado numa corrida entre duas requisições)
+    @GetMapping("/data-integrity-unique")
+    public void throwDataIntegrityUnique() {
+        throw new DataIntegrityViolationException("could not execute statement",
+            new ConstraintViolationException("duplicate", new SQLException(), ConstraintKind.UNIQUE, "uk_user_email"));
+    }
+
+    // HTTP 409 — a mesma violação, traduzida pelo Spring como DuplicateKeyException
+    @GetMapping("/data-integrity-duplicate-key")
+    public void throwDuplicateKey() {
+        throw new DuplicateKeyException("duplicate key value violates unique constraint uk_user_email");
+    }
+
+    // HTTP 409 — dependente vinculado (chave estrangeira)
+    @GetMapping("/data-integrity-foreign-key")
+    public void throwDataIntegrityForeignKey() {
+        throw new DataIntegrityViolationException("could not execute statement",
+            new ConstraintViolationException("fk", new SQLException(), ConstraintKind.FOREIGN_KEY, "fk_expense_card"));
     }
 
     // HTTP 500 — a mensagem simula um detalhe interno que não pode chegar ao cliente
