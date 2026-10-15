@@ -49,3 +49,7 @@ effective-pom.xml
 ### Node / Nx ###
 node_modules/
 .nx/
+
+### Variáveis de ambiente locais ###
+.env
+.env.*.local
