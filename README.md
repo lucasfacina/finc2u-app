@@ -64,7 +64,7 @@ Os alvos aparecem agrupados no Nx Console (Application, Build, Verification, Hel
 | Build        | `classes`     | Compila o código principal e processa os recursos (`./mvnw compile`)                                                     |
 | Build        | `testClasses` | Compila também o código de teste (`./mvnw test-compile`)                                                                 |
 | Verification | `test`        | Roda a suíte de testes (`./mvnw test`)                                                                                   |
-| Verification | `verify`      | `./mvnw verify`                                                                          |
+| Verification | `verify`      | `./mvnw verify`                                                                                                          |
 | Quality      | `depsUpdates` | Lista atualizações disponíveis do parent, das dependências diretas e das propriedades de versão                          |
 | Quality      | `depsAudit`   | Audita as dependências (diretas e transitivas) na base [OSV](https://osv.dev); sai com código 1 se achar vulnerabilidade |
 | API          | `apiExport`   | Exporta o `/v3/api-docs` para `apps/server/openapi.json` (a aplicação precisa estar rodando)                             |
@@ -195,16 +195,16 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 
 ### Despesas — `/expenses`
 
-| Método | Endpoint                | Descrição                    | Parâmetros                                                                                    |
-|--------|-------------------------|------------------------------|-----------------------------------------------------------------------------------------------|
-| POST   | `/expenses`             | Criar despesa                | `userId` (query), Body: `ExpenseRequest`                                                      |
-| GET    | `/expenses`             | Listar despesas do usuário   | `userId`* (query)                                                                             |
-| GET    | `/expenses/filters`     | Listar despesas com filtros  | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
-| GET    | `/expenses/{id}`        | Buscar despesa por ID        | `id` (path)                                                                                   |
-| GET    | `/expenses/projections` | Projeção de parcelas futuras | `userId`* (query)                                                                             |
-| PUT    | `/expenses/{id}`        | Atualizar despesa            | `id` (path), Body: `ExpenseRequest`                                                           |
-| PATCH  | `/expenses/{id}/status` | Atualizar status da despesa  | `id` (path), `status` (query)                                                                 |
-| DELETE | `/expenses/{id}`        | Deletar despesa              | `id` (path)                                                                                   |
+| Método | Endpoint                | Descrição                         | Parâmetros                                                                                    |
+|--------|-------------------------|-----------------------------------|-----------------------------------------------------------------------------------------------|
+| POST   | `/expenses`             | Criar despesa (parcelas: 1 a 120) | `userId` (query), Body: `ExpenseRequest`                                                      |
+| GET    | `/expenses`             | Listar despesas do usuário        | `userId`* (query)                                                                             |
+| GET    | `/expenses/filters`     | Listar despesas com filtros       | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
+| GET    | `/expenses/{id}`        | Buscar despesa por ID             | `id` (path)                                                                                   |
+| GET    | `/expenses/projections` | Projeção de parcelas futuras      | `userId`* (query)                                                                             |
+| PUT    | `/expenses/{id}`        | Atualizar despesa                 | `id` (path), Body: `ExpenseRequest`                                                           |
+| PATCH  | `/expenses/{id}/status` | Atualizar status da despesa       | `id` (path), `status` (query)                                                                 |
+| DELETE | `/expenses/{id}`        | Deletar despesa                   | `id` (path)                                                                                   |
 
 ### Ganhos Extras — `/extra-incomes`
 
