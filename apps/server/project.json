@@ -45,6 +45,9 @@
       "API": [
         "apiExport"
       ],
+      "Reporting": [
+        "historyExport"
+      ],
       "H2 (dev)": [
         "h2Reset",
         "h2Fresh"
@@ -299,6 +302,16 @@
       },
       "metadata": {
         "description": "Exporta o /v3/api-docs para apps/server/openapi.json (a aplicação precisa estar rodando)"
+      }
+    },
+    "historyExport": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/history-export.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Exporta o histórico de commits (AAAA-MM-DD | mensagem, do mais antigo ao mais recente) para docs/historico_commits.txt"
       }
     },
     "h2Reset": {
