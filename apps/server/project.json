@@ -1,0 +1,53 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "server",
+  "projectType": "application",
+  "metadata": {
+    "targetGroups": {
+      "Server": [
+        "dev",
+        "test",
+        "build",
+        "verify",
+        "clean"
+      ]
+    }
+  },
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw spring-boot:run",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw test",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw package -DskipTests",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "verify": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw verify",
+        "cwd": "{projectRoot}"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw clean",
+        "cwd": "{projectRoot}"
+      }
+    }
+  }
+}
