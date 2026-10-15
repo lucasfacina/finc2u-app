@@ -53,25 +53,46 @@ pnpm exec nx run server:<alvo> -- <args>  # repassa argumentos ao script (use se
 
 ### Servidor
 
-| Alvo           | O que faz                                                                                                                |
-|----------------|--------------------------------------------------------------------------------------------------------------------------|
-| `dev`          | Sobe a aplicação (`spring-boot:run`) com a raiz do repositório como diretório de trabalho                                |
-| `test`         | Roda a suíte de testes (`./mvnw test`)                                                                                   |
-| `build`        | Compila e empacota sem testes (`./mvnw package -DskipTests`)                                                             |
-| `verify`       | `./mvnw verify`                                                                                                          |
-| `clean`        | `./mvnw clean`                                                                                                           |
-| `deps:updates` | Lista atualizações disponíveis do parent, das dependências diretas e das propriedades de versão                          |
-| `deps:audit`   | Audita as dependências (diretas e transitivas) na base [OSV](https://osv.dev); sai com código 1 se achar vulnerabilidade |
-| `api:export`   | Exporta o `/v3/api-docs` para `apps/server/openapi.json` (a aplicação precisa estar rodando)                             |
+Os alvos aparecem agrupados no Nx Console (Application, Build, Verification, Help, Quality, bancos de dados etc.).
+
+| Grupo        | Alvo          | O que faz                                                                                                                |
+|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| Application  | `dev`         | Sobe a aplicação (`spring-boot:run`) com a raiz do repositório como diretório de trabalho                                |
+| Application  | `devTest`     | Sobe a aplicação com o classpath de teste (H2 em memória, sem seeders); usa a porta 8080, então pare o `dev` antes       |
+| Build        | `build`       | Compila e empacota o JAR executável sem rodar os testes (`./mvnw package -DskipTests`)                                   |
+| Build        | `clean`       | `./mvnw clean`                                                                                                           |
+| Build        | `classes`     | Compila o código principal e processa os recursos (`./mvnw compile`)                                                     |
+| Build        | `testClasses` | Compila também o código de teste (`./mvnw test-compile`)                                                                 |
+| Verification | `test`        | Roda a suíte de testes (`./mvnw test`)                                                                                   |
+| Verification | `verify`      | `./mvnw verify`                                                                          |
+| Quality      | `depsUpdates` | Lista atualizações disponíveis do parent, das dependências diretas e das propriedades de versão                          |
+| Quality      | `depsAudit`   | Audita as dependências (diretas e transitivas) na base [OSV](https://osv.dev); sai com código 1 se achar vulnerabilidade |
+| API          | `apiExport`   | Exporta o `/v3/api-docs` para `apps/server/openapi.json` (a aplicação precisa estar rodando)                             |
 
 O `dev` usa a raiz como diretório de trabalho para que o banco H2 fique no mesmo `data/` usado pela IDE.
 
+Passos isolados do build, no grupo **Build Steps**: `compileJava`, `compileTestJava`, `processResources` e
+`processTestResources`. O `compileTestJava` exige o código principal já compilado.
+
+### Diagnóstico, documentação e setup
+
+| Grupo         | Alvo                   | O que faz                                                                                             |
+|---------------|------------------------|-------------------------------------------------------------------------------------------------------|
+| Help          | `dependencies`         | Árvore de dependências (diretas e transitivas); filtre com `-- -Dincludes=grupo:artefato`             |
+| Help          | `dependencyInsight`    | Árvore detalhada: mostra duplicatas omitidas e de onde veio cada versão (ex.: `version managed from`) |
+| Help          | `dependencyManagement` | POM efetivo, com o `dependencyManagement` e os plugins herdados do Spring Boot                        |
+| Help          | `buildEnvironment`     | Plugins do build e as dependências de cada um                                                         |
+| Help          | `javaToolchains`       | Versões de Maven e Java (e do sistema) usadas pelo build                                              |
+| Help          | `properties`           | Propriedades do projeto, inclusive as versões herdadas do BOM do Spring Boot                          |
+| Build Setup   | `wrapper`              | Regenera o Maven Wrapper; para trocar a versão: `-- -Dmaven=3.9.x` (altera `mvnw` e `.mvn/`)          |
+| Documentation | `javadoc`              | Gera o Javadoc em `apps/server/target/reports/apidocs`                                                |
+
 ### Banco H2 (desenvolvimento)
 
-| Alvo          | O que faz                                                                                                 |
-|---------------|-----------------------------------------------------------------------------------------------------------|
-| `db:h2:reset` | Apaga os arquivos `finc2udb*` do H2. Pede confirmação; recusa se a aplicação estiver rodando (porta 8080) |
-| `db:h2:fresh` | Apaga o banco **sem confirmação** e já sobe a aplicação (os seeders repopulam tudo)                       |
+| Alvo      | O que faz                                                                                                 |
+|-----------|-----------------------------------------------------------------------------------------------------------|
+| `h2Reset` | Apaga os arquivos `finc2udb*` do H2. Pede confirmação; recusa se a aplicação estiver rodando (porta 8080) |
+| `h2Fresh` | Apaga o banco **sem confirmação** e já sobe a aplicação (os seeders repopulam tudo)                       |
 
 Opções do script: `-- --dry-run` (só lista o que seria apagado) e `-- --yes` (não pergunta). Fora de um terminal
 interativo a confirmação é obrigatória (`--yes`).
@@ -82,23 +103,23 @@ Prepara o terreno para a Fase 14: a aplicação ainda usa o H2, e o PostgreSQL j
 
 1. `cp .env.example .env` e ajuste os valores (o `.env` é ignorado pelo Git). Troque a senha. Se a porta `5432` já
    estiver em uso (por exemplo, por outro projeto), mude o `DB_PORT`.
-2. `pnpm exec nx run server:db:pg:start`
+2. `pnpm exec nx run server:pgStart`
 
-| Alvo            | O que faz                                                                                                                          |
-|-----------------|------------------------------------------------------------------------------------------------------------------------------------|
-| `db:pg:start`   | Sobe o PostgreSQL 18 (`docker compose up -d`); escuta apenas em `127.0.0.1`                                                        |
-| `db:pg:stop`    | Para o contêiner (os dados ficam no volume)                                                                                        |
-| `db:pg:status`  | Mostra o estado do contêiner                                                                                                       |
-| `db:pg:logs`    | Acompanha os logs (`-f`)                                                                                                           |
-| `db:pg:psql`    | Abre o `psql`; aceita argumentos: `-- -c "select version()"`                                                                       |
-| `db:pg:reset`   | **Apaga o contêiner e o volume de dados** e sobe um banco vazio. Pede confirmação (`-- --yes` para pular)                          |
-| `db:pg:backup`  | Gera `backups/finc2u-AAAAMMDD-HHMMSS.dump` (`pg_dump`, formato custom; a pasta é ignorada pelo Git)                                |
-| `db:pg:restore` | Restaura um backup, **recriando o banco**: `-- <arquivo.dump \| latest> [--yes]`. Antes, gera um `pre-restore-*.dump` de segurança |
-| `db:pg:schema`  | Gera o rascunho da migração `V1__baseline.sql` a partir do schema atual (só estrutura; não sobrescreve sem `--force`)              |
+| Alvo        | O que faz                                                                                                                          |
+|-------------|------------------------------------------------------------------------------------------------------------------------------------|
+| `pgStart`   | Sobe o PostgreSQL 18 (`docker compose up -d`); escuta apenas em `127.0.0.1`                                                        |
+| `pgStop`    | Para o contêiner (os dados ficam no volume)                                                                                        |
+| `pgStatus`  | Mostra o estado do contêiner                                                                                                       |
+| `pgLogs`    | Acompanha os logs (`-f`)                                                                                                           |
+| `pgPsql`    | Abre o `psql`; aceita argumentos: `-- -c "select version()"`                                                                       |
+| `pgReset`   | **Apaga o contêiner e o volume de dados** e sobe um banco vazio. Pede confirmação (`-- --yes` para pular)                          |
+| `pgBackup`  | Gera `backups/finc2u-AAAAMMDD-HHMMSS.dump` (`pg_dump`, formato custom; a pasta é ignorada pelo Git)                                |
+| `pgRestore` | Restaura um backup, **recriando o banco**: `-- <arquivo.dump \| latest> [--yes]`. Antes, gera um `pre-restore-*.dump` de segurança |
+| `pgSchema`  | Gera o rascunho da migração `V1__baseline.sql` a partir do schema atual (só estrutura; não sobrescreve sem `--force`)              |
 
-> Com o Apple `container`, o `healthcheck` e o `restart` do `docker-compose.yml` são ignorados: o `db:pg:status` não
-> mostra "healthy" e o contêiner não sobe sozinho após reiniciar o Mac. Use `db:pg:start` e, para saber se o banco já
-> aceita conexões, `db:pg:psql -- -c "select 1"`.
+> Com o Apple `container`, o `healthcheck` e o `restart` do `docker-compose.yml` são ignorados: o `pgStatus` não
+> mostra "healthy" e o contêiner não sobe sozinho após reiniciar o Mac. Use `pgStart` e, para saber se o banco já
+> aceita conexões, `pgPsql -- -c "select 1"`.
 
 ### Flyway (migrações)
 
@@ -106,11 +127,14 @@ O Flyway roda como CLI em contêiner (mesma versão que o Spring Boot gerencia) 
 migrações de `apps/server/src/main/resources/db/migration`. Ainda não há dependência do Flyway no `pom.xml` — ela
 entra na Fase 14, quando a aplicação passa a migrar sozinha ao subir.
 
-| Alvo                 | O que faz                                                          |
-|----------------------|--------------------------------------------------------------------|
-| `db:flyway:info`     | Mostra o histórico e o estado das migrações                        |
-| `db:flyway:validate` | Confere se as migrações aplicadas batem com os arquivos (checksum) |
-| `db:flyway:migrate`  | Aplica as migrações pendentes                                      |
+| Alvo             | O que faz                                                                                                   |
+|------------------|-------------------------------------------------------------------------------------------------------------|
+| `flywayBaseline` | Marca um banco já existente como baseline (cria o histórico sem aplicar migrações): `-- -baselineVersion=1` |
+| `flywayClean`    | **Apaga todos os objetos dos schemas** (tabelas e dados). Pede confirmação (`-- --yes` para pular)          |
+| `flywayInfo`     | Mostra o histórico e o estado das migrações                                                                 |
+| `flywayMigrate`  | Aplica as migrações pendentes                                                                               |
+| `flywayRepair`   | Repara a tabela de histórico (remove registros de migrações falhas e realinha checksums)                    |
+| `flywayValidate` | Confere se as migrações aplicadas batem com os arquivos (checksum)                                          |
 
 ## Autenticação
 
