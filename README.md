@@ -87,6 +87,12 @@ Passos isolados do build, no grupo **Build Steps**: `compileJava`, `compileTestJ
 | Build Setup   | `wrapper`              | Regenera o Maven Wrapper; para trocar a versão: `-- -Dmaven=3.9.x` (altera `mvnw` e `.mvn/`)          |
 | Documentation | `javadoc`              | Gera o Javadoc em `apps/server/target/reports/apidocs`                                                |
 
+### Relatórios
+
+| Grupo     | Alvo            | O que faz                                                                                                                                                                |
+|-----------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Reporting | `historyExport` | Exporta o histórico de commits (`AAAA-MM-DD \| mensagem`, do mais antigo ao mais recente) para `docs/historico_commits.txt`; destino alterável com `-- --output arquivo` |
+
 ### Banco H2 (desenvolvimento)
 
 | Alvo      | O que faz                                                                                                 |
@@ -135,6 +141,18 @@ entra na Fase 14, quando a aplicação passa a migrar sozinha ao subir.
 | `flywayMigrate`  | Aplica as migrações pendentes                                                                               |
 | `flywayRepair`   | Repara a tabela de histórico (remove registros de migrações falhas e realinha checksums)                    |
 | `flywayValidate` | Confere se as migrações aplicadas batem com os arquivos (checksum)                                          |
+
+## Integração Contínua
+
+O workflow `.github/workflows/ci.yml` roda no GitHub Actions a cada push na `main`, em pull requests e uma vez por
+semana (novas vulnerabilidades surgem mesmo sem mudança no código):
+
+| Job      | O que faz                                                                                                          |
+|----------|--------------------------------------------------------------------------------------------------------------------|
+| `server` | Testes, build e verificações com Java 21 (`./mvnw -B -ntp verify`, em `apps/server`); não roda na execução semanal |
+| `audit`  | Audita as dependências Maven na base OSV (`scripts/deps-audit.sh`); falha se houver vulnerabilidade conhecida      |
+
+Os dois jobs são os mesmos comandos que você roda localmente (`nx run server:verify` e `nx run server:depsAudit`).
 
 ## Autenticação
 
