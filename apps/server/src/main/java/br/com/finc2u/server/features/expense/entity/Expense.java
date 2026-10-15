@@ -46,9 +46,9 @@ public class Expense extends BaseModel {
 
     @ManyToMany
     @JoinTable(
-            name = "tb_expense_tag",
-            joinColumns = @JoinColumn(name = "expense_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
+        name = "tb_expense_tag",
+        joinColumns = @JoinColumn(name = "expense_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
     )
     private List<Tag> tags;
 
@@ -72,8 +72,8 @@ public class Expense extends BaseModel {
         }
 
         LocalDate purchase = purchaseDate != null
-                ? purchaseDate
-                : LocalDate.now();
+            ? purchaseDate
+            : LocalDate.now();
         this.dueDate = cardAccount.calculateInvoiceDueDate(purchase);
     }
 
@@ -84,12 +84,12 @@ public class Expense extends BaseModel {
     public void resolveDefaultPaymentStatus() {
         if (paymentStatus == null) {
             paymentStatus = !dueDate.isAfter(LocalDate.now())
-                    ? PaymentStatus.PAID
-                    : PaymentStatus.PENDING;
+                ? PaymentStatus.PAID
+                : PaymentStatus.PENDING;
         }
     }
 
-    // Valida regras de PARCELED: mínimo de parcelas, parcela inicial padrão e auto-PAID na última.
+    // Valida regras de PARCELED: mínimo de parcelas e parcela inicial padrão. O status não depende da parcela.
     public void applyInstallmentRules() {
         if (expenseType == ExpenseType.PARCELED) {
             if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS) {
@@ -100,11 +100,8 @@ public class Expense extends BaseModel {
             }
             if (currentInstallment > totalInstallment) {
                 throw new BusinessException(
-                        "Parcela atual (" + currentInstallment + ") não pode ser maior que o total (" + totalInstallment + ")."
+                    "Parcela atual (" + currentInstallment + ") não pode ser maior que o total (" + totalInstallment + ")."
                 );
-            }
-            if (currentInstallment.equals(totalInstallment)) {
-                paymentStatus = PaymentStatus.PAID;
             }
         }
     }
