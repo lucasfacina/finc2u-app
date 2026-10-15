@@ -1,0 +1,14 @@
+{
+  "name": "@finc2u/source",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "packageManager": "pnpm@12.9.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {},
+  "devDependencies": {
+    "nx": "23.3.0"
+  }
+}
