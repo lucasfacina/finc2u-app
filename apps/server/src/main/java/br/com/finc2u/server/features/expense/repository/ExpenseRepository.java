@@ -18,22 +18,23 @@ import java.util.UUID;
 public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpecificationExecutor<Expense> {
 
     @NonNull
-    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"tags", "cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     @Override
     List<Expense> findAll(Specification<Expense> spec);
 
     @NonNull
-    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"tags", "cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     Optional<Expense> findById(@NonNull UUID id);
 
-    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"tags", "cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserId(UUID userId);
 
     boolean existsByUserId(UUID userId);
 
+    @EntityGraph(attributePaths = {"cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndDueDateBetween(UUID userId, LocalDate start, LocalDate end);
 
-    @EntityGraph(attributePaths = {"tags"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"tags", "cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByExpenseTypeAndUserId(ExpenseType type, UUID userId);
 
 }
