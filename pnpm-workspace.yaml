@@ -1,0 +1,7 @@
+packages:
+  - 'apps/*'
+allowBuilds:
+  nx: true
+overrides:
+  undici: '^7.29.1'
+  'brace-expansion@>=4 <5.0.12': '>=5.0.12'
