@@ -147,14 +147,9 @@ class ExpenseControllerTest {
 
     @Test
     void update_shouldReturnBadRequest_whenCurrentInstallmentIsNegative() throws Exception {
-        var invalid = new ExpenseRequest(
-            "Mercado", BigDecimal.valueOf(150.0), ExpenseType.PARCELED, LocalDate.now(), null,
-            PaymentStatus.PENDING, -1, 3, cardAccountId, null
-        );
-
         mockMvc.perform(put("/expenses/{id}", expenseId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalid)))
+                .content(objectMapper.writeValueAsString(parceledRequest(-1, 3))))
             .andExpect(status().isBadRequest());
 
         verifyNoInteractions(expenseService);
@@ -330,16 +325,19 @@ class ExpenseControllerTest {
             .andExpect(status().isNoContent());
     }
 
-    private ResultActions performCreateWithInstallments(Integer currentInstallment, Integer totalInstallment) throws Exception {
-        var parceled = new ExpenseRequest(
+    // As parcelas entram por parâmetro: com literais no construtor o IDE avisa que a chamada "sempre falha" na validação.
+    private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
+        return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
             PaymentStatus.PENDING, currentInstallment, totalInstallment, cardAccountId, null
         );
+    }
 
+    private ResultActions performCreateWithInstallments(Integer currentInstallment, Integer totalInstallment) throws Exception {
         return mockMvc.perform(post("/expenses")
             .param("userId", userId.toString())
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(parceled)));
+            .content(objectMapper.writeValueAsString(parceledRequest(currentInstallment, totalInstallment))));
     }
 
 }
