@@ -1,0 +1,26 @@
+name: finc2u
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: finc2u-postgres
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${DB_PORT:-5432}:5432'
+    environment:
+      POSTGRES_DB: ${DB_NAME:-finc2u}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no .env (copie o .env.example)}
+    volumes:
+      # A imagem 18+ guarda os dados em /var/lib/postgresql/18/docker (PGDATA padrão), então o volume
+      # monta em /var/lib/postgresql. Isso também evita o `lost+found` na raiz do volume (ex.: Apple
+      # `container`), que faria o `initdb` recusar um diretório de dados não vazio.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
