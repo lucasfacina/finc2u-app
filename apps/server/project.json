@@ -10,6 +10,10 @@
         "build",
         "verify",
         "clean"
+      ],
+      "Database": [
+        "db:h2:reset",
+        "db:h2:fresh"
       ]
     }
   },
@@ -17,7 +21,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "./mvnw spring-boot:run",
+        "command": "./mvnw spring-boot:run -Dspring-boot.run.workingDirectory=\"$(cd ../.. && pwd)\"",
         "cwd": "{projectRoot}"
       }
     },
@@ -47,6 +51,25 @@
       "options": {
         "command": "./mvnw clean",
         "cwd": "{projectRoot}"
+      }
+    },
+    "db:h2:reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/db-reset.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:h2:fresh": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "./scripts/db-reset.sh --yes",
+          "nx run server:dev"
+        ],
+        "parallel": false,
+        "forwardAllArgs": false,
+        "cwd": "{workspaceRoot}"
       }
     }
   }
