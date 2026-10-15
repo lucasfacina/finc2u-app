@@ -4,31 +4,69 @@
   "projectType": "application",
   "metadata": {
     "targetGroups": {
-      "Server": [
+      "Application": [
         "dev",
-        "test",
-        "build",
-        "verify",
-        "clean",
-        "deps:updates",
-        "deps:audit",
-        "api:export"
+        "devTest"
       ],
-      "Database": [
-        "db:h2:reset",
-        "db:h2:fresh",
-        "db:pg:start",
-        "db:pg:stop",
-        "db:pg:status",
-        "db:pg:logs",
-        "db:pg:psql",
-        "db:pg:reset",
-        "db:pg:backup",
-        "db:pg:restore",
-        "db:pg:schema",
-        "db:flyway:info",
-        "db:flyway:validate",
-        "db:flyway:migrate"
+      "Build": [
+        "build",
+        "clean",
+        "classes",
+        "testClasses"
+      ],
+      "Build Steps": [
+        "compileJava",
+        "compileTestJava",
+        "processResources",
+        "processTestResources"
+      ],
+      "Verification": [
+        "test",
+        "verify"
+      ],
+      "Help": [
+        "dependencies",
+        "dependencyInsight",
+        "dependencyManagement",
+        "buildEnvironment",
+        "javaToolchains",
+        "properties"
+      ],
+      "Build Setup": [
+        "wrapper"
+      ],
+      "Documentation": [
+        "javadoc"
+      ],
+      "Quality": [
+        "depsUpdates",
+        "depsAudit"
+      ],
+      "API": [
+        "apiExport"
+      ],
+      "H2 (dev)": [
+        "h2Reset",
+        "h2Fresh"
+      ],
+      "PostgreSQL (prod)": [
+        "pgStart",
+        "pgStop",
+        "pgStatus",
+        "pgLogs",
+        "pgPsql",
+        "pgReset",
+        "pgBackup",
+        "pgRestore",
+        "pgSchema"
+      ],
+      "Flyway": [
+        "flywayBaseline",
+        "flywayClean",
+        "flywayInfo",
+        "flywayMigrate",
+        "flywayRepair",
+        "flywayValidate"
       ]
     }
   },
@@ -38,13 +76,19 @@
       "options": {
         "command": "./mvnw spring-boot:run -Dspring-boot.run.workingDirectory=\"$(cd ../.. && pwd)\"",
         "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Sobe a aplicação (spring-boot:run) com a raiz do repositório como diretório de trabalho"
       }
     },
-    "test": {
+    "devTest": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "./mvnw test",
+        "command": "./mvnw spring-boot:test-run",
         "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Sobe a aplicação com o classpath de teste (H2 em memória, sem seeders); usa a porta 8080, então pare o dev antes"
       }
     },
     "build": {
@@ -52,13 +96,9 @@
       "options": {
         "command": "./mvnw package -DskipTests",
         "cwd": "{projectRoot}"
-      }
-    },
-    "verify": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "./mvnw verify",
-        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Compila e empacota sem rodar os testes (mvnw package -DskipTests)"
       }
     },
     "clean": {
@@ -66,16 +106,212 @@
       "options": {
         "command": "./mvnw clean",
         "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Apaga a pasta target (mvnw clean)"
       }
     },
-    "db:h2:reset": {
+    "classes": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw compile",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Compila o código principal e processa os recursos (mvnw compile)"
+      }
+    },
+    "testClasses": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw test-compile",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Compila o código principal e o de teste (mvnw test-compile)"
+      }
+    },
+    "compileJava": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw compiler:compile",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Só compila o Java principal (compiler:compile), sem processar recursos"
+      }
+    },
+    "compileTestJava": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw compiler:testCompile",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Só compila o Java de teste (compiler:testCompile); exige o código principal já compilado"
+      }
+    },
+    "processResources": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw resources:resources",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Só copia os recursos principais para target/classes (resources:resources)"
+      }
+    },
+    "processTestResources": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw resources:testResources",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Só copia os recursos de teste para target/test-classes (resources:testResources)"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw test",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Roda a suíte de testes (mvnw test)"
+      }
+    },
+    "verify": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw verify",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Roda testes e verificações do ciclo Maven (mvnw verify)"
+      }
+    },
+    "dependencies": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw dependency:tree",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Mostra a árvore de dependências (diretas e transitivas); filtre com -- -Dincludes=grupo:artefato"
+      }
+    },
+    "dependencyInsight": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw dependency:tree -Dverbose",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Árvore detalhada: mostra duplicatas omitidas e de onde veio cada versão (ex.: version managed from)"
+      }
+    },
+    "dependencyManagement": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw help:effective-pom",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Mostra o POM efetivo, com o dependencyManagement e os plugins herdados do Spring Boot"
+      }
+    },
+    "buildEnvironment": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw dependency:resolve-plugins",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Lista os plugins do build e as dependências de cada um"
+      }
+    },
+    "javaToolchains": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw -v",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Mostra as versões de Maven e Java (e o sistema) usadas pelo build"
+      }
+    },
+    "properties": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw -q help:evaluate -Dexpression=project.properties -DforceStdout",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Lista as propriedades do projeto, inclusive as versões herdadas do BOM do Spring Boot"
+      }
+    },
+    "wrapper": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw wrapper:wrapper",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Regenera os arquivos do Maven Wrapper; para trocar a versão: -- -Dmaven=3.9.x (altera mvnw e .mvn/)"
+      }
+    },
+    "javadoc": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./mvnw javadoc:javadoc",
+        "cwd": "{projectRoot}"
+      },
+      "metadata": {
+        "description": "Gera o Javadoc em apps/server/target/reports/apidocs"
+      }
+    },
+    "depsUpdates": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/deps-updates.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Lista atualizações de parent, dependências diretas e propriedades de versão (não altera o pom.xml)"
+      }
+    },
+    "depsAudit": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/deps-audit.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Audita as dependências Maven na base OSV; sai com código 1 se houver vulnerabilidade"
+      }
+    },
+    "apiExport": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/api-export.sh",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Exporta o /v3/api-docs para apps/server/openapi.json (a aplicação precisa estar rodando)"
+      }
+    },
+    "h2Reset": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/db-reset.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Apaga o banco H2 de desenvolvimento (data/finc2udb*). Confirma antes e recusa se a aplicação estiver rodando"
       }
     },
-    "db:h2:fresh": {
+    "h2Fresh": {
       "executor": "nx:run-commands",
       "options": {
         "commands": [
@@ -85,111 +321,159 @@
         "parallel": false,
         "forwardAllArgs": false,
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Apaga o banco H2 SEM confirmar e sobe a aplicação para os seeders repopularem"
       }
     },
-    "db:pg:start": {
+    "pgStart": {
       "executor": "nx:run-commands",
       "options": {
         "command": "docker compose up -d",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Sobe o PostgreSQL 18 local (docker compose up -d), só em 127.0.0.1"
       }
     },
-    "db:pg:stop": {
+    "pgStop": {
       "executor": "nx:run-commands",
       "options": {
         "command": "docker compose stop postgres",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Para o contêiner do PostgreSQL (os dados ficam no volume)"
       }
     },
-    "db:pg:status": {
+    "pgStatus": {
       "executor": "nx:run-commands",
       "options": {
         "command": "docker compose ps",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Mostra o estado do contêiner do PostgreSQL"
       }
     },
-    "db:pg:logs": {
+    "pgLogs": {
       "executor": "nx:run-commands",
       "options": {
         "command": "docker compose logs -f postgres",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Acompanha os logs do PostgreSQL (-f)"
       }
     },
-    "db:pg:psql": {
+    "pgPsql": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-psql.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Abre o psql no banco local; argumentos após -- (ex.: -- -c \"select 1\")"
       }
     },
-    "db:pg:reset": {
+    "pgReset": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-reset.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Apaga o contêiner E o volume de dados do PostgreSQL e sobe um banco vazio (pede confirmação)"
       }
     },
-    "db:pg:backup": {
+    "pgBackup": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-backup.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Gera um backup (pg_dump) em backups/finc2u-AAAAMMDD-HHMMSS.dump"
       }
     },
-    "db:pg:restore": {
+    "pgRestore": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-restore.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Restaura um backup recriando o banco; gera um pre-restore antes. Uso: -- <arquivo.dump | latest>"
       }
     },
-    "db:pg:schema": {
+    "pgSchema": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/pg-schema.sh",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Gera o rascunho da migração V1__baseline.sql a partir do schema atual (só estrutura)"
       }
     },
-    "db:flyway:info": {
+    "flywayBaseline": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/flyway.sh baseline",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Marca um banco já existente como baseline: cria o histórico do Flyway sem aplicar migrações (ex.: -- -baselineVersion=1)"
+      }
+    },
+    "flywayClean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/flyway.sh clean",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Apaga TODOS os objetos dos schemas (tabelas e dados). Pede confirmação; -- --yes para pular"
+      }
+    },
+    "flywayInfo": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/flyway.sh info",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Mostra o histórico e o estado das migrações do Flyway"
       }
     },
-    "db:flyway:validate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "./scripts/flyway.sh validate",
-        "cwd": "{workspaceRoot}"
-      }
-    },
-    "db:flyway:migrate": {
+    "flywayMigrate": {
       "executor": "nx:run-commands",
       "options": {
         "command": "./scripts/flyway.sh migrate",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Aplica as migrações pendentes do Flyway"
       }
     },
-    "deps:updates": {
+    "flywayRepair": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "./scripts/deps-updates.sh",
+        "command": "./scripts/flyway.sh repair",
         "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Repara a tabela de histórico do Flyway: remove registros de migrações falhas e realinha checksums"
       }
     },
-    "deps:audit": {
+    "flywayValidate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "./scripts/deps-audit.sh",
+        "command": "./scripts/flyway.sh validate",
         "cwd": "{workspaceRoot}"
-      }
-    },
-    "api:export": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "./scripts/api-export.sh",
-        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "Confere se as migrações aplicadas batem com os arquivos (checksum)"
       }
     }
   }
