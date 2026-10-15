@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.expense.controller;
 
+import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.dto.ExpenseRequest;
@@ -18,6 +19,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
@@ -99,6 +101,63 @@ class ExpenseControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(expenseId.toString()))
             .andExpect(jsonPath("$.description").value("Mercado"));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCurrentInstallmentIsZero() throws Exception {
+        performCreateWithInstallments(0, 3)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Erro de validação."));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCurrentInstallmentIsNegative() throws Exception {
+        performCreateWithInstallments(-100000, 3)
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenTotalInstallmentIsZero() throws Exception {
+        performCreateWithInstallments(1, 0)
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenTotalInstallmentExceedsMaximum() throws Exception {
+        performCreateWithInstallments(1, BusinessConstants.MAX_INSTALLMENTS + 1)
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnCreated_whenInstallmentsAreWithinLimits() throws Exception {
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
+
+        performCreateWithInstallments(1, BusinessConstants.MAX_INSTALLMENTS)
+            .andExpect(status().isCreated());
+    }
+
+    @Test
+    void update_shouldReturnBadRequest_whenCurrentInstallmentIsNegative() throws Exception {
+        var invalid = new ExpenseRequest(
+            "Mercado", BigDecimal.valueOf(150.0), ExpenseType.PARCELED, LocalDate.now(), null,
+            PaymentStatus.PENDING, -1, 3, cardAccountId, null
+        );
+
+        mockMvc.perform(put("/expenses/{id}", expenseId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalid)))
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
     }
 
     @Test
@@ -269,6 +328,18 @@ class ExpenseControllerTest {
 
         mockMvc.perform(delete("/expenses/{id}", expenseId))
             .andExpect(status().isNoContent());
+    }
+
+    private ResultActions performCreateWithInstallments(Integer currentInstallment, Integer totalInstallment) throws Exception {
+        var parceled = new ExpenseRequest(
+            "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
+            PaymentStatus.PENDING, currentInstallment, totalInstallment, cardAccountId, null
+        );
+
+        return mockMvc.perform(post("/expenses")
+            .param("userId", userId.toString())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(parceled)));
     }
 
 }

@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.expense.entity;
 
+import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
@@ -182,6 +183,50 @@ public class ExpenseTest {
             .build();
 
         assertThrows(BusinessException.class, expense::applyInstallmentRules);
+    }
+
+    @Test
+    void applyInstallmentRules_shouldThrow_whenCurrentInstallmentIsZero() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(0)
+            .totalInstallment(3)
+            .build();
+
+        assertThrows(BusinessException.class, expense::applyInstallmentRules);
+    }
+
+    @Test
+    void applyInstallmentRules_shouldThrow_whenCurrentInstallmentIsNegative() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(-5)
+            .totalInstallment(3)
+            .build();
+
+        assertThrows(BusinessException.class, expense::applyInstallmentRules);
+    }
+
+    @Test
+    void applyInstallmentRules_shouldThrow_whenTotalInstallmentExceedsMaximum() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(BusinessConstants.MAX_INSTALLMENTS + 1)
+            .build();
+
+        assertThrows(BusinessException.class, expense::applyInstallmentRules);
+    }
+
+    @Test
+    void applyInstallmentRules_shouldAccept_whenTotalInstallmentIsTheMaximum() {
+        Expense expense = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(BusinessConstants.MAX_INSTALLMENTS)
+            .build();
+
+        expense.applyInstallmentRules();
+
+        assertEquals(1, expense.getCurrentInstallment());
     }
 
     @Test
