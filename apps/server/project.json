@@ -13,7 +13,13 @@
       ],
       "Database": [
         "db:h2:reset",
-        "db:h2:fresh"
+        "db:h2:fresh",
+        "db:pg:start",
+        "db:pg:stop",
+        "db:pg:status",
+        "db:pg:logs",
+        "db:pg:psql",
+        "db:pg:reset"
       ]
     }
   },
@@ -69,6 +75,48 @@
         ],
         "parallel": false,
         "forwardAllArgs": false,
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose up -d",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:stop": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose stop postgres",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:status": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose ps",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:logs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "docker compose logs -f postgres",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:psql": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/pg-psql.sh",
+        "cwd": "{workspaceRoot}"
+      }
+    },
+    "db:pg:reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "./scripts/pg-reset.sh",
         "cwd": "{workspaceRoot}"
       }
     }
