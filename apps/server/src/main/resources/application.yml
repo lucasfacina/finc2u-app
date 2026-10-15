@@ -21,6 +21,12 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        # Estatísticas do Hibernate (só em dev): com o logger abaixo, cada sessão fechada loga o total de
+        # statements JDBC da requisição — o jeito mais rápido de enxergar um N+1 (skill n1-problem-spring).
+        generate_statistics: true
+logging:
+  level:
+    org.hibernate.session.metrics: DEBUG
 app:
   seeders:
     enabled: true
@@ -48,6 +54,9 @@ app:
 #     hibernate:
 #       ddl-auto: validate
 #     show-sql: false
+#     properties:
+#       hibernate:
+#         generate_statistics: false
 #
 # app:
 #   seeders:
