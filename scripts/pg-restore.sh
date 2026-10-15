@@ -35,7 +35,7 @@ fi
 [[ -f "$source_file" ]] || { echo "Arquivo não encontrado: $source_file" >&2; exit 1; }
 
 if ! docker compose ps 2>/dev/null | grep -q "running"; then
-  echo "O PostgreSQL local não está rodando. Suba com: nx run server:db:pg:start" >&2
+  echo "O PostgreSQL local não está rodando. Suba com: nx run server:pgStart" >&2
   exit 1
 fi
 

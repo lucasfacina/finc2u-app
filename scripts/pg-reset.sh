@@ -31,4 +31,4 @@ fi
 
 docker compose down -v
 docker compose up -d
-echo "PostgreSQL recriado (vazio). Acompanhe com: nx run server:db:pg:logs"
+echo "PostgreSQL recriado (vazio). Acompanhe com: nx run server:pgLogs"
