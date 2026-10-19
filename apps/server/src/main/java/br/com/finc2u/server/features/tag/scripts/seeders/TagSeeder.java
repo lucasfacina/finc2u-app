@@ -22,26 +22,28 @@ public class TagSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        List<Tag> seedTags = createSeedTags();
-        List<String> names = seedTags.stream().map(Tag::getName).toList();
+        var user = context.getUser();
+        var names = seedTagNames();
 
-        List<Tag> existingTags = tagRepository.findByNameIn(names);
-        if (!existingTags.isEmpty()) {
-            existingTags.forEach(context::putTag);
-            return;
-        }
+        // Encontrar ou criar por item: tag ausente é criada mesmo que as demais já existam (context.tag nunca devolve null).
+        var existingTags = tagRepository.findByUserIdAndNameIn(user.getId(), names);
+        existingTags.forEach(context::putTag);
 
-        tagRepository.saveAll(seedTags).forEach(context::putTag);
+        var existingNames = existingTags.stream().map(Tag::getName).toList();
+        var missingTags = names.stream()
+            .filter(name -> !existingNames.contains(name))
+            .map(name -> {
+                var tag = Tag.of(name);
+                tag.setUser(user);
+                return tag;
+            })
+            .toList();
+
+        tagRepository.saveAll(missingTags).forEach(context::putTag);
     }
 
-    private List<Tag> createSeedTags() {
-        return List.of(
-                Tag.of("Alimentação"),
-                Tag.of("Transporte"),
-                Tag.of("Assinaturas"),
-                Tag.of("Saúde"),
-                Tag.of("Lazer")
-        );
+    private List<String> seedTagNames() {
+        return List.of("Essencial", "Supérfluo", "Reembolsável", "Dividido", "Recorrente");
     }
 
 }

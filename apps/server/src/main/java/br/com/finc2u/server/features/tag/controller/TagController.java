@@ -21,14 +21,14 @@ public class TagController {
     private final TagService tagService;
 
     @PostMapping
-    public ResponseEntity<TagResponse> create(@Valid @RequestBody TagRequest tagRequest) {
-        Tag savedTag = tagService.create(tagRequest.toEntity());
+    public ResponseEntity<TagResponse> create(@Valid @RequestBody TagRequest tagRequest, @RequestParam UUID userId) {
+        Tag savedTag = tagService.create(tagRequest.toEntity(), userId);
         return new ResponseEntity<>(TagResponse.from(savedTag), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<TagResponse>> getAll() {
-        List<TagResponse> tagResponse = tagService.getAll()
+    public ResponseEntity<List<TagResponse>> getByUserId(@RequestParam UUID userId) {
+        List<TagResponse> tagResponse = tagService.getByUser(userId)
                 .stream()
                 .map(TagResponse::from)
                 .toList();

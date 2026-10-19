@@ -25,14 +25,15 @@ public class ExpenseMapper {
     // Resolve e vincula o cartão; id nulo desvincula (despesa avulsa).
     public void applyCardAccount(Expense expense, UUID cardAccountId) {
         expense.setCardAccount(cardAccountId == null
-                ? null
-                : cardAccountService.getById(cardAccountId));
+            ? null
+            : cardAccountService.getById(cardAccountId)
+        );
     }
 
-    // Resolve e vincula as tags quando a lista é informada (lista vazia limpa as tags).
+    // Resolve e vincula as tags do dono da despesa quando a lista é informada (lista vazia limpa as tags).
     public void applyTags(Expense expense, List<UUID> tagIds) {
         if (tagIds != null) {
-            expense.setTags(tagService.getByIds(tagIds));
+            expense.setTags(tagService.getByIds(tagIds, expense.getUser().getId()));
         }
     }
 
