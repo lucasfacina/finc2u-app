@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.tag.service.TagService;
+import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,13 +39,13 @@ public class ExpenseMapperTest {
     void applyCardAccount_shouldResolveAndAttach_whenIdPresent() {
         UUID cardId = UUID.randomUUID();
         CardAccount card = CardAccount.builder()
-                .build();
+            .build();
         card.setId(cardId);
         when(cardAccountService.getById(cardId))
-                .thenReturn(card);
+            .thenReturn(card);
 
         Expense expense = Expense.builder()
-                .build();
+            .build();
         expenseMapper.applyCardAccount(expense, cardId);
 
         assertSame(card, expense.getCardAccount());
@@ -53,8 +54,8 @@ public class ExpenseMapperTest {
     @Test
     void applyCardAccount_shouldUnlink_whenIdNull() {
         Expense expense = Expense.builder()
-                .cardAccount(CardAccount.builder().build())
-                .build();
+            .cardAccount(CardAccount.builder().build())
+            .build();
 
         expenseMapper.applyCardAccount(expense, null);
 
@@ -63,15 +64,19 @@ public class ExpenseMapperTest {
     }
 
     @Test
-    void applyTags_shouldResolveAndAttach_whenListPresent() {
+    void applyTags_shouldResolveTagsOfTheExpenseOwnerAndAttach_whenListPresent() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
         List<UUID> ids = List.of(UUID.randomUUID());
         List<Tag> tags = List.of(Tag.builder()
-                .build());
-        when(tagService.getByIds(ids))
-                .thenReturn(tags);
+            .build());
+        when(tagService.getByIds(ids, owner.getId()))
+            .thenReturn(tags);
 
         Expense expense = Expense.builder()
-                .build();
+            .user(owner)
+            .build();
         expenseMapper.applyTags(expense, ids);
 
         assertEquals(tags, expense.getTags());
@@ -80,7 +85,7 @@ public class ExpenseMapperTest {
     @Test
     void applyTags_shouldDoNothing_whenListNull() {
         Expense expense = Expense.builder()
-                .build();
+            .build();
 
         expenseMapper.applyTags(expense, null);
 
@@ -91,24 +96,24 @@ public class ExpenseMapperTest {
     @Test
     void applyEditableFields_shouldCopyScalarFields_butNotAssociations() {
         CardAccount card = CardAccount.builder().
-                build();
+            build();
 
         Expense target = Expense.builder()
-                .description("antigo")
-                .value(BigDecimal.valueOf(10))
-                .cardAccount(card)
-                .build();
+            .description("antigo")
+            .value(BigDecimal.valueOf(10))
+            .cardAccount(card)
+            .build();
 
         Expense source = Expense.builder()
-                .description("novo")
-                .value(BigDecimal.valueOf(99))
-                .dueDate(LocalDate.of(2026, 8, 1))
-                .expenseType(ExpenseType.PARCELED)
-                .paymentStatus(PaymentStatus.PAID)
-                .currentInstallment(2)
-                .totalInstallment(5)
-                .cardAccount(CardAccount.builder().build())
-                .build();
+            .description("novo")
+            .value(BigDecimal.valueOf(99))
+            .dueDate(LocalDate.of(2026, 8, 1))
+            .expenseType(ExpenseType.PARCELED)
+            .paymentStatus(PaymentStatus.PAID)
+            .currentInstallment(2)
+            .totalInstallment(5)
+            .cardAccount(CardAccount.builder().build())
+            .build();
 
         expenseMapper.applyEditableFields(target, source);
 

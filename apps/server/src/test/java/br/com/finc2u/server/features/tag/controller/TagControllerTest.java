@@ -38,28 +38,31 @@ class TagControllerTest {
 
     private Tag tag;
     private UUID tagId;
+    private UUID userId;
 
     @BeforeEach
     void setUp() {
         tagId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         tag = Tag.builder()
-                .name("Alimentação")
-                .build();
+            .name("Alimentação")
+            .build();
         tag.setId(tagId);
     }
 
     @Test
     void create_shouldReturnCreated() throws Exception {
         TagRequest request = new TagRequest("Alimentação");
-        when(tagService.create(any(Tag.class)))
-                .thenReturn(tag);
+        when(tagService.create(any(Tag.class), eq(userId)))
+            .thenReturn(tag);
 
         mockMvc.perform(post("/tags")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(tagId.toString()))
-                .andExpect(jsonPath("$.name").value("Alimentação"));
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.id").value(tagId.toString()))
+            .andExpect(jsonPath("$.name").value("Alimentação"));
     }
 
     @Test
@@ -67,43 +70,63 @@ class TagControllerTest {
         TagRequest invalidRequest = new TagRequest("");
 
         mockMvc.perform(post("/tags")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
-    void getAll_shouldReturnOk() throws Exception {
-        when(tagService.getAll())
-                .thenReturn(List.of(tag));
+    void create_shouldReturnBadRequest_whenUserIdIsMissing() throws Exception {
+        TagRequest request = new TagRequest("Alimentação");
 
+        mockMvc.perform(post("/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void getByUserId_shouldReturnOk() throws Exception {
+        when(tagService.getByUser(userId))
+            .thenReturn(List.of(tag));
+
+        mockMvc.perform(get("/tags")
+                .param("userId", userId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].name").value("Alimentação"));
+    }
+
+    @Test
+    void getByUserId_shouldReturnBadRequest_whenUserIdIsMissing() throws Exception {
         mockMvc.perform(get("/tags"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Alimentação"));
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test
     void getById_shouldReturnOk() throws Exception {
         when(tagService.getById(tagId))
-                .thenReturn(tag);
+            .thenReturn(tag);
 
         mockMvc.perform(get("/tags/{id}", tagId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(tagId.toString()));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(tagId.toString()));
     }
 
     @Test
     void update_shouldReturnOk() throws Exception {
         TagRequest request = new TagRequest("Alimentação");
         when(tagService.update(eq(tagId), any(Tag.class)))
-                .thenReturn(tag);
+            .thenReturn(tag);
 
         mockMvc.perform(put("/tags/{id}", tagId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Alimentação"));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Alimentação"));
     }
 
     @Test
@@ -111,7 +134,7 @@ class TagControllerTest {
         doNothing().when(tagService).delete(tagId);
 
         mockMvc.perform(delete("/tags/{id}", tagId))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
 }

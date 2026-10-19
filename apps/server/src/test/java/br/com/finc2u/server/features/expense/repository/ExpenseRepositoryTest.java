@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição, cartão e tags). O cenário tem
@@ -67,8 +68,8 @@ class ExpenseRepositoryTest {
         persistCardsWithExpenses(CARDS, 1);
 
         statistics = entityManager.getEntityManagerFactory()
-                .unwrap(SessionFactory.class)
-                .getStatistics();
+            .unwrap(SessionFactory.class)
+            .getStatistics();
         resetPersistenceContext();
     }
 
@@ -83,7 +84,15 @@ class ExpenseRepositoryTest {
 
     @Test
     void findAllBySpecification_shouldLoadCardAndTagsInTheMainQuery() {
-        var filter = new ExpenseFilter(null, null, null, null, null, null, null);
+        var filter = new ExpenseFilter(
+            null, // month
+            null, // year
+            null, // status
+            null, // type
+            null, // cardAccountId
+            null, // minPrice
+            null // maxPrice
+        );
 
         var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter));
 
@@ -104,10 +113,10 @@ class ExpenseRepositoryTest {
     @Test
     void findByUserIdAndDueDateBetween_shouldLoadCardInTheMainQuery() {
         var expenses = expenseRepository.findByUserIdAndDueDateBetween(
-                user.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
+            user.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(expense -> expense.getCardAccount().getCardName());
+        expenses.forEach(expense -> assertNotNull(expense.getCardAccount().getCardName()));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
@@ -129,7 +138,7 @@ class ExpenseRepositoryTest {
         expenseRepository.findByUserId(user.getId()).forEach(ExpenseResponse::from);
 
         assertEquals(statementsWithFewCards, statistics.getPrepareStatementCount(),
-                "Mais cartões não podem gerar mais statements (N+1)");
+            "Mais cartões não podem gerar mais statements (N+1)");
     }
 
     private void resetPersistenceContext() {
@@ -150,40 +159,43 @@ class ExpenseRepositoryTest {
 
     private User persistUser() {
         var newUser = User.builder()
-                .name("Ana")
-                .email("ana@email.com")
-                .build();
+            .name("Ana")
+            .email("ana@email.com")
+            .build();
         newUser.setUserConfiguration(UserConfiguration.builder()
-                .baseSalary(BigDecimal.valueOf(3000))
-                .savingsBalance(BigDecimal.valueOf(100))
-                .build());
+            .baseSalary(BigDecimal.valueOf(3000))
+            .savingsBalance(BigDecimal.valueOf(100))
+            .build());
         return testEntityManager.persist(newUser);
     }
 
     private Tag persistTag(String name) {
-        return testEntityManager.persist(Tag.of(name));
+        return testEntityManager.persist(Tag.builder()
+            .name(name)
+            .user(user)
+            .build());
     }
 
     private CardAccount persistCard(String name) {
         return testEntityManager.persist(CardAccount.builder()
-                .cardName(name)
-                .closingDate(10)
-                .dueDate(17)
-                .user(user)
-                .build());
+            .cardName(name)
+            .closingDate(10)
+            .dueDate(17)
+            .user(user)
+            .build());
     }
 
     private Expense persistExpense(String description, CardAccount cardAccount) {
         return testEntityManager.persist(Expense.builder()
-                .description(description)
-                .value(BigDecimal.valueOf(50))
-                .dueDate(LocalDate.of(2026, 6, 17))
-                .expenseType(ExpenseType.VARIABLE)
-                .paymentStatus(PaymentStatus.PENDING)
-                .user(user)
-                .cardAccount(cardAccount)
-                .tags(new ArrayList<>(tags.subList(0, 2)))
-                .build());
+            .description(description)
+            .value(BigDecimal.valueOf(50))
+            .dueDate(LocalDate.of(2026, 6, 17))
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(PaymentStatus.PENDING)
+            .user(user)
+            .cardAccount(cardAccount)
+            .tags(new ArrayList<>(tags.subList(0, 2)))
+            .build());
     }
 
 }
