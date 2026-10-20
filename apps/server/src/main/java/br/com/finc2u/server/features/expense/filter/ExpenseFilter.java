@@ -20,6 +20,7 @@ public record ExpenseFilter(
     PaymentStatus status,
     ExpenseType type,
     UUID cardAccountId,
+    UUID categoryId,
     BigDecimal minPrice,
     BigDecimal maxPrice
 ) {
