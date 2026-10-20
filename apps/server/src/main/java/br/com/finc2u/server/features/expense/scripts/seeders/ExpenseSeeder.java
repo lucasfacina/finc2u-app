@@ -24,106 +24,106 @@ public class ExpenseSeeder implements Seeder {
 
     @Override
     public int order() {
-        return 5;
+        return 6;
     }
 
     @Override
     public void seed(SeedContext context) {
         List<Expense> expenses = List.of(
-                // FIXED / PAID — em cartão, assinaturas
-                Expense.builder()
-                        .description("Netflix")
-                        .value(new BigDecimal("20.90"))
-                        .dueDate(NUBANK_DUE)
-                        .expenseType(ExpenseType.FIXED)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Nubank"))
-                        .tags(List.of(context.tag("Recorrente")))
-                        .build(),
-                Expense.builder()
-                        .description("iCloud")
-                        .value(new BigDecimal("19.90"))
-                        .dueDate(NUBANK_DUE)
-                        .expenseType(ExpenseType.FIXED)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Nubank"))
-                        .tags(List.of(context.tag("Recorrente")))
-                        .build(),
+            // FIXED / PAID — em cartão, assinaturas
+            Expense.builder()
+                .description("Netflix")
+                .value(new BigDecimal("20.90"))
+                .dueDate(NUBANK_DUE)
+                .expenseType(ExpenseType.FIXED)
+                .paymentStatus(PaymentStatus.PAID)
+                .user(context.getUser())
+                .cardAccount(context.card("Nubank"))
+                .tags(List.of(context.tag("Recorrente")))
+                .build(),
+            Expense.builder()
+                .description("iCloud")
+                .value(new BigDecimal("19.90"))
+                .dueDate(NUBANK_DUE)
+                .expenseType(ExpenseType.FIXED)
+                .paymentStatus(PaymentStatus.PAID)
+                .user(context.getUser())
+                .cardAccount(context.card("Nubank"))
+                .tags(List.of(context.tag("Recorrente")))
+                .build(),
 
-                // VARIABLE / PAID — em cartão, alimentação
-                Expense.builder()
-                        .description("Mercado")
-                        .value(new BigDecimal("350.00"))
-                        .dueDate(NUBANK_DUE)
-                        .expenseType(ExpenseType.VARIABLE)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Nubank"))
-                        .tags(List.of(context.tag("Essencial")))
-                        .build(),
+            // VARIABLE / PAID — em cartão, alimentação
+            Expense.builder()
+                .description("Mercado")
+                .value(new BigDecimal("350.00"))
+                .dueDate(NUBANK_DUE)
+                .expenseType(ExpenseType.VARIABLE)
+                .paymentStatus(PaymentStatus.PAID)
+                .user(context.getUser())
+                .cardAccount(context.card("Nubank"))
+                .tags(List.of(context.tag("Essencial")))
+                .build(),
 
-                // PARCELED / PAID — parcela final (5/5), lazer
-                Expense.builder()
-                        .description("Compra parcelada")
-                        .value(new BigDecimal("100.76"))
-                        .dueDate(NUBANK_DUE)
-                        .expenseType(ExpenseType.PARCELED)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .currentInstallment(5)
-                        .totalInstallment(5)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Nubank"))
-                        .tags(List.of(context.tag("Supérfluo")))
-                        .build(),
+            // PARCELED / PAID — parcela final (5/5), lazer
+            Expense.builder()
+                .description("Compra parcelada")
+                .value(new BigDecimal("100.76"))
+                .dueDate(NUBANK_DUE)
+                .expenseType(ExpenseType.PARCELED)
+                .paymentStatus(PaymentStatus.PAID)
+                .currentInstallment(5)
+                .totalInstallment(5)
+                .user(context.getUser())
+                .cardAccount(context.card("Nubank"))
+                .tags(List.of(context.tag("Supérfluo")))
+                .build(),
 
-                // PARCELED / PENDING — parcela em curso (4/10), outro cartão, lazer
-                Expense.builder()
-                        .description("Eletrônico")
-                        .value(new BigDecimal("139.00"))
-                        .dueDate(MELI_DUE)
-                        .expenseType(ExpenseType.PARCELED)
-                        .paymentStatus(PaymentStatus.PENDING)
-                        .currentInstallment(4).totalInstallment(10)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Mercado Pago"))
-                        .tags(List.of(context.tag("Supérfluo")))
-                        .build(),
+            // PARCELED / PENDING — parcela em curso (4/10), outro cartão, lazer
+            Expense.builder()
+                .description("Eletrônico")
+                .value(new BigDecimal("139.00"))
+                .dueDate(MELI_DUE)
+                .expenseType(ExpenseType.PARCELED)
+                .paymentStatus(PaymentStatus.PENDING)
+                .currentInstallment(4).totalInstallment(10)
+                .user(context.getUser())
+                .cardAccount(context.card("Mercado Pago"))
+                .tags(List.of(context.tag("Supérfluo")))
+                .build(),
 
-                // VARIABLE / PAID — saúde
-                Expense.builder()
-                        .description("Farmácia")
-                        .value(new BigDecimal("45.00"))
-                        .dueDate(MELI_DUE)
-                        .expenseType(ExpenseType.VARIABLE)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .user(context.getUser())
-                        .cardAccount(context.card("Mercado Pago"))
-                        .tags(List.of(context.tag("Essencial")))
-                        .build(),
+            // VARIABLE / PAID — saúde
+            Expense.builder()
+                .description("Farmácia")
+                .value(new BigDecimal("45.00"))
+                .dueDate(MELI_DUE)
+                .expenseType(ExpenseType.VARIABLE)
+                .paymentStatus(PaymentStatus.PAID)
+                .user(context.getUser())
+                .cardAccount(context.card("Mercado Pago"))
+                .tags(List.of(context.tag("Essencial")))
+                .build(),
 
-                // FIXED / PAID — avulsa (sem cartão), assinaturas
-                Expense.builder()
-                        .description("Vivo")
-                        .value(new BigDecimal("39.00"))
-                        .dueDate(LocalDate.of(2026, 6, 17))
-                        .expenseType(ExpenseType.FIXED)
-                        .paymentStatus(PaymentStatus.PAID)
-                        .user(context.getUser())
-                        .tags(List.of(context.tag("Recorrente")))
-                        .build(),
+            // FIXED / PAID — avulsa (sem cartão), assinaturas
+            Expense.builder()
+                .description("Vivo")
+                .value(new BigDecimal("39.00"))
+                .dueDate(LocalDate.of(2026, 6, 17))
+                .expenseType(ExpenseType.FIXED)
+                .paymentStatus(PaymentStatus.PAID)
+                .user(context.getUser())
+                .tags(List.of(context.tag("Recorrente")))
+                .build(),
 
-                // FIXED / PENDING — avulsa (sem cartão), transporte
-                Expense.builder()
-                        .description("Busão")
-                        .value(new BigDecimal("80.32"))
-                        .dueDate(LocalDate.of(2026, 6, 25))
-                        .expenseType(ExpenseType.FIXED)
-                        .paymentStatus(PaymentStatus.PENDING)
-                        .user(context.getUser())
-                        .tags(List.of(context.tag("Essencial")))
-                        .build()
+            // FIXED / PENDING — avulsa (sem cartão), transporte
+            Expense.builder()
+                .description("Busão")
+                .value(new BigDecimal("80.32"))
+                .dueDate(LocalDate.of(2026, 6, 25))
+                .expenseType(ExpenseType.FIXED)
+                .paymentStatus(PaymentStatus.PENDING)
+                .user(context.getUser())
+                .tags(List.of(context.tag("Essencial")))
+                .build()
         );
 
         if (expenseRepository.existsByUserId(context.getUser().getId())) {

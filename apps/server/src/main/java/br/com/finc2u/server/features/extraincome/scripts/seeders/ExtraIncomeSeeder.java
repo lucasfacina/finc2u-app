@@ -21,24 +21,24 @@ public class ExtraIncomeSeeder implements Seeder {
 
     @Override
     public int order() {
-        return 4;
+        return 5;
     }
 
     @Override
     public void seed(SeedContext context) {
         List<ExtraIncome> extraIncomes = List.of(
-                ExtraIncome.builder()
-                        .description("Mãe")
-                        .value(new BigDecimal("4470.00"))
-                        .date(COMPETENCIA)
-                        .user(context.getUser())
-                        .build(),
-                ExtraIncome.builder()
-                        .description("Tio Luiz")
-                        .value(new BigDecimal("305.50"))
-                        .date(COMPETENCIA)
-                        .user(context.getUser())
-                        .build()
+            ExtraIncome.builder()
+                .description("Mãe")
+                .value(new BigDecimal("4470.00"))
+                .date(COMPETENCIA)
+                .user(context.getUser())
+                .build(),
+            ExtraIncome.builder()
+                .description("Tio Luiz")
+                .value(new BigDecimal("305.50"))
+                .date(COMPETENCIA)
+                .user(context.getUser())
+                .build()
         );
 
         if (extraIncomeRepository.existsByUserId(context.getUser().getId())) {
