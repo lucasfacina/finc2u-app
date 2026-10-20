@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -129,6 +130,7 @@ public class CardAccountServiceTest {
     void update_shouldReturnUpdatedCardAccount_whenExists() {
         CardAccount updates = CardAccount.builder()
             .cardName("C6Bank")
+            .expirationDate(LocalDate.of(2031, 8, 31))
             .build();
 
         when(cardAccountRepository.findById(cardId))
@@ -140,6 +142,7 @@ public class CardAccountServiceTest {
 
         assertNotNull(response);
         assertEquals("C6Bank", cardAccount.getCardName());
+        assertEquals(LocalDate.of(2031, 8, 31), cardAccount.getExpirationDate());
         verify(cardAccountRepository, times(1)).save(cardAccount);
     }
 
