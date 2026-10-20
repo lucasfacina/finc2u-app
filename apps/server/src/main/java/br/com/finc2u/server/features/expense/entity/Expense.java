@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.expense.entity;
 
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
@@ -71,15 +72,19 @@ public class Expense extends BaseModel {
     }
 
     /*
-     * Define o status de pagamento por padrão quando não informado:
-     * vencimento até a data de referência (hoje) conta como PAID (assume pagamento em dia); vencimento futuro fica PENDING.
+     * Define o status de pagamento por padrão quando não informado: PENDING. Se o vencimento já passou (anterior à data
+     * de referência, que é hoje), o sistema não adivinha: o cliente precisa dizer se a despesa já foi paga (D13).
      */
     public void resolveDefaultPaymentStatus(LocalDate referenceDate) {
-        if (paymentStatus == null) {
-            paymentStatus = !dueDate.isAfter(referenceDate)
-                ? PaymentStatus.PAID
-                : PaymentStatus.PENDING;
+        if (paymentStatus != null) {
+            return;
         }
+
+        if (dueDate.isBefore(referenceDate)) {
+            throw new InvalidRequestException(
+                "Vencimento anterior a hoje: informe se a despesa já foi paga (paymentStatus).");
+        }
+        paymentStatus = PaymentStatus.PENDING;
     }
 
     /*
@@ -121,14 +126,6 @@ public class Expense extends BaseModel {
         resolveDueDate(purchaseDate);
         resolveDefaultPaymentStatus(referenceDate);
         applyInstallmentRules();
-    }
-
-
-    // Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior à data de referência).
-    public void markPaidIfOverdue(LocalDate referenceDate) {
-        if (paymentStatus == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(referenceDate)) {
-            paymentStatus = PaymentStatus.PAID;
-        }
     }
 
 }

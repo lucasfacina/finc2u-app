@@ -30,7 +30,7 @@ public record ExpenseRequest(
     // Opcional: data da compra, usada para determinar em qual fatura (e vencimento) a despesa cai.
     LocalDate purchaseDate,
 
-    // Opcional: quando ausente, é definido por padrão pela data de vencimento (<= hoje → PAID, futuro → PENDING).
+    // Opcional: quando ausente, a despesa nasce PENDING. Com vencimento anterior a hoje, é obrigatório informar (400).
     PaymentStatus paymentStatus,
 
     // Opcionais (só valem para PARCELED). Com valor informado, ficam entre 1 e o teto de parcelas; a relação

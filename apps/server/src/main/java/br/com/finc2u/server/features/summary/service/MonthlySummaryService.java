@@ -18,8 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.Clock;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,12 +31,11 @@ public class MonthlySummaryService {
     private final ExtraIncomeRepository extraIncomeRepository;
     private final UserService userService;
     private final SalaryHistoryService salaryHistoryService;
-    private final Clock clock;
 
     /*
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: busca despesas/extras do mês,
-     * reconcilia despesas vencidas, agrega os totais (MonthlySummaryTotals), recupera ou cria o
-     * resumo + o restante do mês anterior, e delega o cálculo à própria entidade.
+     * agrega os totais (MonthlySummaryTotals), recupera ou cria o resumo + o restante do mês anterior, e delega o
+     * cálculo à própria entidade. Não altera nenhuma despesa.
      */
     @Transactional
     public MonthlySummary calculateOrRecalculate(UUID userId, Integer month, Integer year) {
@@ -47,9 +44,6 @@ public class MonthlySummaryService {
 
         List<Expense> expenses = expenseRepository.findByUserIdAndDueDateBetween(userId, period.start(), period.end());
         List<ExtraIncome> extraIncomes = extraIncomeRepository.findByUserIdAndDateBetween(userId, period.start(), period.end());
-
-        var today = LocalDate.now(clock);
-        expenses.forEach(expense -> expense.markPaidIfOverdue(today));
 
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
