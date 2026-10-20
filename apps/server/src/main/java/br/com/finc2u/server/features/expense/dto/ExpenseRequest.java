@@ -56,6 +56,7 @@ public record ExpenseRequest(
     // O cartão é informado por id ou por nome, nunca pelos dois (consistência do próprio request).
     @JsonIgnore
     @AssertTrue(message = "Informe o cartão por id ou por nome, não pelos dois.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
     public boolean isCardReferenceValid() {
         return cardAccountId == null || cardName == null || cardName.isBlank();
     }

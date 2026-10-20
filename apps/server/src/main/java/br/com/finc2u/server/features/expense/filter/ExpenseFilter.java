@@ -27,6 +27,7 @@ public record ExpenseFilter(
 
     // Faixa de preço coerente; com apenas um dos limites informados não há o que comparar.
     @AssertTrue(message = "O preço mínimo não pode ser maior que o preço máximo.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
     public boolean isPriceRangeValid() {
         return minPrice == null || maxPrice == null || minPrice.compareTo(maxPrice) <= 0;
     }
