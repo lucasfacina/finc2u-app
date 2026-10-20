@@ -58,7 +58,7 @@ public class MonthlySummary extends BaseModel {
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
      * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
-     * -> savingsBalance vem do UserConfiguration (snapshot no momento do cálculo).
+     * -> savingsBalance vem do User (snapshot no momento do cálculo).
      */
     public void resolveTotals(
         MonthlySummaryTotals totals,

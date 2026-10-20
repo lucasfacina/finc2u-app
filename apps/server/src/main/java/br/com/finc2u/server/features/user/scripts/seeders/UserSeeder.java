@@ -3,7 +3,6 @@ package br.com.finc2u.server.features.user.scripts.seeders;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.repository.UserRepository;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
@@ -47,10 +46,8 @@ public class UserSeeder implements Seeder {
         User user = User.builder()
             .name("Lucas Facina")
             .email(SEED_EMAIL)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(new BigDecimal("5000.00"))
-            .build());
+            .build();
 
         return userRepository.save(user);
     }

@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.user.dto;
 
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -21,14 +20,11 @@ public record UserUpdateRequest(
 ) {
 
     public User toEntity() {
-        User user = User.builder()
+        return User.builder()
             .name(this.name)
             .email(this.email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(this.savingsBalance)
-            .build());
-        return user;
+            .build();
     }
 
 }

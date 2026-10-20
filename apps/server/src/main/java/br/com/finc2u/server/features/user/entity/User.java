@@ -1,7 +1,9 @@
 package br.com.finc2u.server.features.user.entity;
 
 import br.com.finc2u.server.shared.model.BaseModel;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -20,20 +22,12 @@ public class User extends BaseModel {
     @Column(unique = true)
     private String email;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private UserConfiguration userConfiguration;
+    private BigDecimal savingsBalance;
 
-    public void setUserConfiguration(UserConfiguration userConfiguration) {
-        this.userConfiguration = userConfiguration;
-        if (userConfiguration != null) {
-            userConfiguration.setUser(this);
-        }
-    }
-
-    // Saldo de poupança configurado ou zero quando não há configuração/valor.
+    // Saldo de poupança informado ou zero quando não há valor.
     public BigDecimal savingsBalanceOrZero() {
-        return userConfiguration != null && userConfiguration.getSavingsBalance() != null
-            ? userConfiguration.getSavingsBalance()
+        return savingsBalance != null
+            ? savingsBalance
             : BigDecimal.ZERO;
     }
 

@@ -61,9 +61,7 @@ public class UserService {
         user.setName(userUpdated.getName());
         user.setEmail(userUpdated.getEmail());
 
-        if (user.getUserConfiguration() != null && userUpdated.getUserConfiguration() != null) {
-            user.getUserConfiguration().setSavingsBalance(userUpdated.getUserConfiguration().getSavingsBalance());
-        }
+        user.setSavingsBalance(userUpdated.getSavingsBalance());
 
         return userRepository.save(user);
     }

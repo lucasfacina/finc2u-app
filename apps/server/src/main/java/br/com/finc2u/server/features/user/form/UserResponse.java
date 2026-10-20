@@ -18,19 +18,13 @@ public record UserResponse(
 ) {
 
     public static UserResponse from(User user, BigDecimal currentBaseSalary) {
-        BigDecimal savings = null;
-
-        if (user.getUserConfiguration() != null) {
-            savings = user.getUserConfiguration().getSavingsBalance();
-        }
-
         return new UserResponse(
             user.getId(),
             user.getName(),
             user.getEmail(),
             user.getCreatedAt(),
             currentBaseSalary,
-            savings
+            user.getSavingsBalance()
         );
     }
 
