@@ -222,6 +222,66 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void create_shouldThrowBusinessException_whenPurchaseIsAfterTheCardExpiration() {
+        cardAccount.setExpirationDate(LocalDate.of(2026, 5, 31));
+        when(userService.getById(userId))
+            .thenReturn(user);
+
+        var exception = assertThrows(BusinessException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, LocalDate.of(2026, 6, 1))));
+
+        assertEquals("Cartão expirado em 05/2026.", exception.getMessage());
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void create_shouldUseTodayAsPurchaseDate_whenItIsNotInformed() {
+        cardAccount.setExpirationDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
+        when(userService.getById(userId))
+            .thenReturn(user);
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, null)));
+
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void create_shouldAccept_whenPurchaseIsWithinTheCardExpiration() {
+        cardAccount.setExpirationDate(LocalDate.of(2026, 5, 31));
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenReturn(expense);
+
+        assertDoesNotThrow(
+            () -> expenseService.create(userId, command(expense, cardAccountId, LocalDate.of(2026, 5, 31))));
+    }
+
+    @Test
+    void update_shouldNotValidateTheCardExpiration_whenPurchaseDateIsNotInformed() {
+        cardAccount.setExpirationDate(LocalDate.now().minusYears(1));
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        assertDoesNotThrow(() -> expenseService.update(expenseId, command(expense, cardAccountId, null)));
+    }
+
+    @Test
+    void update_shouldThrowBusinessException_whenPurchaseDateIsInformedAfterTheCardExpiration() {
+        cardAccount.setExpirationDate(LocalDate.of(2026, 5, 31));
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.update(expenseId, command(expense, cardAccountId, LocalDate.of(2026, 6, 1))));
+
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
     void update_shouldNotSave_whenCardOrCategoryDoesNotBelongToTheUser() {
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
