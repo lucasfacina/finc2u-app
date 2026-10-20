@@ -20,8 +20,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ExpenseMapperTest {
@@ -50,7 +50,7 @@ public class ExpenseMapperTest {
         Expense expense = Expense.builder()
             .user(owner)
             .build();
-        expenseMapper.applyCardAccount(expense, cardId);
+        expenseMapper.applyCardAccount(expense, cardId, null);
 
         assertSame(card, expense.getCardAccount());
     }
@@ -68,8 +68,56 @@ public class ExpenseMapperTest {
             .user(owner)
             .build();
 
-        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCardAccount(expense, cardId));
+        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCardAccount(expense, cardId, null));
         assertNull(expense.getCardAccount());
+    }
+
+    @Test
+    void applyCardAccount_shouldResolveTheCardByNameAmongTheOwnerCards_whenOnlyNamePresent() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        CardAccount card = CardAccount.builder()
+            .cardName("Nubank")
+            .build();
+        when(cardAccountService.getByUserAndName(owner.getId(), "nubank"))
+            .thenReturn(card);
+
+        Expense expense = Expense.builder()
+            .user(owner)
+            .build();
+        expenseMapper.applyCardAccount(expense, null, "nubank");
+
+        assertSame(card, expense.getCardAccount());
+        verify(cardAccountService, never()).getByIdAndUser(any(), any());
+    }
+
+    @Test
+    void applyCardAccount_shouldPropagateNotFound_whenCardNameDoesNotBelongToTheOwner() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        when(cardAccountService.getByUserAndName(owner.getId(), "Nubank"))
+            .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o nome: Nubank"));
+
+        Expense expense = Expense.builder()
+            .user(owner)
+            .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCardAccount(expense, null, "Nubank"));
+        assertNull(expense.getCardAccount());
+    }
+
+    @Test
+    void applyCardAccount_shouldUnlink_whenNameIsBlank() {
+        Expense expense = Expense.builder()
+            .cardAccount(CardAccount.builder().build())
+            .build();
+
+        expenseMapper.applyCardAccount(expense, null, "  ");
+
+        assertNull(expense.getCardAccount());
+        verifyNoInteractions(cardAccountService);
     }
 
     @Test
@@ -78,7 +126,7 @@ public class ExpenseMapperTest {
             .cardAccount(CardAccount.builder().build())
             .build();
 
-        expenseMapper.applyCardAccount(expense, null);
+        expenseMapper.applyCardAccount(expense, null, null);
 
         assertNull(expense.getCardAccount());
         verifyNoInteractions(cardAccountService);

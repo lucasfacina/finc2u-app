@@ -93,7 +93,7 @@ class ExpenseServiceTest {
 
         assertNotNull(response);
         assertEquals(expense.getDescription(), response.getDescription());
-        verify(expenseMapper).applyCardAccount(expense, cardAccountId);
+        verify(expenseMapper).applyCardAccount(expense, cardAccountId, null);
         verify(expenseMapper).applyCategory(expense, categoryId);
         verify(expenseRepository, times(1)).save(any(Expense.class));
     }
@@ -103,7 +103,7 @@ class ExpenseServiceTest {
         when(userService.getById(userId))
             .thenReturn(user);
         doThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + cardAccountId))
-            .when(expenseMapper).applyCardAccount(expense, cardAccountId);
+            .when(expenseMapper).applyCardAccount(expense, cardAccountId, null);
 
         assertThrows(ResourceNotFoundException.class,
             () -> expenseService.create(userId, command(expense, cardAccountId, null)));
@@ -205,7 +205,7 @@ class ExpenseServiceTest {
         var updates = Expense.builder()
             .description("Mercado do mês")
             .build();
-        var command = new ExpenseCommand(updates, cardAccountId, categoryId, null);
+        var command = new ExpenseCommand(updates, cardAccountId, null, categoryId, null);
 
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
@@ -215,7 +215,7 @@ class ExpenseServiceTest {
         Expense response = expenseService.update(expenseId, command);
 
         assertEquals(expenseId, response.getId());
-        verify(expenseMapper).applyCardAccount(expense, cardAccountId);
+        verify(expenseMapper).applyCardAccount(expense, cardAccountId, null);
         verify(expenseMapper).applyCategory(expense, categoryId);
         verify(expenseMapper).applyEditableFields(expense, updates);
         verify(expenseRepository).save(expense);
@@ -370,7 +370,7 @@ class ExpenseServiceTest {
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
-        return new ExpenseCommand(expense, cardAccountId, categoryId, purchaseDate);
+        return new ExpenseCommand(expense, cardAccountId, null, categoryId, purchaseDate);
     }
 
 }

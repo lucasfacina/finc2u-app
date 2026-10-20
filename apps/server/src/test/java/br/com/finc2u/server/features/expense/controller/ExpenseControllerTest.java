@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -91,7 +92,8 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
-            cardAccountId
+            cardAccountId,
+            null
         );
     }
 
@@ -123,7 +125,8 @@ class ExpenseControllerTest {
             null,
             null,
             null,
-            cardAccountId
+            cardAccountId,
+            null
         );
 
         mockMvc.perform(post("/expenses")
@@ -134,6 +137,62 @@ class ExpenseControllerTest {
             .andExpect(jsonPath("$.status").value(400));
 
         verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenBothCardIdAndCardNameAreInformed() throws Exception {
+        var requestWithBoth = new ExpenseRequest(
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            LocalDate.now(),
+            null,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            categoryId,
+            cardAccountId,
+            "Nubank"
+        );
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithBoth)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldPassTheCardNameToServiceAsCommand_whenOnlyTheNameIsInformed() throws Exception {
+        var requestWithCardName = new ExpenseRequest(
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            LocalDate.now(),
+            null,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            categoryId,
+            null,
+            "Nubank"
+        );
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithCardName)))
+            .andExpect(status().isCreated());
+
+        var captor = ArgumentCaptor.forClass(ExpenseCommand.class);
+        verify(expenseService).create(eq(userId), captor.capture());
+        assertEquals("Nubank", captor.getValue().cardName());
+        assertNull(captor.getValue().cardAccountId());
     }
 
     @Test
@@ -148,7 +207,8 @@ class ExpenseControllerTest {
             null,
             null,
             null,
-            cardAccountId
+            cardAccountId,
+            null
         );
 
         mockMvc.perform(put("/expenses/{id}", expenseId)
@@ -225,7 +285,8 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
-            cardAccountId
+            cardAccountId,
+            null
         );
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
             .thenReturn(expense);
@@ -387,7 +448,7 @@ class ExpenseControllerTest {
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
-            PaymentStatus.PENDING, currentInstallment, totalInstallment, categoryId, cardAccountId
+            PaymentStatus.PENDING, currentInstallment, totalInstallment, categoryId, cardAccountId, null
         );
     }
 
