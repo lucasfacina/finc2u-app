@@ -5,6 +5,8 @@ import br.com.finc2u.server.features.user.dto.UserRequest;
 import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
+import br.com.finc2u.server.features.user.form.UserResponse;
+import br.com.finc2u.server.features.user.projection.UserProfileProjection;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +38,9 @@ class UserControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private UserProfileProjection userProfileProjection;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -69,13 +74,15 @@ class UserControllerTest {
     void create_shouldReturnCreated() throws Exception {
         when(userService.create(any(User.class), eq(BigDecimal.valueOf(5000)), eq(LocalDate.of(2026, 1, 1))))
             .thenReturn(user);
+        when(userProfileProjection.toProfile(user)).thenReturn(profile());
 
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(userId.toString()))
-            .andExpect(jsonPath("$.name").value("Lucas Facina"));
+            .andExpect(jsonPath("$.name").value("Lucas Facina"))
+            .andExpect(jsonPath("$.baseSalary").value(5000));
     }
 
     @Test
@@ -97,22 +104,24 @@ class UserControllerTest {
 
     @Test
     void getAll_shouldReturnOk() throws Exception {
-        when(userService.getAll())
-            .thenReturn(List.of(user));
+        when(userProfileProjection.getProfiles())
+            .thenReturn(List.of(profile()));
 
         mockMvc.perform(get("/users"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].name").value("Lucas Facina"));
+            .andExpect(jsonPath("$[0].name").value("Lucas Facina"))
+            .andExpect(jsonPath("$[0].baseSalary").value(5000));
     }
 
     @Test
     void getById_shouldReturnOk() throws Exception {
-        when(userService.getById(userId))
-            .thenReturn(user);
+        when(userProfileProjection.getProfile(userId))
+            .thenReturn(profile());
 
         mockMvc.perform(get("/users/{id}", userId))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.id").value(userId.toString()));
+            .andExpect(jsonPath("$.id").value(userId.toString()))
+            .andExpect(jsonPath("$.baseSalary").value(5000));
     }
 
     @Test
@@ -120,6 +129,7 @@ class UserControllerTest {
         var updateRequest = new UserUpdateRequest("Lucas Facina", "facina3@gmail.com", BigDecimal.valueOf(1000));
         when(userService.update(eq(userId), any(User.class)))
             .thenReturn(user);
+        when(userProfileProjection.toProfile(user)).thenReturn(profile());
 
         mockMvc.perform(put("/users/{id}", userId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -145,6 +155,10 @@ class UserControllerTest {
 
         mockMvc.perform(delete("/users/{id}", userId))
             .andExpect(status().isNoContent());
+    }
+
+    private UserResponse profile() {
+        return UserResponse.from(user, BigDecimal.valueOf(5000));
     }
 
 }
