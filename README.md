@@ -1,8 +1,7 @@
 # Finc2U App
 
-Aplicação de gestão financeira pessoal, nascida como atividade de fixação de estágio (já entregue) e hoje base do
-backend do TCC: um módulo de sugestões de educação financeira por motor de regras (Drools). O plano de evolução está
-em `docs/Finc2UApp_Roadmap_TCC.md`.
+Aplicação de gestão financeira pessoal, nascida como atividade de fixação de estágio e hoje base do
+backend do TCC: um módulo de sugestões de educação financeira por motor de regras (Drools).
 
 ## Stack Tecnológica
 
@@ -17,7 +16,7 @@ em `docs/Finc2UApp_Roadmap_TCC.md`.
 
 1. Certifique-se de ter o Java 21 instalado.
 2. Clone o repositório.
-3. Execute o projeto via IDE (IntelliJ/Eclipse) ou via terminal com o Maven Wrapper:
+3. Execute o projeto via IDE (IntelliJ/Eclipse) ou via terminal, a partir de `apps/server`, com o Maven Wrapper:
    `./mvnw spring-boot:run`
 4. A aplicação estará disponível em `http://localhost:8080`.
 5. A documentação interativa da API (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` — dá para testar
@@ -29,6 +28,8 @@ em `docs/Finc2UApp_Roadmap_TCC.md`.
 > (os seeders repopulam tudo), apague a pasta `data/` e suba a aplicação novamente.
 
 ## Executar Testes
+
+A partir de `apps/server`:
 
 ```bash
 ./mvnw test
@@ -89,9 +90,9 @@ Passos isolados do build, no grupo **Build Steps**: `compileJava`, `compileTestJ
 
 ### Relatórios
 
-| Grupo     | Alvo            | O que faz                                                                                                                                                                |
-|-----------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Reporting | `historyExport` | Exporta o histórico de commits (`AAAA-MM-DD \| mensagem`, do mais antigo ao mais recente) para `docs/historico_commits.txt`; destino alterável com `-- --output arquivo` |
+| Grupo     | Alvo            | O que faz                                                                                                                                                       |
+|-----------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Reporting | `historyExport` | Exporta o histórico de commits (`AAAA-MM-DD \| mensagem`, do mais antigo ao mais recente) para um arquivo de texto; destino alterável com `-- --output arquivo` |
 
 ### Banco H2 (desenvolvimento)
 
