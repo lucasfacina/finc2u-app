@@ -1,6 +1,7 @@
 package br.com.finc2u.server.shared.seed;
 
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.user.entity.User;
 import lombok.Getter;
@@ -14,6 +15,16 @@ import java.util.Map;
 public class SeedContext {
 
     private User user;
+
+    private final Map<String, Category> categoriesByName = new LinkedHashMap<>();
+
+    public void putCategory(Category category) {
+        categoriesByName.put(category.getName(), category);
+    }
+
+    public Category category(String name) {
+        return categoriesByName.get(name);
+    }
 
     private final Map<String, CardAccount> cardsByName = new LinkedHashMap<>();
 
