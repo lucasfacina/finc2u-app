@@ -31,7 +31,6 @@ public record UserRequest(
             .email(this.email)
             .build();
         user.setUserConfiguration(UserConfiguration.builder()
-            .baseSalary(this.baseSalary)
             .savingsBalance(this.savingsBalance)
             .build());
         return user;

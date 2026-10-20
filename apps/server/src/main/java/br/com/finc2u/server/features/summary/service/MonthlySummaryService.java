@@ -50,16 +50,16 @@ public class MonthlySummaryService {
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
         MonthlySummary summary = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
-                .orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
+            .orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
 
-        BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start(), user.baseSalaryOrZero());
+        BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
 
         Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
         summary.resolveTotals(
-                totals,
-                previous.map(MonthlySummary::getRemainingAmount).orElse(null),
-                previous.map(MonthlySummary::getSavingsBalance).orElse(null),
-                baseSalary
+            totals,
+            previous.map(MonthlySummary::getRemainingAmount).orElse(null),
+            previous.map(MonthlySummary::getSavingsBalance).orElse(null),
+            baseSalary
         );
 
         return monthlySummaryRepository.save(summary);
@@ -73,7 +73,7 @@ public class MonthlySummaryService {
     @Transactional(readOnly = true)
     public MonthlySummary getByUserAndPeriod(UUID userId, Integer month, Integer year) {
         return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
-                .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
+            .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
     }
 
     @Transactional(readOnly = true)

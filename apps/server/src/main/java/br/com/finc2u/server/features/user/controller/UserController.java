@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.user.controller;
 
 import br.com.finc2u.server.features.user.dto.UserRequest;
+import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -42,8 +43,8 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserRequest userRequest) {
-        User updatedUser = userService.update(id, userRequest.toEntity());
+    public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
+        User updatedUser = userService.update(id, userUpdateRequest.toEntity());
         return ResponseEntity.ok(UserResponse.from(updatedUser));
     }
 

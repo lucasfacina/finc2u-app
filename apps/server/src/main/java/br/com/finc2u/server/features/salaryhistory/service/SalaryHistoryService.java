@@ -27,7 +27,7 @@ public class SalaryHistoryService {
         User user = userService.getById(userId);
         if (salaryHistoryRepository.existsByUserIdAndEffectiveFrom(userId, history.getEffectiveFrom())) {
             throw new BusinessException("Já existe um registro de salário com vigência em " +
-                    history.getEffectiveFrom() + " para este usuário.");
+                history.getEffectiveFrom() + " para este usuário.");
         }
         history.setUser(user);
 
@@ -37,7 +37,7 @@ public class SalaryHistoryService {
     @Transactional(readOnly = true)
     public SalaryHistory getById(UUID id) {
         return salaryHistoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Histórico de salário não encontrado com o ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Histórico de salário não encontrado com o ID: " + id));
     }
 
     @Transactional(readOnly = true)
@@ -48,26 +48,26 @@ public class SalaryHistoryService {
     /*
      * Retorna o salário vigente no início do período informado.
      * Busca a entrada mais recente com effectiveFrom <= periodStart.
-     * Caso não exista histórico, usa o fallback (baseSalary do UserConfiguration).
+     * Caso não exista histórico (período anterior à primeira vigência), devolve zero.
      */
     @Transactional(readOnly = true)
-    public BigDecimal getBaseSalaryForPeriod(UUID userId, LocalDate periodStart, BigDecimal fallback) {
+    public BigDecimal getBaseSalaryForPeriod(UUID userId, LocalDate periodStart) {
         return salaryHistoryRepository
-                .findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(userId, periodStart)
-                .map(SalaryHistory::getBaseSalary)
-                .orElse(fallback);
+            .findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(userId, periodStart)
+            .map(SalaryHistory::getBaseSalary)
+            .orElse(BigDecimal.ZERO);
     }
 
     @Transactional
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
         SalaryHistory salaryHistory = getById(id);
         salaryHistoryRepository
-                .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
-                .filter(conflict -> !conflict.getId().equals(id))
-                .ifPresent(conflict -> {
-                    throw new BusinessException("Já existe um registro de salário com vigência em " +
-                            historyData.getEffectiveFrom() + " para este usuário.");
-                });
+            .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
+            .filter(conflict -> !conflict.getId().equals(id))
+            .ifPresent(conflict -> {
+                throw new BusinessException("Já existe um registro de salário com vigência em " +
+                    historyData.getEffectiveFrom() + " para este usuário.");
+            });
         salaryHistory.setBaseSalary(historyData.getBaseSalary());
         salaryHistory.setEffectiveFrom(historyData.getEffectiveFrom());
 

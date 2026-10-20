@@ -30,13 +30,6 @@ public class User extends BaseModel {
         }
     }
 
-    // Salário-base configurado ou zero quando não há configuração/valor
-    public BigDecimal baseSalaryOrZero() {
-        return userConfiguration != null && userConfiguration.getBaseSalary() != null
-            ? userConfiguration.getBaseSalary()
-            : BigDecimal.ZERO;
-    }
-
     // Saldo de poupança configurado ou zero quando não há configuração/valor.
     public BigDecimal savingsBalanceOrZero() {
         return userConfiguration != null && userConfiguration.getSavingsBalance() != null

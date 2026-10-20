@@ -18,7 +18,6 @@ import java.math.BigDecimal;
 @Builder
 public class UserConfiguration extends BaseModel {
 
-    private BigDecimal baseSalary;
     private BigDecimal savingsBalance;
 
     @OneToOne(optional = false)

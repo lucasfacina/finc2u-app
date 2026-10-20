@@ -10,8 +10,8 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(
-        name = "tb_monthly_summary",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "summary_month", "summary_year"})
+    name = "tb_monthly_summary",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "summary_month", "summary_year"})
 )
 @Getter
 @Setter
@@ -44,16 +44,16 @@ public class MonthlySummary extends BaseModel {
     // Cria um resumo novo para o período, ainda não calculado.
     public static MonthlySummary forPeriod(User user, Integer month, Integer year) {
         return MonthlySummary.builder()
-                .user(user)
-                .month(month)
-                .year(year)
-                .build();
+            .user(user)
+            .month(month)
+            .year(year)
+            .build();
     }
 
     /*
      * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
      * compostos a partir dos totais agregados.
-     * -> baseSalary      = salário vigente no período (resolvido pelo service via SalaryHistory; fallback UserConfiguration)
+     * -> baseSalary      = salário vigente no período (resolvido pelo service via SalaryHistory; zero antes da primeira vigência)
      * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
      * -> totalIncome     = baseSalary + totalExtras + cashBalance
      * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
@@ -61,20 +61,20 @@ public class MonthlySummary extends BaseModel {
      * -> savingsBalance vem do UserConfiguration (snapshot no momento do cálculo).
      */
     public void resolveTotals(
-            MonthlySummaryTotals totals,
-            BigDecimal previousMonthRemaining,
-            BigDecimal previousMonthSavingsBalance,
-            BigDecimal baseSalaryForPeriod
+        MonthlySummaryTotals totals,
+        BigDecimal previousMonthRemaining,
+        BigDecimal previousMonthSavingsBalance,
+        BigDecimal baseSalaryForPeriod
     ) {
         this.cashBalance = previousMonthRemaining != null
-                ? previousMonthRemaining
-                : BigDecimal.ZERO;
+            ? previousMonthRemaining
+            : BigDecimal.ZERO;
 
         this.savingsBalance = user.savingsBalanceOrZero();
 
         this.savingsYield = previousMonthSavingsBalance != null
-                ? this.savingsBalance.subtract(previousMonthSavingsBalance)
-                : BigDecimal.ZERO;
+            ? this.savingsBalance.subtract(previousMonthSavingsBalance)
+            : BigDecimal.ZERO;
 
         this.baseSalary = baseSalaryForPeriod;
 

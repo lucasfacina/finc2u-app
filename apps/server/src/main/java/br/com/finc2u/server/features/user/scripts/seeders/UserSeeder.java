@@ -30,28 +30,27 @@ public class UserSeeder implements Seeder {
     @Override
     public void seed(SeedContext context) {
         User user = userRepository.findByEmail(SEED_EMAIL)
-                .orElseGet(this::createSeedUser);
+            .orElseGet(this::createSeedUser);
 
         context.setUser(user);
 
         if (!salaryHistoryRepository.existsByUserId(user.getId())) {
             salaryHistoryRepository.save(SalaryHistory.builder()
-                    .user(user)
-                    .baseSalary(new BigDecimal("3000.00"))
-                    .effectiveFrom(LocalDate.of(2026, 1, 1))
-                    .build());
+                .user(user)
+                .baseSalary(new BigDecimal("3000.00"))
+                .effectiveFrom(LocalDate.of(2026, 1, 1))
+                .build());
         }
     }
 
     private User createSeedUser() {
         User user = User.builder()
-                .name("Lucas Facina")
-                .email(SEED_EMAIL)
-                .build();
+            .name("Lucas Facina")
+            .email(SEED_EMAIL)
+            .build();
         user.setUserConfiguration(UserConfiguration.builder()
-                .baseSalary(new BigDecimal("3000.00"))
-                .savingsBalance(new BigDecimal("5000.00"))
-                .build());
+            .savingsBalance(new BigDecimal("5000.00"))
+            .build());
 
         return userRepository.save(user);
     }

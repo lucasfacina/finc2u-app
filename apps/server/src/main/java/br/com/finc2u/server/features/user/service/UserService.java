@@ -62,7 +62,6 @@ public class UserService {
         user.setEmail(userUpdated.getEmail());
 
         if (user.getUserConfiguration() != null && userUpdated.getUserConfiguration() != null) {
-            user.getUserConfiguration().setBaseSalary(userUpdated.getUserConfiguration().getBaseSalary());
             user.getUserConfiguration().setSavingsBalance(userUpdated.getUserConfiguration().getSavingsBalance());
         }
 
