@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.card.service;
 
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
@@ -92,6 +93,31 @@ public class CardAccountServiceTest {
         verify(cardAccountRepository, times(1)).save(any(CardAccount.class));
     }
 
+    // "Mesmo nome em outro usuário é aceito" é garantido pela consulta escopada por usuário (CardAccountRepositoryTest).
+    @Test
+    void create_shouldThrowBusinessException_whenNameAlreadyExistsForTheUser_ignoringCase() {
+        var newCard = CardAccount.of("NUBANK", 5, 15, null);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, "NUBANK"))
+            .thenReturn(Optional.of(cardAccount));
+
+        assertThrows(BusinessException.class, () -> cardAccountService.create(newCard, userId));
+        verify(cardAccountRepository, never()).save(any(CardAccount.class));
+    }
+
+    @Test
+    void getByUser_shouldSearchByTheTrimmedName_whenNameIsInformed() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, "nu"))
+            .thenReturn(List.of(cardAccount));
+
+        List<CardAccount> response = cardAccountService.getByUser(userId, "  nu ");
+
+        assertEquals(List.of(cardAccount), response);
+    }
+
     @Test
     void getById_shouldReturnCardAccount_whenIdExists() {
         when(cardAccountRepository.findById(cardId))
@@ -115,10 +141,10 @@ public class CardAccountServiceTest {
     void getByUser_shouldReturnListOfCardAccount_whenUserExists() {
         when(userService.getById(userId))
             .thenReturn(user);
-        when(cardAccountRepository.findByUserIdOrderByCardNameAsc(userId))
+        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, ""))
             .thenReturn(List.of(cardAccount));
 
-        List<CardAccount> response = cardAccountService.getByUser(userId);
+        List<CardAccount> response = cardAccountService.getByUser(userId, null);
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
@@ -143,6 +169,36 @@ public class CardAccountServiceTest {
         assertNotNull(response);
         assertEquals("C6Bank", cardAccount.getCardName());
         assertEquals(LocalDate.of(2031, 8, 31), cardAccount.getExpirationDate());
+        verify(cardAccountRepository, times(1)).save(cardAccount);
+    }
+
+    @Test
+    void update_shouldThrowBusinessException_whenNameAlreadyExistsOnAnotherCardOfTheUser() {
+        var other = CardAccount.builder()
+            .cardName("C6Bank")
+            .user(user)
+            .build();
+        other.setId(UUID.randomUUID());
+        when(cardAccountRepository.findById(cardId))
+            .thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, "c6bank"))
+            .thenReturn(Optional.of(other));
+
+        assertThrows(BusinessException.class,
+            () -> cardAccountService.update(cardId, CardAccount.of("c6bank", 5, 15, null)));
+        verify(cardAccountRepository, never()).save(any(CardAccount.class));
+    }
+
+    @Test
+    void update_shouldAllowSameName_whenRenameToOwnCurrentName() {
+        when(cardAccountRepository.findById(cardId))
+            .thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, "Nubank"))
+            .thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.save(cardAccount))
+            .thenReturn(cardAccount);
+
+        assertDoesNotThrow(() -> cardAccountService.update(cardId, CardAccount.of("Nubank", 5, 15, null)));
         verify(cardAccountRepository, times(1)).save(cardAccount);
     }
 

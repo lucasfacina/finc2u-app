@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.card.controller;
 
 import br.com.finc2u.server.config.GlobalExceptionHandler;
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.card.dto.CardAccountRequest;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.service.CardAccountService;
@@ -138,13 +139,38 @@ class CardAccountControllerTest {
 
     @Test
     void getByUser_shouldReturnOk() throws Exception {
-        when(cardAccountService.getByUser(userId))
+        when(cardAccountService.getByUser(userId, null))
             .thenReturn(List.of(cardAccount));
 
         mockMvc.perform(get("/card-accounts")
                 .param("userId", userId.toString()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].cardName").value("Nubank"));
+    }
+
+    @Test
+    void getByUser_shouldPassTheNameToTheSearch_whenInformed() throws Exception {
+        when(cardAccountService.getByUser(userId, "nu"))
+            .thenReturn(List.of(cardAccount));
+
+        mockMvc.perform(get("/card-accounts")
+                .param("userId", userId.toString())
+                .param("name", "nu"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].cardName").value("Nubank"));
+    }
+
+    @Test
+    void create_shouldReturnUnprocessableEntity_whenNameAlreadyExists() throws Exception {
+        when(cardAccountService.create(any(CardAccount.class), eq(userId)))
+            .thenThrow(new BusinessException("Cartão já cadastrado!"));
+
+        mockMvc.perform(post("/card-accounts")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isUnprocessableContent())
+            .andExpect(jsonPath("$.status").value(422));
     }
 
     @Test

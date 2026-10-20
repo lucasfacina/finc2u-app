@@ -4,10 +4,28 @@ import br.com.finc2u.server.exception.BusinessException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CardAccountTest {
+
+    // ---- of ----
+
+    @Test
+    void of_shouldFillTheFieldsAndStoreTheLastDayOfTheExpirationMonth() {
+        CardAccount card = CardAccount.of("Nubank", 5, 15, YearMonth.of(2028, 2));
+
+        assertEquals("Nubank", card.getCardName());
+        assertEquals(5, card.getClosingDate());
+        assertEquals(15, card.getDueDate());
+        assertEquals(LocalDate.of(2028, 2, 29), card.getExpirationDate());
+    }
+
+    @Test
+    void of_shouldLeaveExpirationEmpty_whenNotInformed() {
+        assertNull(CardAccount.of("Nubank", 5, 15, null).getExpirationDate());
+    }
 
     @Test
     void calculateInvoiceDueDate_shouldFallInSameClosingMonth_whenPurchaseUpToClosingDay() {
