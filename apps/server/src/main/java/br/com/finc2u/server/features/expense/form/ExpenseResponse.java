@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.expense.form;
 
+import br.com.finc2u.server.features.category.form.CategoryResponse;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -19,7 +20,8 @@ public record ExpenseResponse(
     PaymentStatus paymentStatus,
     Integer currentInstallment,
     Integer totalInstallment,
-    String cardName
+    String cardName,
+    CategoryResponse category
 ) {
 
     public static ExpenseResponse from(Expense expense) {
@@ -35,7 +37,8 @@ public record ExpenseResponse(
             expense.getTotalInstallment(),
             expense.getCardAccount() != null
                 ? expense.getCardAccount().getCardName()
-                : null
+                : null,
+            CategoryResponse.from(expense.getCategory())
         );
     }
 
