@@ -19,6 +19,9 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: true
 app:
   seeders:
     enabled: false
