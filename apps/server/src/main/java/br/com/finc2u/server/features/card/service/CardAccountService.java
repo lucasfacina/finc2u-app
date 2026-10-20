@@ -52,6 +52,7 @@ public class CardAccountService {
         cardAccount.setCardName(cardUpdated.getCardName());
         cardAccount.setClosingDate(cardUpdated.getClosingDate());
         cardAccount.setDueDate(cardUpdated.getDueDate());
+        cardAccount.setExpirationDate(cardUpdated.getExpirationDate());
 
         return cardAccountRepository.save(cardAccount);
     }

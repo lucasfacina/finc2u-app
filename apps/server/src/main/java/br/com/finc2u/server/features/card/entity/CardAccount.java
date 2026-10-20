@@ -23,6 +23,9 @@ public class CardAccount extends BaseModel {
     private Integer closingDate;
     private Integer dueDate;
 
+    // Último dia do mês de validade do cartão; nulo quando a validade não é informada.
+    private LocalDate expirationDate;
+
     @ManyToOne
     private User user;
 
