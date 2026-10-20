@@ -17,7 +17,7 @@ public record UserResponse(
     BigDecimal savingsBalance
 ) {
 
-    public static UserResponse from(User user) {
+    public static UserResponse from(User user, BigDecimal currentBaseSalary) {
         BigDecimal savings = null;
 
         if (user.getUserConfiguration() != null) {
@@ -29,7 +29,7 @@ public record UserResponse(
             user.getName(),
             user.getEmail(),
             user.getCreatedAt(),
-            null,
+            currentBaseSalary,
             savings
         );
     }

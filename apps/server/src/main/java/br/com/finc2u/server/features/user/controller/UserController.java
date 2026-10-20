@@ -4,6 +4,7 @@ import br.com.finc2u.server.features.user.dto.UserRequest;
 import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.form.UserResponse;
+import br.com.finc2u.server.features.user.projection.UserProfileProjection;
 import br.com.finc2u.server.features.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,32 +21,28 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final UserProfileProjection userProfileProjection;
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest userRequest) {
         User savedUser = userService.create(userRequest.toEntity(), userRequest.baseSalary(), userRequest.effectiveFrom());
-        return new ResponseEntity<>(UserResponse.from(savedUser), HttpStatus.CREATED);
+        return new ResponseEntity<>(userProfileProjection.toProfile(savedUser), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAll() {
-        List<UserResponse> userResponse = userService.getAll()
-            .stream()
-            .map(UserResponse::from)
-            .toList();
-        return ResponseEntity.ok(userResponse);
+        return ResponseEntity.ok(userProfileProjection.getProfiles());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getById(@PathVariable UUID id) {
-        User user = userService.getById(id);
-        return ResponseEntity.ok(UserResponse.from(user));
+        return ResponseEntity.ok(userProfileProjection.getProfile(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
         User updatedUser = userService.update(id, userUpdateRequest.toEntity());
-        return ResponseEntity.ok(UserResponse.from(updatedUser));
+        return ResponseEntity.ok(userProfileProjection.toProfile(updatedUser));
     }
 
     @DeleteMapping("/{id}")
