@@ -4,6 +4,7 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
+import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +57,29 @@ public class SalaryHistoryService {
             .findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(userId, periodStart)
             .map(SalaryHistory::getBaseSalary)
             .orElse(BigDecimal.ZERO);
+    }
+
+    /*
+     * Salário com vigência mais recente com effectiveFrom <= hoje.
+     * Será vazio se o usuário ainda não tem nenhuma vigência iniciada.
+     */
+    @Transactional(readOnly = true)
+    public Optional<BigDecimal> getCurrentBaseSalary(UUID userId) {
+        return Optional.ofNullable(getCurrentBaseSalaries(List.of(userId)).get(userId));
+    }
+
+    /*
+     * Salário vigente de vários usuários por uma única consulta (evita N+1 na listagem).
+     * Usuários sem vigência iniciada não aparecem no mapa.
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, BigDecimal> getCurrentBaseSalaries(Collection<UUID> userIds) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        return salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now())
+            .stream()
+            .collect(Collectors.toMap(CurrentSalary::userId, CurrentSalary::baseSalary));
     }
 
     @Transactional
