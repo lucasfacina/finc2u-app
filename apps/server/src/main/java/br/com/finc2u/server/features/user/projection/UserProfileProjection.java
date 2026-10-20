@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/*
+ * Monta o UserResponse com o salário vigente, que vive no SalaryHistory (não no User). Na listagem, busca o salário de
+ * todos os usuários de uma vez, para não gerar uma consulta por usuário (N+1).
+ */
 @Component
 public record UserProfileProjection(UserService userService, SalaryHistoryService salaryHistoryService) {
 
