@@ -10,10 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,10 +27,15 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SalaryHistoryServiceTest {
 
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
     @Mock
     private SalaryHistoryRepository salaryHistoryRepository;
     @Mock
     private UserService userService;
+
+    @Spy
+    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private SalaryHistoryService salaryHistoryService;
@@ -145,7 +153,7 @@ class SalaryHistoryServiceTest {
     void getCurrentBaseSalaries_shouldMapEachUserToTheCurrentSalary_inASingleQuery() {
         var otherUserId = UUID.randomUUID();
         var userIds = List.of(userId, otherUserId);
-        when(salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now()))
+        when(salaryHistoryRepository.findCurrentSalaries(userIds, TODAY))
             .thenReturn(List.of(
                 new CurrentSalary(userId, BigDecimal.valueOf(3500)),
                 new CurrentSalary(otherUserId, BigDecimal.valueOf(4200))));
@@ -155,13 +163,13 @@ class SalaryHistoryServiceTest {
         assertEquals(2, result.size());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(userId)));
         assertEquals(0, BigDecimal.valueOf(4200).compareTo(result.get(otherUserId)));
-        verify(salaryHistoryRepository).findCurrentSalaries(userIds, LocalDate.now());
+        verify(salaryHistoryRepository).findCurrentSalaries(userIds, TODAY);
     }
 
     @Test
     void getCurrentBaseSalaries_shouldOmitUsersWithoutStartedSalary() {
         var userIds = List.of(userId);
-        when(salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now())).thenReturn(List.of());
+        when(salaryHistoryRepository.findCurrentSalaries(userIds, TODAY)).thenReturn(List.of());
 
         assertTrue(salaryHistoryService.getCurrentBaseSalaries(userIds).isEmpty());
     }
@@ -175,7 +183,7 @@ class SalaryHistoryServiceTest {
 
     @Test
     void getCurrentBaseSalary_shouldReturnTheCurrentSalary() {
-        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), LocalDate.now()))
+        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), TODAY))
             .thenReturn(List.of(new CurrentSalary(userId, BigDecimal.valueOf(3500))));
 
         var result = salaryHistoryService.getCurrentBaseSalary(userId);
@@ -185,7 +193,7 @@ class SalaryHistoryServiceTest {
 
     @Test
     void getCurrentBaseSalary_shouldBeEmpty_whenNoSalaryHasStarted() {
-        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), LocalDate.now())).thenReturn(List.of());
+        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), TODAY)).thenReturn(List.of());
 
         assertTrue(salaryHistoryService.getCurrentBaseSalary(userId).isEmpty());
     }

@@ -17,11 +17,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +36,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
 
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
     @Mock
     private ExpenseRepository expenseRepository;
 
@@ -41,6 +46,9 @@ class ExpenseServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Spy
+    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private ExpenseService expenseService;
@@ -73,7 +81,7 @@ class ExpenseServiceTest {
         expense = Expense.builder()
             .description("Mercado")
             .value(BigDecimal.valueOf(150.0))
-            .dueDate(LocalDate.now())
+            .dueDate(TODAY)
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .user(user)
@@ -236,7 +244,7 @@ class ExpenseServiceTest {
 
     @Test
     void create_shouldUseTodayAsPurchaseDate_whenItIsNotInformed() {
-        cardAccount.setExpirationDate(LocalDate.now().minusMonths(1).withDayOfMonth(1));
+        cardAccount.setExpirationDate(TODAY.minusMonths(1).withDayOfMonth(1));
         when(userService.getById(userId))
             .thenReturn(user);
 
@@ -260,7 +268,7 @@ class ExpenseServiceTest {
 
     @Test
     void update_shouldNotValidateTheCardExpiration_whenPurchaseDateIsNotInformed() {
-        cardAccount.setExpirationDate(LocalDate.now().minusYears(1));
+        cardAccount.setExpirationDate(TODAY.minusYears(1));
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class)))

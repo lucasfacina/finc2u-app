@@ -11,12 +11,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
-import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +36,10 @@ public class UserServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Spy
+    private Clock clock = Clock.fixed(LocalDate.of(2026, 3, 15).atStartOfDay(ZoneId.systemDefault()).toInstant(),
+        ZoneId.systemDefault());
 
     @InjectMocks
     private UserService userService;
@@ -91,7 +97,7 @@ public class UserServiceTest {
 
         userService.create(user, BigDecimal.valueOf(5000), null);
 
-        assertEquals(YearMonth.now().atDay(1), captureRegisteredEvent().salaryEffectiveFrom());
+        assertEquals(LocalDate.of(2026, 3, 1), captureRegisteredEvent().salaryEffectiveFrom());
     }
 
     @Test

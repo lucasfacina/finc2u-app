@@ -11,11 +11,15 @@ import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
-import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -24,6 +28,18 @@ import static org.mockito.Mockito.doThrow;
 
 @SpringBootTest
 class UserRegistrationIntegrationTest {
+
+    @TestConfiguration
+    static class FixedClockConfig {
+
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return Clock.fixed(LocalDate.of(2026, 3, 15).atStartOfDay(ZoneId.systemDefault()).toInstant(),
+                ZoneId.systemDefault());
+        }
+
+    }
 
     @Autowired
     private UserService userService;
@@ -56,7 +72,7 @@ class UserRegistrationIntegrationTest {
         var savedUser = userService.create(user, BigDecimal.valueOf(3000), null);
 
         var history = salaryHistoryService.getByUser(savedUser.getId());
-        assertEquals(YearMonth.now().atDay(1), history.getFirst().getEffectiveFrom());
+        assertEquals(LocalDate.of(2026, 3, 1), history.getFirst().getEffectiveFrom());
     }
 
     @Test
