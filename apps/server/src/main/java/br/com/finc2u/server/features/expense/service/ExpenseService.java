@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final UserService userService;
     private final ExpenseMapper expenseMapper;
+    private final Clock clock;
 
     @Transactional
     public Expense create(UUID userId, ExpenseCommand command) {
@@ -33,7 +35,7 @@ public class ExpenseService {
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId());
 
-        assertCardUsable(expense, command.purchaseDate() != null ? command.purchaseDate() : LocalDate.now());
+        assertCardUsable(expense, command.purchaseDate() != null ? command.purchaseDate() : LocalDate.now(clock));
 
         expense.prepareForPersistence(command.purchaseDate());
 

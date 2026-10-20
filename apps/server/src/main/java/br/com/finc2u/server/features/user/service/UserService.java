@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
@@ -22,6 +23,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     @Transactional
     public User create(User user, BigDecimal baseSalary, LocalDate effectiveFrom) {
@@ -32,7 +34,7 @@ public class UserService {
         var savedUser = userRepository.save(user);
         var salaryEffectiveFrom = effectiveFrom != null
             ? effectiveFrom
-            : YearMonth.now().atDay(1);
+            : YearMonth.now(clock).atDay(1);
         eventPublisher.publishEvent(new UserRegisteredEvent(savedUser, baseSalary, salaryEffectiveFrom));
 
         return savedUser;

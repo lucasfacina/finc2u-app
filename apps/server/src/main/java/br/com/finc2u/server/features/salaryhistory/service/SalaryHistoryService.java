@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ public class SalaryHistoryService {
 
     private final SalaryHistoryRepository salaryHistoryRepository;
     private final UserService userService;
+    private final Clock clock;
 
     @Transactional
     public SalaryHistory create(SalaryHistory history, UUID userId) {
@@ -77,7 +79,7 @@ public class SalaryHistoryService {
         if (userIds.isEmpty()) {
             return Map.of();
         }
-        return salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now())
+        return salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now(clock))
             .stream()
             .collect(Collectors.toMap(CurrentSalary::userId, CurrentSalary::baseSalary));
     }
