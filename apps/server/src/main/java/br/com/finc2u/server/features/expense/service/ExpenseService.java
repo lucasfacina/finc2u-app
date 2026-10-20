@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.expense.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
-import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
@@ -23,7 +22,6 @@ import java.util.UUID;
 public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
-    private final CardAccountService cardAccountService;
     private final UserService userService;
     private final ExpenseMapper expenseMapper;
 
