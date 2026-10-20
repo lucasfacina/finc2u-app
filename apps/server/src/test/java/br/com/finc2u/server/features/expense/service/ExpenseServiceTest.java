@@ -181,7 +181,7 @@ class ExpenseServiceTest {
     @Test
     void create_shouldDefaultStatusToPaid_whenNullAndDueDateNotInFuture() {
         expense.setPaymentStatus(null);
-        expense.setDueDate(LocalDate.now().minusDays(1));
+        expense.setDueDate(TODAY.minusDays(1));
 
         when(userService.getById(userId))
             .thenReturn(user);
@@ -196,7 +196,7 @@ class ExpenseServiceTest {
     @Test
     void create_shouldDefaultStatusToPending_whenNullAndDueDateInFuture() {
         expense.setPaymentStatus(null);
-        expense.setDueDate(LocalDate.now().plusDays(5));
+        expense.setDueDate(TODAY.plusDays(5));
 
         when(userService.getById(userId))
             .thenReturn(user);

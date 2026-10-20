@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class ExpenseTest {
 
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
     // ---- resolveDueDate ----
 
     @Test
@@ -67,10 +69,10 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldBePaid_whenNullAndDueDateNotInFuture() {
         Expense expense = Expense.builder()
-            .dueDate(LocalDate.now().minusDays(1))
+            .dueDate(TODAY.minusDays(1))
             .build();
 
-        expense.resolveDefaultPaymentStatus();
+        expense.resolveDefaultPaymentStatus(TODAY);
 
         assertEquals(PaymentStatus.PAID, expense.getPaymentStatus());
     }
@@ -78,10 +80,10 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldBePending_whenNullAndDueDateInFuture() {
         Expense expense = Expense.builder()
-            .dueDate(LocalDate.now().plusDays(5))
+            .dueDate(TODAY.plusDays(5))
             .build();
 
-        expense.resolveDefaultPaymentStatus();
+        expense.resolveDefaultPaymentStatus(TODAY);
 
         assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }
@@ -89,11 +91,11 @@ public class ExpenseTest {
     @Test
     void resolveDefaultPaymentStatus_shouldKeepExistingStatus_whenAlreadySet() {
         Expense expense = Expense.builder()
-            .dueDate(LocalDate.now().minusDays(1))
+            .dueDate(TODAY.minusDays(1))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
 
-        expense.resolveDefaultPaymentStatus();
+        expense.resolveDefaultPaymentStatus(TODAY);
 
         assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }
@@ -253,7 +255,7 @@ public class ExpenseTest {
             .expenseType(ExpenseType.VARIABLE)
             .build();
 
-        expense.prepareForPersistence(LocalDate.of(2026, 5, 20));
+        expense.prepareForPersistence(LocalDate.of(2026, 5, 20), TODAY);
 
         assertEquals(LocalDate.of(2026, 6, 15), expense.getDueDate());
     }
@@ -261,16 +263,16 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldDefaultStatusFromResolvedDueDate() {
         Expense future = Expense.builder()
-            .dueDate(LocalDate.now().plusDays(5))
+            .dueDate(TODAY.plusDays(5))
             .expenseType(ExpenseType.VARIABLE)
             .build();
         Expense past = Expense.builder()
-            .dueDate(LocalDate.now().minusDays(5))
+            .dueDate(TODAY.minusDays(5))
             .expenseType(ExpenseType.VARIABLE)
             .build();
 
-        future.prepareForPersistence(null);
-        past.prepareForPersistence(null);
+        future.prepareForPersistence(TODAY, TODAY);
+        past.prepareForPersistence(TODAY, TODAY);
 
         assertEquals(PaymentStatus.PENDING, future.getPaymentStatus());
         assertEquals(PaymentStatus.PAID, past.getPaymentStatus());
@@ -279,12 +281,12 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldApplyInstallmentRules() {
         Expense expense = Expense.builder()
-            .dueDate(LocalDate.now().plusDays(1))
+            .dueDate(TODAY.plusDays(1))
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(3)
             .build();
 
-        expense.prepareForPersistence(null);
+        expense.prepareForPersistence(TODAY, TODAY);
 
         assertEquals(1, expense.getCurrentInstallment());
     }
@@ -292,13 +294,13 @@ public class ExpenseTest {
     @Test
     void prepareForPersistence_shouldKeepFutureLastInstallmentPending() {
         Expense expense = Expense.builder()
-            .dueDate(LocalDate.now().plusDays(1))
+            .dueDate(TODAY.plusDays(1))
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(3)
             .totalInstallment(3)
             .build();
 
-        expense.prepareForPersistence(null);
+        expense.prepareForPersistence(TODAY, TODAY);
 
         assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }

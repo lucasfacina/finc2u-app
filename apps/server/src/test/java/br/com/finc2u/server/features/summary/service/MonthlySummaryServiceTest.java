@@ -17,10 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +36,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class MonthlySummaryServiceTest {
 
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
     @Mock
     private MonthlySummaryRepository monthlySummaryRepository;
     @Mock
@@ -43,6 +48,9 @@ class MonthlySummaryServiceTest {
     private UserService userService;
     @Mock
     private SalaryHistoryService salaryHistoryService;
+
+    @Spy
+    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
@@ -105,12 +113,12 @@ class MonthlySummaryServiceTest {
         Expense expense1 = expenseOf(
             BigDecimal.valueOf(500),
             PaymentStatus.PAID,
-            LocalDate.now().plusDays(10)
+            TODAY.plusDays(10)
         );
         Expense expense2 = expenseOf(
             BigDecimal.valueOf(300),
             PaymentStatus.PENDING,
-            LocalDate.now().plusDays(20)
+            TODAY.plusDays(20)
         );
 
         stubRepositories(
@@ -155,7 +163,7 @@ class MonthlySummaryServiceTest {
         Expense overdue = expenseOf(
             BigDecimal.valueOf(400),
             PaymentStatus.PENDING,
-            LocalDate.now().minusDays(1)
+            TODAY.minusDays(1)
         );
 
         stubRepositories(
