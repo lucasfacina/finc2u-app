@@ -131,7 +131,7 @@ public class ExpenseTest {
         assertEquals(1, expense.getCurrentInstallment());
     }
 
-    // A última parcela não vira PAID por ser a última: quem decide o status é o pagamento (D13).
+    // A última parcela não vira PAID por ser a última: quem decide o status é o pagamento.
     @Test
     void applyInstallmentRules_shouldKeepStatus_whenLastInstallment() {
         Expense expense = Expense.builder()

@@ -27,11 +27,11 @@ import static org.junit.jupiter.api.Assertions.*;
 /*
  * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição, cartão e categoria). O cenário tem
  * vários cartões e várias categorias: com um único cartão/categoria o N+1 passaria despercebido. A contagem usa
- * getPrepareStatementCount() (todo SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
+ * getPrepareStatementCount() (SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
  *
  * O total esperado das listagens é 2: a consulta de despesas (com cartão e categoria no @EntityGraph) mais um custo FIXO do
  * dono — o Expense.user é EAGER. Esse custo não cresce com os dados (toda consulta é escopada por um único usuário)
- * e some quando o Expense.user virar LAZY (Fase 13); aí este número deve cair para 1. O que o teste realmente
+ * e some quando o Expense.user passar a ser LAZY; aí este número deve cair para 1. O que o teste realmente
  * protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
  */
 @DataJpaTest
