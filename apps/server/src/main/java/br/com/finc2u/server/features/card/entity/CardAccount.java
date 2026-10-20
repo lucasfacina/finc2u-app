@@ -32,7 +32,7 @@ public class CardAccount extends BaseModel {
     // Último dia do mês de validade do cartão; nulo quando a validade não é informada.
     private LocalDate expirationDate;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private User user;
 
     // A validade informada por mês/ano vira o último dia desse mês; o CardAccountService associa o usuário.

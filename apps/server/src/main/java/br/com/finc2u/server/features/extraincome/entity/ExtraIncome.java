@@ -25,7 +25,7 @@ public class ExtraIncome extends BaseModel {
     @Column(name = "received_date")
     private LocalDate date;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
     private User user;
 
