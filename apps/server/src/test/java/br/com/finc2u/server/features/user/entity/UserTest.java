@@ -13,9 +13,9 @@ class UserTest {
     @Test
     void setUserConfiguration_shouldLinkConfigurationBackToUser() {
         User user = User.builder()
-                .build();
+            .build();
         UserConfiguration configuration = UserConfiguration.builder()
-                .build();
+            .build();
 
         user.setUserConfiguration(configuration);
 
@@ -26,45 +26,11 @@ class UserTest {
     @Test
     void setUserConfiguration_shouldAcceptNull() {
         User user = User.builder()
-                .build();
+            .build();
 
         user.setUserConfiguration(null);
 
         assertNull(user.getUserConfiguration());
-    }
-
-    // ---- baseSalaryOrZero ----
-
-    @Test
-    void baseSalaryOrZero_shouldReturnZero_whenNoConfiguration() {
-        User user = User.builder()
-                .build();
-
-        assertEquals(0, BigDecimal.ZERO.compareTo(user.baseSalaryOrZero()));
-    }
-
-    @Test
-    void baseSalaryOrZero_shouldReturnZero_whenBaseSalaryIsNull() {
-        User user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(null)
-                        .build()
-                )
-                .build();
-
-        assertEquals(0, BigDecimal.ZERO.compareTo(user.baseSalaryOrZero()));
-    }
-
-    @Test
-    void baseSalaryOrZero_shouldReturnConfiguredValue() {
-        User user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(BigDecimal.valueOf(3000))
-                        .build()
-                )
-                .build();
-
-        assertEquals(0, BigDecimal.valueOf(3000).compareTo(user.baseSalaryOrZero()));
     }
 
     // ---- savingsBalanceOrZero ----
@@ -72,7 +38,7 @@ class UserTest {
     @Test
     void savingsBalanceOrZero_shouldReturnZero_whenNoConfiguration() {
         User user = User.builder()
-                .build();
+            .build();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(user.savingsBalanceOrZero()));
     }
@@ -80,11 +46,11 @@ class UserTest {
     @Test
     void savingsBalanceOrZero_shouldReturnZero_whenSavingsBalanceIsNull() {
         User user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .savingsBalance(null)
-                        .build()
-                )
-                .build();
+            .userConfiguration(UserConfiguration.builder()
+                .savingsBalance(null)
+                .build()
+            )
+            .build();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(user.savingsBalanceOrZero()));
     }
@@ -92,11 +58,11 @@ class UserTest {
     @Test
     void savingsBalanceOrZero_shouldReturnConfiguredValue() {
         User user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .savingsBalance(BigDecimal.valueOf(1500))
-                        .build()
-                )
-                .build();
+            .userConfiguration(UserConfiguration.builder()
+                .savingsBalance(BigDecimal.valueOf(1500))
+                .build()
+            )
+            .build();
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(user.savingsBalanceOrZero()));
     }

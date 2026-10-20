@@ -49,7 +49,6 @@ public class UserServiceTest {
             .name("Lucas Facina")
             .email("facina3@gmail.com")
             .userConfiguration(UserConfiguration.builder()
-                .baseSalary(BigDecimal.valueOf(5000))
                 .savingsBalance(BigDecimal.valueOf(1000))
                 .build()
             )
@@ -153,6 +152,44 @@ public class UserServiceTest {
         assertNotNull(response);
         assertEquals(user.getName(), response.getName());
         verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void update_shouldCopyOnlyNameEmailAndSavingsBalance() {
+        var changes = User.builder()
+            .name("Lucas F.")
+            .email("novo@email.com")
+            .build();
+        changes.setUserConfiguration(UserConfiguration.builder()
+            .savingsBalance(BigDecimal.valueOf(2500))
+            .build());
+        when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("novo@email.com"))
+            .thenReturn(Optional.empty());
+        when(userRepository.save(user))
+            .thenReturn(user);
+
+        var response = userService.update(userId, changes);
+
+        assertEquals("Lucas F.", response.getName());
+        assertEquals("novo@email.com", response.getEmail());
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(response.getUserConfiguration().getSavingsBalance()));
+    }
+
+    @Test
+    void update_shouldThrowBusinessException_whenNewEmailBelongsToAnotherUser() {
+        var changes = User.builder()
+            .name("Lucas Facina")
+            .email("outro@email.com")
+            .build();
+        when(userRepository.findById(userId))
+            .thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("outro@email.com"))
+            .thenReturn(Optional.of(User.builder().build()));
+
+        assertThrows(BusinessException.class, () -> userService.update(userId, changes));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

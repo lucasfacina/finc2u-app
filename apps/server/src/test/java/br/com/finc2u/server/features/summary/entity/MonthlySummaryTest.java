@@ -13,22 +13,21 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 class MonthlySummaryTest {
 
-    private static User userWith(BigDecimal baseSalary, BigDecimal savings) {
+    private static User userWith(BigDecimal savings) {
         return User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(baseSalary)
-                        .savingsBalance(savings)
-                        .build())
-                .build();
+            .userConfiguration(UserConfiguration.builder()
+                .savingsBalance(savings)
+                .build())
+            .build();
     }
 
     private static MonthlySummaryTotals totals(double expenses, double paid, double pending, double extraIncomes, double fixed) {
         return new MonthlySummaryTotals(
-                BigDecimal.valueOf(expenses),
-                BigDecimal.valueOf(paid),
-                BigDecimal.valueOf(pending),
-                BigDecimal.valueOf(extraIncomes),
-                BigDecimal.valueOf(fixed)
+            BigDecimal.valueOf(expenses),
+            BigDecimal.valueOf(paid),
+            BigDecimal.valueOf(pending),
+            BigDecimal.valueOf(extraIncomes),
+            BigDecimal.valueOf(fixed)
         );
     }
 
@@ -51,14 +50,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldSetCashBalance_fromPreviousMonthRemaining() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        User user = userWith(BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                BigDecimal.valueOf(350),
-                null,
-                BigDecimal.valueOf(3000)
+            totals(1000, 600, 400, 0, 0),
+            BigDecimal.valueOf(350),
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(summary.getCashBalance()));
@@ -66,14 +65,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldSetCashBalanceToZero_whenNoPreviousMonth() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        User user = userWith(BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(1000, 600, 400, 0, 0),
-                null,
-                null,
-                BigDecimal.valueOf(3000)
+            totals(1000, 600, 400, 0, 0),
+            null,
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getCashBalance()));
@@ -86,14 +85,14 @@ class MonthlySummaryTest {
         // cashBalance = 200 (carryover do mês anterior)
         // totalIncome = baseSalary(3000) + totalExtras(500) + cashBalance(200) = 3700
         // remainingAmount = totalIncome(3700) - totalExpenses(1000) = 2700
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        User user = userWith(BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(1000, 600, 400, 500, 0),
-                BigDecimal.valueOf(200),
-                null,
-                BigDecimal.valueOf(3000)
+            totals(1000, 600, 400, 500, 0),
+            BigDecimal.valueOf(200),
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(summary.getBaseSalary()));
@@ -103,14 +102,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldPopulateAllTotalsFields() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        User user = userWith(BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(1000, 600, 400, 500, 200),
-                BigDecimal.ZERO,
-                null,
-                BigDecimal.valueOf(3000)
+            totals(1000, 600, 400, 500, 200),
+            BigDecimal.ZERO,
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(summary.getTotalExpenses()));
@@ -123,14 +122,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldSnapshotSavingsBalance_fromUserConfiguration() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
+        User user = userWith(BigDecimal.valueOf(1500));
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO,
-                null,
-                BigDecimal.valueOf(3000)
+            totals(0, 0, 0, 0, 0),
+            BigDecimal.ZERO,
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
@@ -138,14 +137,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldUseZeroSavings_whenUserHasNoConfiguration() {
-        User user = userWith(null, null);
+        User user = userWith(null);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(0, 0, 0, 0, 0),
-                BigDecimal.ZERO,
-                null,
-                BigDecimal.ZERO
+            totals(0, 0, 0, 0, 0),
+            BigDecimal.ZERO,
+            null,
+            BigDecimal.ZERO
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsBalance()));
@@ -156,14 +155,14 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldComputeSavingsYield_fromPreviousMonthSavingsBalance() {
         // savingsYield = savingsBalance(1500) - previousMonthSavingsBalance(1200) = 300
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
+        User user = userWith(BigDecimal.valueOf(1500));
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(0, 0, 0, 0, 0),
-                null,
-                BigDecimal.valueOf(1200),
-                BigDecimal.valueOf(3000)
+            totals(0, 0, 0, 0, 0),
+            null,
+            BigDecimal.valueOf(1200),
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.valueOf(300).compareTo(summary.getSavingsYield()));
@@ -171,14 +170,14 @@ class MonthlySummaryTest {
 
     @Test
     void resolveTotals_shouldSetSavingsYieldToZero_whenNoPreviousMonth() {
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.valueOf(1500));
+        User user = userWith(BigDecimal.valueOf(1500));
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.resolveTotals(
-                totals(0, 0, 0, 0, 0),
-                null,
-                null,
-                BigDecimal.valueOf(3000)
+            totals(0, 0, 0, 0, 0),
+            null,
+            null,
+            BigDecimal.valueOf(3000)
         );
 
         assertEquals(0, BigDecimal.ZERO.compareTo(summary.getSavingsYield()));
@@ -189,14 +188,14 @@ class MonthlySummaryTest {
     @Test
     void resolveTotals_shouldUseBaseSalaryForPeriod_asSnapshot() {
         // baseSalary passado = 3500 (salário vigente no período, resolvido pelo service)
-        User user = userWith(BigDecimal.valueOf(3000), BigDecimal.ZERO);
+        User user = userWith(BigDecimal.ZERO);
         MonthlySummary summary = MonthlySummary.forPeriod(user, 8, 2026);
 
         summary.resolveTotals(
-                totals(0, 0, 0, 0, 0),
-                null,
-                null,
-                BigDecimal.valueOf(3500)
+            totals(0, 0, 0, 0, 0),
+            null,
+            null,
+            BigDecimal.valueOf(3500)
         );
 
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(summary.getBaseSalary()));

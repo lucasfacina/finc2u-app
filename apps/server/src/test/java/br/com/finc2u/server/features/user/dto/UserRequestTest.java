@@ -24,7 +24,6 @@ class UserRequestTest {
         assertEquals("Lucas", user.getName());
         assertEquals("lucas@email.com", user.getEmail());
         assertNotNull(user.getUserConfiguration());
-        assertEquals(0, BigDecimal.valueOf(3000).compareTo(user.getUserConfiguration().getBaseSalary()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(user.getUserConfiguration().getSavingsBalance()));
         assertSame(user, user.getUserConfiguration().getUser());
     }

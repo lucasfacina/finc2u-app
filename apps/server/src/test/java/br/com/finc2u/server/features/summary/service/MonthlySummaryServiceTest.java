@@ -56,73 +56,72 @@ class MonthlySummaryServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(BigDecimal.valueOf(3000))
-                        .savingsBalance(BigDecimal.valueOf(1000))
-                        .build()
-                )
-                .build();
+            .userConfiguration(UserConfiguration.builder()
+                .savingsBalance(BigDecimal.valueOf(1000))
+                .build()
+            )
+            .build();
         user.setId(userId);
     }
 
     private Expense expenseOf(BigDecimal value, PaymentStatus status, LocalDate dueDate) {
         return Expense.builder()
-                .value(value)
-                .expenseType(ExpenseType.VARIABLE)
-                .paymentStatus(status)
-                .dueDate(dueDate)
-                .user(user)
-                .build();
+            .value(value)
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(status)
+            .dueDate(dueDate)
+            .user(user)
+            .build();
     }
 
     private ExtraIncome extraIncomeOf(BigDecimal value) {
         return ExtraIncome.builder()
-                .value(value)
-                .date(LocalDate.of(YEAR, MONTH, 10))
-                .user(user)
-                .build();
+            .value(value)
+            .date(LocalDate.of(YEAR, MONTH, 10))
+            .user(user)
+            .build();
     }
 
     private void stubRepositories(
-            List<Expense> expenses,
-            List<ExtraIncome> extraIncomes,
-            MonthlySummary existing,
-            MonthlySummary prevMonth) {
+        List<Expense> expenses,
+        List<ExtraIncome> extraIncomes,
+        MonthlySummary existing,
+        MonthlySummary prevMonth) {
 
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(expenseRepository.findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(expenses);
+            .thenReturn(expenses);
         when(extraIncomeRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(extraIncomes);
+            .thenReturn(extraIncomes);
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
-                .thenReturn(Optional.ofNullable(existing));
+            .thenReturn(Optional.ofNullable(existing));
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 5, YEAR))
-                .thenReturn(Optional.ofNullable(prevMonth));
+            .thenReturn(Optional.ofNullable(prevMonth));
         when(monthlySummaryRepository.save(any(MonthlySummary.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
-        when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class), any(BigDecimal.class)))
-                .thenReturn(BigDecimal.valueOf(3000));
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class)))
+            .thenReturn(BigDecimal.valueOf(3000));
     }
 
     @Test
     void calculateOrRecalculate_shouldComputeTotalsAndSave() {
         Expense expense1 = expenseOf(
-                BigDecimal.valueOf(500),
-                PaymentStatus.PAID,
-                LocalDate.now().plusDays(10)
+            BigDecimal.valueOf(500),
+            PaymentStatus.PAID,
+            LocalDate.now().plusDays(10)
         );
         Expense expense2 = expenseOf(
-                BigDecimal.valueOf(300),
-                PaymentStatus.PENDING,
-                LocalDate.now().plusDays(20)
+            BigDecimal.valueOf(300),
+            PaymentStatus.PENDING,
+            LocalDate.now().plusDays(20)
         );
 
         stubRepositories(
-                List.of(expense1, expense2),
-                List.of(),
-                null,
-                null
+            List.of(expense1, expense2),
+            List.of(),
+            null,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -136,18 +135,18 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldIncludeAvulsoExpense_whenNoCardAccount() {
         Expense avulso = expenseOf(
-                BigDecimal.valueOf(200),
-                PaymentStatus.PENDING,
-                LocalDate.of(YEAR, MONTH, 5)
+            BigDecimal.valueOf(200),
+            PaymentStatus.PENDING,
+            LocalDate.of(YEAR, MONTH, 5)
         );
 
         avulso.setCardAccount(null);
 
         stubRepositories(
-                List.of(avulso),
-                List.of(),
-                null,
-                null
+            List.of(avulso),
+            List.of(),
+            null,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -158,16 +157,16 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldMarkOverduePendingAsPaid_beforeAggregating() {
         Expense overdue = expenseOf(
-                BigDecimal.valueOf(400),
-                PaymentStatus.PENDING,
-                LocalDate.now().minusDays(1)
+            BigDecimal.valueOf(400),
+            PaymentStatus.PENDING,
+            LocalDate.now().minusDays(1)
         );
 
         stubRepositories(
-                List.of(overdue),
-                List.of(),
-                null,
-                null
+            List.of(overdue),
+            List.of(),
+            null,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -181,10 +180,10 @@ class MonthlySummaryServiceTest {
         // totalIncome = baseSalary(3000) + extras(500) = 3500  (cashBalance não compõe renda)
         // remainingAmount = 3500 - totalExpenses(0) = 3500
         stubRepositories(
-                List.of(),
-                List.of(extraIncomeOf(BigDecimal.valueOf(500))),
-                null,
-                null
+            List.of(),
+            List.of(extraIncomeOf(BigDecimal.valueOf(500))),
+            null,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -196,17 +195,17 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldAutoFillCashBalance_fromPreviousMonthRemaining() {
         MonthlySummary previousSummary = MonthlySummary.builder()
-                .month(5)
-                .year(YEAR)
-                .user(user)
-                .remainingAmount(BigDecimal.valueOf(350))
-                .build();
+            .month(5)
+            .year(YEAR)
+            .user(user)
+            .remainingAmount(BigDecimal.valueOf(350))
+            .build();
 
         stubRepositories(
-                List.of(),
-                List.of(),
-                null,
-                previousSummary
+            List.of(),
+            List.of(),
+            null,
+            previousSummary
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -217,17 +216,17 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldUsePreviousMonthRemaining_asCashBalance() {
         MonthlySummary previousSummary = MonthlySummary.builder()
-                .month(5)
-                .year(YEAR)
-                .user(user)
-                .remainingAmount(BigDecimal.valueOf(350))
-                .build();
+            .month(5)
+            .year(YEAR)
+            .user(user)
+            .remainingAmount(BigDecimal.valueOf(350))
+            .build();
 
         stubRepositories(
-                List.of(),
-                List.of(),
-                null,
-                previousSummary
+            List.of(),
+            List.of(),
+            null,
+            previousSummary
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -238,10 +237,10 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrRecalculate_shouldSnapshotSavingsBalance_fromUserConfiguration() {
         stubRepositories(
-                List.of(),
-                List.of(),
-                null,
-                null
+            List.of(),
+            List.of(),
+            null,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -252,17 +251,17 @@ class MonthlySummaryServiceTest {
     @Test
     void calculateOrUpdate_shouldRecalculateExistingSummary_whenAlreadyExists() {
         MonthlySummary existing = MonthlySummary.builder()
-                .month(MONTH)
-                .year(YEAR)
-                .user(user)
-                .cashBalance(BigDecimal.valueOf(100))
-                .build();
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .cashBalance(BigDecimal.valueOf(100))
+            .build();
 
         stubRepositories(
-                List.of(),
-                List.of(),
-                existing,
-                null
+            List.of(),
+            List.of(),
+            existing,
+            null
         );
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
@@ -274,12 +273,12 @@ class MonthlySummaryServiceTest {
     @Test
     void getByUserAndPeriod_shouldReturnSummary_whenExists() {
         MonthlySummary summary = MonthlySummary.builder()
-                .month(MONTH)
-                .year(YEAR)
-                .user(user)
-                .build();
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .build();
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
-                .thenReturn(Optional.ofNullable(summary));
+            .thenReturn(Optional.ofNullable(summary));
 
         MonthlySummary result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
 
@@ -291,21 +290,21 @@ class MonthlySummaryServiceTest {
     @Test
     void getByUserAndPeriod_shouldThrow_whenNotFound() {
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR));
+            () -> monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR));
     }
 
     @Test
     void getByUser_shouldReturnList() {
         MonthlySummary summary = MonthlySummary.builder()
-                .month(MONTH)
-                .year(YEAR)
-                .user(user)
-                .build();
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .build();
         when(monthlySummaryRepository.findByUserId(userId))
-                .thenReturn(List.of(summary));
+            .thenReturn(List.of(summary));
 
         List<MonthlySummary> result = monthlySummaryService.getByUser(userId);
 

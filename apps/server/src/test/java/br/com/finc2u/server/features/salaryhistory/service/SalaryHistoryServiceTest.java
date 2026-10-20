@@ -3,7 +3,6 @@ package br.com.finc2u.server.features.salaryhistory.service;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,25 +40,22 @@ class SalaryHistoryServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         user = User.builder()
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(BigDecimal.valueOf(3000))
-                        .build())
-                .build();
+            .build();
         user.setId(userId);
     }
 
     @Test
     void create_shouldSaveAndReturnHistory() {
         SalaryHistory input = SalaryHistory.builder()
-                .baseSalary(BigDecimal.valueOf(3500))
-                .effectiveFrom(LocalDate.of(2026, 8, 1))
-                .build();
+            .baseSalary(BigDecimal.valueOf(3500))
+            .effectiveFrom(LocalDate.of(2026, 8, 1))
+            .build();
 
         SalaryHistory saved = SalaryHistory.builder()
-                .user(user)
-                .baseSalary(BigDecimal.valueOf(3500))
-                .effectiveFrom(LocalDate.of(2026, 8, 1))
-                .build();
+            .user(user)
+            .baseSalary(BigDecimal.valueOf(3500))
+            .effectiveFrom(LocalDate.of(2026, 8, 1))
+            .build();
 
         when(userService.getById(userId)).thenReturn(user);
         when(salaryHistoryRepository.save(any())).thenReturn(saved);
@@ -74,15 +70,15 @@ class SalaryHistoryServiceTest {
     @Test
     void getByUser_shouldReturnHistoryOrderedByDateDesc() {
         SalaryHistory history1 = SalaryHistory.builder()
-                .user(user)
-                .baseSalary(BigDecimal.valueOf(3500))
-                .effectiveFrom(LocalDate.of(2026, 8, 1))
-                .build();
+            .user(user)
+            .baseSalary(BigDecimal.valueOf(3500))
+            .effectiveFrom(LocalDate.of(2026, 8, 1))
+            .build();
         SalaryHistory history2 = SalaryHistory.builder()
-                .user(user)
-                .baseSalary(BigDecimal.valueOf(3000))
-                .effectiveFrom(LocalDate.of(2026, 1, 1))
-                .build();
+            .user(user)
+            .baseSalary(BigDecimal.valueOf(3000))
+            .effectiveFrom(LocalDate.of(2026, 1, 1))
+            .build();
 
         when(salaryHistoryRepository.findByUserIdOrderByEffectiveFromDesc(userId)).thenReturn(List.of(history1, history2));
 
@@ -95,55 +91,52 @@ class SalaryHistoryServiceTest {
     @Test
     void getBaseSalaryForPeriod_shouldReturnHistoricalSalary_whenExists() {
         SalaryHistory history = SalaryHistory.builder()
-                .user(user)
-                .baseSalary(BigDecimal.valueOf(3000))
-                .effectiveFrom(LocalDate.of(2026, 1, 1))
-                .build();
+            .user(user)
+            .baseSalary(BigDecimal.valueOf(3000))
+            .effectiveFrom(LocalDate.of(2026, 1, 1))
+            .build();
 
         when(salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
-                userId, LocalDate.of(2026, 6, 1)))
-                .thenReturn(Optional.of(history));
+            userId, LocalDate.of(2026, 6, 1)))
+            .thenReturn(Optional.of(history));
 
         BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
-                userId,
-                LocalDate.of(2026, 6, 1),
-                BigDecimal.valueOf(9999)
+            userId,
+            LocalDate.of(2026, 6, 1)
         );
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(result));
     }
 
     @Test
-    void getBaseSalaryForPeriod_shouldUseFallback_whenNoHistoryExists() {
+    void getBaseSalaryForPeriod_shouldReturnZero_whenPeriodIsBeforeTheFirstSalary() {
         when(salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
-                userId, LocalDate.of(2026, 6, 1)))
-                .thenReturn(Optional.empty());
+            userId, LocalDate.of(2026, 6, 1)))
+            .thenReturn(Optional.empty());
 
         BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
-                userId,
-                LocalDate.of(2026, 6, 1),
-                BigDecimal.valueOf(2500)
+            userId,
+            LocalDate.of(2026, 6, 1)
         );
 
-        assertEquals(0, BigDecimal.valueOf(2500).compareTo(result));
+        assertEquals(0, BigDecimal.ZERO.compareTo(result));
     }
 
     @Test
     void getBaseSalaryForPeriod_shouldNotReturnFutureSalary() {
         SalaryHistory januarySalary = SalaryHistory.builder()
-                .user(user)
-                .baseSalary(BigDecimal.valueOf(3000))
-                .effectiveFrom(LocalDate.of(2026, 1, 1))
-                .build();
+            .user(user)
+            .baseSalary(BigDecimal.valueOf(3000))
+            .effectiveFrom(LocalDate.of(2026, 1, 1))
+            .build();
 
         when(salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
-                userId, LocalDate.of(2026, 6, 1)))
-                .thenReturn(Optional.of(januarySalary));
+            userId, LocalDate.of(2026, 6, 1)))
+            .thenReturn(Optional.of(januarySalary));
 
         BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
-                userId,
-                LocalDate.of(2026, 6, 1),
-                BigDecimal.ZERO
+            userId,
+            LocalDate.of(2026, 6, 1)
         );
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(result));

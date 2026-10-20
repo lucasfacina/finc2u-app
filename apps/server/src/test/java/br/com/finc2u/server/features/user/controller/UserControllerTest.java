@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.user.controller;
 
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.user.dto.UserRequest;
+import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -50,7 +51,6 @@ class UserControllerTest {
             .name("Lucas Facina")
             .email("facina3@gmail.com")
             .userConfiguration(UserConfiguration.builder()
-                .baseSalary(BigDecimal.valueOf(5000))
                 .savingsBalance(BigDecimal.valueOf(1000))
                 .build()
             )
@@ -117,14 +117,26 @@ class UserControllerTest {
 
     @Test
     void update_shouldReturnOk() throws Exception {
+        var updateRequest = new UserUpdateRequest("Lucas Facina", "facina3@gmail.com", BigDecimal.valueOf(1000));
         when(userService.update(eq(userId), any(User.class)))
             .thenReturn(user);
 
         mockMvc.perform(put("/users/{id}", userId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(updateRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Lucas Facina"));
+    }
+
+    @Test
+    void update_shouldReturnBadRequest_whenInvalidInput() throws Exception {
+        var invalidRequest = new UserUpdateRequest("", "invalid-email", BigDecimal.valueOf(-1));
+
+        mockMvc.perform(put("/users/{id}", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
     }
 
     @Test

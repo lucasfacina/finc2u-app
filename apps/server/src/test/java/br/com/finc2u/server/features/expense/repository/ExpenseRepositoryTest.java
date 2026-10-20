@@ -163,7 +163,6 @@ class ExpenseRepositoryTest {
             .email("ana@email.com")
             .build();
         newUser.setUserConfiguration(UserConfiguration.builder()
-            .baseSalary(BigDecimal.valueOf(3000))
             .savingsBalance(BigDecimal.valueOf(100))
             .build());
         return testEntityManager.persist(newUser);

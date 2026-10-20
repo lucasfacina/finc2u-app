@@ -53,7 +53,7 @@ class UserRepositoryTest {
         List<User> users = userRepository.findAll();
 
         assertEquals(3, users.size());
-        users.forEach(user -> assertNotNull(user.getUserConfiguration().getBaseSalary()));
+        users.forEach(user -> assertNotNull(user.getUserConfiguration().getSavingsBalance()));
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
@@ -62,7 +62,7 @@ class UserRepositoryTest {
         User user = userRepository.findByEmail("beto@email.com")
             .orElseThrow();
 
-        assertEquals(0, BigDecimal.valueOf(3000).compareTo(user.getUserConfiguration().getBaseSalary()));
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(user.getUserConfiguration().getSavingsBalance()));
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
@@ -74,7 +74,6 @@ class UserRepositoryTest {
             .email("ana@email.com")
             .build();
         duplicated.setUserConfiguration(UserConfiguration.builder()
-            .baseSalary(BigDecimal.valueOf(1000))
             .build());
 
         var exception = assertThrows(DataIntegrityViolationException.class,
@@ -97,7 +96,6 @@ class UserRepositoryTest {
             .email(email)
             .build();
         user.setUserConfiguration(UserConfiguration.builder()
-            .baseSalary(BigDecimal.valueOf(3000))
             .savingsBalance(BigDecimal.valueOf(100))
             .build());
         testEntityManager.persist(user);

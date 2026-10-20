@@ -71,7 +71,6 @@ class UserRegistrationIntegrationTest {
             .email(email)
             .build();
         user.setUserConfiguration(UserConfiguration.builder()
-            .baseSalary(BigDecimal.valueOf(3000))
             .savingsBalance(BigDecimal.valueOf(100))
             .build());
         return user;
