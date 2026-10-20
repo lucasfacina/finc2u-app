@@ -31,6 +31,18 @@ public class CardAccount extends BaseModel {
     @ManyToOne
     private User user;
 
+    // A validade informada por mês/ano vira o último dia desse mês; o CardAccountService associa o usuário.
+    public static CardAccount of(String cardName, Integer closingDate, Integer dueDate, YearMonth expiration) {
+        return CardAccount.builder()
+            .cardName(cardName)
+            .closingDate(closingDate)
+            .dueDate(dueDate)
+            .expirationDate(expiration != null
+                ? expiration.atEndOfMonth()
+                : null)
+            .build();
+    }
+
     /*
      * Cartão com validade só aceita compras até o último dia do mês de validade; sem validade, aceita sempre.
      */

@@ -25,14 +25,12 @@ public record CardAccountRequest(
 ) {
 
     public CardAccount toEntity() {
-        return CardAccount.builder()
-            .cardName(this.cardName())
-            .closingDate(this.closingDate())
-            .dueDate(this.dueDate())
-            .expirationDate(this.expiration() != null
-                ? this.expiration().atEndOfMonth()
-                : null)
-            .build();
+        return CardAccount.of(
+            this.cardName(),
+            this.closingDate(),
+            this.dueDate(),
+            this.expiration()
+        );
     }
 
 }
