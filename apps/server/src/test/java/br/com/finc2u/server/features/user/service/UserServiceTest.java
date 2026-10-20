@@ -4,15 +4,20 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.entity.UserConfiguration;
+import br.com.finc2u.server.features.user.event.UserRegisteredEvent;
 import br.com.finc2u.server.features.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +33,9 @@ public class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private UserService userService;
 
@@ -38,25 +46,25 @@ public class UserServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         user = User.builder()
-                .name("Lucas Facina")
-                .email("facina3@gmail.com")
-                .userConfiguration(UserConfiguration.builder()
-                        .baseSalary(BigDecimal.valueOf(5000))
-                        .savingsBalance(BigDecimal.valueOf(1000))
-                        .build()
-                )
-                .build();
+            .name("Lucas Facina")
+            .email("facina3@gmail.com")
+            .userConfiguration(UserConfiguration.builder()
+                .baseSalary(BigDecimal.valueOf(5000))
+                .savingsBalance(BigDecimal.valueOf(1000))
+                .build()
+            )
+            .build();
         user.setId(userId);
     }
 
     @Test
     void create_shouldReturnUser_whenEmailIsUnique() {
         when(userRepository.findByEmail(anyString()))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
         when(userRepository.save(any(User.class)))
-                .thenReturn(user);
+            .thenReturn(user);
 
-        User response = userService.create(user);
+        User response = userService.create(user, BigDecimal.valueOf(5000), LocalDate.of(2026, 1, 1));
 
         assertNotNull(response);
         assertEquals(user.getName(), response.getName());
@@ -65,18 +73,47 @@ public class UserServiceTest {
     }
 
     @Test
+    void create_shouldPublishUserRegisteredEvent_withSalaryAndEffectiveFrom() {
+        when(userRepository.findByEmail(anyString()))
+            .thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class)))
+            .thenReturn(user);
+
+        userService.create(user, BigDecimal.valueOf(5000), LocalDate.of(2026, 1, 1));
+
+        var event = captureRegisteredEvent();
+        assertSame(user, event.user());
+        assertEquals(0, BigDecimal.valueOf(5000).compareTo(event.baseSalary()));
+        assertEquals(LocalDate.of(2026, 1, 1), event.salaryEffectiveFrom());
+    }
+
+    @Test
+    void create_shouldDefaultEffectiveFromToFirstDayOfCurrentMonth_whenNotInformed() {
+        when(userRepository.findByEmail(anyString()))
+            .thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class)))
+            .thenReturn(user);
+
+        userService.create(user, BigDecimal.valueOf(5000), null);
+
+        assertEquals(YearMonth.now().atDay(1), captureRegisteredEvent().salaryEffectiveFrom());
+    }
+
+    @Test
     void create_shouldThrowBusinessException_whenEmailAlreadyExists() {
         when(userRepository.findByEmail(anyString()))
-                .thenReturn(Optional.of(user));
+            .thenReturn(Optional.of(user));
 
-        assertThrows(BusinessException.class, () -> userService.create(user));
+        assertThrows(BusinessException.class,
+            () -> userService.create(user, BigDecimal.valueOf(5000), null));
         verify(userRepository, never()).save(any(User.class));
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
     void getById_shouldReturnUser_whenIdExists() {
         when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+            .thenReturn(Optional.of(user));
 
         User response = userService.getById(userId);
 
@@ -87,7 +124,7 @@ public class UserServiceTest {
     @Test
     void getById_shouldThrowResourceNotFoundException_whenIdDoesNotExist() {
         when(userRepository.findById(userId))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> userService.getById(userId));
     }
@@ -95,7 +132,7 @@ public class UserServiceTest {
     @Test
     void getAll_shouldReturnListOfUser() {
         when(userRepository.findAll())
-                .thenReturn(List.of(user));
+            .thenReturn(List.of(user));
 
         List<User> response = userService.getAll();
 
@@ -107,9 +144,9 @@ public class UserServiceTest {
     @Test
     void update_shouldReturnUpdatedUser_whenUserExists() {
         when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+            .thenReturn(Optional.of(user));
         when(userRepository.save(any(User.class)))
-                .thenReturn(user);
+            .thenReturn(user);
 
         User response = userService.update(userId, user);
 
@@ -121,12 +158,18 @@ public class UserServiceTest {
     @Test
     void delete_shouldCallDelete_whenUserExists() {
         when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+            .thenReturn(Optional.of(user));
         doNothing().when(userRepository).delete(user);
 
         userService.delete(userId);
 
         verify(userRepository, times(1)).delete(user);
+    }
+
+    private UserRegisteredEvent captureRegisteredEvent() {
+        var captor = ArgumentCaptor.forClass(UserRegisteredEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        return captor.getValue();
     }
 
 }

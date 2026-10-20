@@ -12,10 +12,11 @@ class UserRequestTest {
     @Test
     void toEntity_shouldBuildUserWithConfigurationLinkedBack() {
         UserRequest request = new UserRequest(
-                "Lucas",
-                "lucas@email.com",
-                BigDecimal.valueOf(3000),
-                BigDecimal.valueOf(500)
+            "Lucas",
+            "lucas@email.com",
+            BigDecimal.valueOf(3000),
+            BigDecimal.valueOf(500),
+            null
         );
 
         User user = request.toEntity();
