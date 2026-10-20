@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.summary.entity;
 
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -15,9 +14,7 @@ class MonthlySummaryTest {
 
     private static User userWith(BigDecimal savings) {
         return User.builder()
-            .userConfiguration(UserConfiguration.builder()
-                .savingsBalance(savings)
-                .build())
+            .savingsBalance(savings)
             .build();
     }
 
@@ -121,7 +118,7 @@ class MonthlySummaryTest {
     // ---- resolveTotals: savingsBalance (snapshot) ----
 
     @Test
-    void resolveTotals_shouldSnapshotSavingsBalance_fromUserConfiguration() {
+    void resolveTotals_shouldSnapshotSavingsBalance_fromUser() {
         User user = userWith(BigDecimal.valueOf(1500));
         MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
 

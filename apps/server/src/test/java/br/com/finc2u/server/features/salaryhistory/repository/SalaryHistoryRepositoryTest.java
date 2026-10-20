@@ -3,7 +3,6 @@ package br.com.finc2u.server.features.salaryhistory.repository;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
@@ -112,10 +111,8 @@ class SalaryHistoryRepositoryTest {
         var user = User.builder()
             .name(name)
             .email(email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         return testEntityManager.persist(user);
     }
 

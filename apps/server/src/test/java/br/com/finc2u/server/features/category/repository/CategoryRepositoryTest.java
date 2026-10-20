@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.category.repository;
 
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,10 +90,8 @@ class CategoryRepositoryTest {
         var user = User.builder()
             .name(name)
             .email(email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         return testEntityManager.persist(user);
     }
 

@@ -3,7 +3,6 @@ package br.com.finc2u.server.features.user.service;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.event.UserRegisteredEvent;
 import br.com.finc2u.server.features.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,10 +47,7 @@ public class UserServiceTest {
         user = User.builder()
             .name("Lucas Facina")
             .email("facina3@gmail.com")
-            .userConfiguration(UserConfiguration.builder()
-                .savingsBalance(BigDecimal.valueOf(1000))
-                .build()
-            )
+            .savingsBalance(BigDecimal.valueOf(1000))
             .build();
         user.setId(userId);
     }
@@ -159,10 +155,8 @@ public class UserServiceTest {
         var changes = User.builder()
             .name("Lucas F.")
             .email("novo@email.com")
-            .build();
-        changes.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(2500))
-            .build());
+            .build();
         when(userRepository.findById(userId))
             .thenReturn(Optional.of(user));
         when(userRepository.findByEmail("novo@email.com"))
@@ -174,7 +168,7 @@ public class UserServiceTest {
 
         assertEquals("Lucas F.", response.getName());
         assertEquals("novo@email.com", response.getEmail());
-        assertEquals(0, BigDecimal.valueOf(2500).compareTo(response.getUserConfiguration().getSavingsBalance()));
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(response.getSavingsBalance()));
     }
 
     @Test

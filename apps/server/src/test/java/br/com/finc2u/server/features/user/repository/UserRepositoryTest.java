@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.user.repository;
 
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
 import org.hibernate.exception.ConstraintViolationException;
@@ -47,20 +46,19 @@ class UserRepositoryTest {
     }
 
     @Test
-    void findAll_shouldLoadConfigurationInSingleQuery() {
+    void findAll_shouldLoadUsersInSingleQuery() {
         List<User> users = userRepository.findAll();
 
         assertEquals(3, users.size());
-        users.forEach(user -> assertNotNull(user.getUserConfiguration().getSavingsBalance()));
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
     @Test
-    void findByEmail_shouldLoadConfigurationInSingleQuery() {
+    void findByEmail_shouldLoadUserInSingleQuery() {
         User user = userRepository.findByEmail("beto@email.com")
             .orElseThrow();
 
-        assertEquals(0, BigDecimal.valueOf(100).compareTo(user.getUserConfiguration().getSavingsBalance()));
+        assertEquals(0, BigDecimal.valueOf(100).compareTo(user.getSavingsBalance()));
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
@@ -71,8 +69,6 @@ class UserRepositoryTest {
             .name("Outra Ana")
             .email("ana@email.com")
             .build();
-        duplicated.setUserConfiguration(UserConfiguration.builder()
-            .build());
 
         var exception = assertThrows(DataIntegrityViolationException.class,
             () -> userRepository.saveAndFlush(duplicated));
@@ -92,10 +88,8 @@ class UserRepositoryTest {
         User user = User.builder()
             .name(name)
             .email(email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         testEntityManager.persist(user);
     }
 

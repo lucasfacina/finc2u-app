@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.user.projection;
 
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,9 +87,7 @@ class UserProfileProjectionTest {
         var user = User.builder()
             .name(name)
             .email(email)
-            .userConfiguration(UserConfiguration.builder()
-                .savingsBalance(BigDecimal.valueOf(100))
-                .build())
+            .savingsBalance(BigDecimal.valueOf(100))
             .build();
         user.setId(UUID.randomUUID());
         return user;

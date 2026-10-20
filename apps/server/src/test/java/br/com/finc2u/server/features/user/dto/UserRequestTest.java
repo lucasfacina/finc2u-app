@@ -5,12 +5,12 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class UserRequestTest {
 
     @Test
-    void toEntity_shouldBuildUserWithConfigurationLinkedBack() {
+    void toEntity_shouldBuildUserWithSavingsBalance() {
         UserRequest request = new UserRequest(
             "Lucas",
             "lucas@email.com",
@@ -23,9 +23,7 @@ class UserRequestTest {
 
         assertEquals("Lucas", user.getName());
         assertEquals("lucas@email.com", user.getEmail());
-        assertNotNull(user.getUserConfiguration());
-        assertEquals(0, BigDecimal.valueOf(500).compareTo(user.getUserConfiguration().getSavingsBalance()));
-        assertSame(user, user.getUserConfiguration().getUser());
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(user.getSavingsBalance()));
     }
 
 }

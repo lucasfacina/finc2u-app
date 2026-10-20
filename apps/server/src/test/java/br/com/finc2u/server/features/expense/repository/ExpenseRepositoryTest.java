@@ -9,7 +9,6 @@ import br.com.finc2u.server.features.expense.form.ExpenseResponse;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
@@ -34,9 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * getPrepareStatementCount() (todo SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
  *
  * O total esperado das listagens é 2: a consulta de despesas (com tags e cartão no @EntityGraph) mais um custo FIXO do
- * dono — o Expense.user é EAGER e o User.userConfiguration (1:1 inverso) é carregado à parte. Esse custo não cresce
- * com os dados (toda consulta é escopada por um único usuário) e some quando o Expense.user virar LAZY (Fase 11); aí
- * este número deve cair para 1. O que o teste realmente protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
+ * dono — o Expense.user é EAGER. Esse custo não cresce com os dados (toda consulta é escopada por um único usuário)
+ * e some quando o Expense.user virar LAZY (Fase 11); aí este número deve cair para 1. O que o teste realmente protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
  */
 @DataJpaTest
 class ExpenseRepositoryTest {
@@ -159,10 +157,8 @@ class ExpenseRepositoryTest {
         var newUser = User.builder()
             .name("Ana")
             .email("ana@email.com")
-            .build();
-        newUser.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         return testEntityManager.persist(newUser);
     }
 

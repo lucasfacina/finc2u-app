@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.tag.repository;
 
 import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,10 +105,8 @@ class TagRepositoryTest {
         var user = User.builder()
             .name(name)
             .email(email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         return testEntityManager.persist(user);
     }
 

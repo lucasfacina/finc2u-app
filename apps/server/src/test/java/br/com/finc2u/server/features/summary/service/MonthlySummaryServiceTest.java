@@ -11,7 +11,6 @@ import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -56,10 +55,7 @@ class MonthlySummaryServiceTest {
     void setUp() {
         userId = UUID.randomUUID();
         user = User.builder()
-            .userConfiguration(UserConfiguration.builder()
-                .savingsBalance(BigDecimal.valueOf(1000))
-                .build()
-            )
+            .savingsBalance(BigDecimal.valueOf(1000))
             .build();
         user.setId(userId);
     }
@@ -235,7 +231,7 @@ class MonthlySummaryServiceTest {
     }
 
     @Test
-    void calculateOrRecalculate_shouldSnapshotSavingsBalance_fromUserConfiguration() {
+    void calculateOrRecalculate_shouldSnapshotSavingsBalance_fromUser() {
         stubRepositories(
             List.of(),
             List.of(),

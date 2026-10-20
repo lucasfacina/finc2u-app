@@ -6,7 +6,6 @@ import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.repository.UserRepository;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -90,10 +89,8 @@ class UserRegistrationIntegrationTest {
         var user = User.builder()
             .name("Ana")
             .email(email)
-            .build();
-        user.setUserConfiguration(UserConfiguration.builder()
             .savingsBalance(BigDecimal.valueOf(100))
-            .build());
+            .build();
         return user;
     }
 

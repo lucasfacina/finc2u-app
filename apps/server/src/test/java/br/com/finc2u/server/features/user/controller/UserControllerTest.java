@@ -4,7 +4,6 @@ import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.user.dto.UserRequest;
 import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.entity.UserConfiguration;
 import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.projection.UserProfileProjection;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -55,10 +54,7 @@ class UserControllerTest {
         user = User.builder()
             .name("Lucas Facina")
             .email("facina3@gmail.com")
-            .userConfiguration(UserConfiguration.builder()
-                .savingsBalance(BigDecimal.valueOf(1000))
-                .build()
-            )
+            .savingsBalance(BigDecimal.valueOf(1000))
             .build();
         user.setId(userId);
 
