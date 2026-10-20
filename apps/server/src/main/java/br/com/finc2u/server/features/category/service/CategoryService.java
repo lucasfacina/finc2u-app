@@ -3,13 +3,17 @@ package br.com.finc2u.server.features.category.service;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.category.enums.DefaultCategory;
 import br.com.finc2u.server.features.category.repository.CategoryRepository;
+import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.UUID;
 
 @Service
@@ -51,6 +55,29 @@ public class CategoryService {
     public List<Category> getByUser(UUID userId) {
         userService.getById(userId);
         return categoryRepository.findByUserIdOrderByNameAsc(userId);
+    }
+
+    /*
+     * Cria as categorias padrão que o usuário ainda não tem (nome comparado sem diferenciar maiúsculas de
+     * minúsculas), então pode ser chamado de novo sem duplicar nada.
+     */
+    @Transactional
+    public void createDefaults(User user) {
+        var existingNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        categoryRepository.findByUserIdOrderByNameAsc(user.getId())
+            .forEach(category -> existingNames.add(category.getName()));
+
+        var missingCategories = Arrays.stream(DefaultCategory.values())
+            .map(DefaultCategory::getCategoryName)
+            .filter(name -> !existingNames.contains(name))
+            .map(name -> {
+                var category = Category.of(name);
+                category.setUser(user);
+                return category;
+            })
+            .toList();
+
+        categoryRepository.saveAll(missingCategories);
     }
 
     @Transactional
