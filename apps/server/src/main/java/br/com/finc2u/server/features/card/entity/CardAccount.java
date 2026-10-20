@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.card.entity;
 
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.Entity;
@@ -9,6 +10,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 @Table(name = "tb_card_account")
@@ -28,6 +30,17 @@ public class CardAccount extends BaseModel {
 
     @ManyToOne
     private User user;
+
+    /*
+     * Cartão com validade só aceita compras até o último dia do mês de validade; sem validade, aceita sempre.
+     */
+    public void assertUsableOn(LocalDate purchaseDate) {
+        if (expirationDate != null && purchaseDate.isAfter(expirationDate)) {
+            throw new BusinessException(
+                "Cartão expirado em " + YearMonth.from(expirationDate).format(DateTimeFormatter.ofPattern("MM/yyyy")) + "."
+            );
+        }
+    }
 
     /*
      * Determina o vencimento da fatura em que a compra cai.

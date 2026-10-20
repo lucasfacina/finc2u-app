@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +34,8 @@ public class ExpenseService {
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId());
         expenseMapper.applyCategory(expense, command.categoryId());
+
+        assertCardUsable(expense, command.purchaseDate() != null ? command.purchaseDate() : LocalDate.now());
 
         expense.prepareForPersistence(command.purchaseDate());
 
@@ -65,6 +68,10 @@ public class ExpenseService {
         expenseMapper.applyCategory(expense, command.categoryId());
         expenseMapper.applyEditableFields(expense, command.expense());
 
+        if (command.purchaseDate() != null) {
+            assertCardUsable(expense, command.purchaseDate());
+        }
+
         expense.prepareForPersistence(command.purchaseDate());
 
         return expenseRepository.save(expense);
@@ -82,6 +89,12 @@ public class ExpenseService {
     public void delete(UUID id) {
         Expense expense = getById(id);
         expenseRepository.delete(expense);
+    }
+
+    private void assertCardUsable(Expense expense, LocalDate purchaseDate) {
+        if (expense.getCardAccount() != null) {
+            expense.getCardAccount().assertUsableOn(purchaseDate);
+        }
     }
 
 }
