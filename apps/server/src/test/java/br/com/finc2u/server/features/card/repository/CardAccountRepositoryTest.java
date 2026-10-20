@@ -103,8 +103,8 @@ class CardAccountRepositoryTest {
             .build();
     }
 
-    private CardAccount persistCard(String name, User user) {
-        return testEntityManager.persistAndFlush(newCard(name, user));
+    private void persistCard(String name, User user) {
+        testEntityManager.persistAndFlush(newCard(name, user));
     }
 
     private User persistUser(String name, String email) {
