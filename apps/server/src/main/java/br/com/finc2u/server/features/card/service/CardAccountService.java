@@ -30,7 +30,13 @@ public class CardAccountService {
     @Transactional(readOnly = true)
     public CardAccount getById(UUID id) {
         return cardAccountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public CardAccount getByIdAndUser(UUID id, UUID userId) {
+        return cardAccountRepository.findByIdAndUserId(id, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + id));
     }
 
     @Transactional(readOnly = true)
