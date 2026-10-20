@@ -183,16 +183,6 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 | PUT    | `/card-accounts/{id}` | Atualizar cartão          | `id` (path), Body: `CardAccountRequest`      |
 | DELETE | `/card-accounts/{id}` | Deletar cartão            | `id` (path)                                  |
 
-### Tags — `/tags`
-
-| Método | Endpoint     | Descrição            | Parâmetros                      |
-|--------|--------------|----------------------|---------------------------------|
-| POST   | `/tags`      | Criar tag            | Body: `TagRequest`              |
-| GET    | `/tags`      | Listar todas as tags | —                               |
-| GET    | `/tags/{id}` | Buscar tag por ID    | `id` (path)                     |
-| PUT    | `/tags/{id}` | Atualizar tag        | `id` (path), Body: `TagRequest` |
-| DELETE | `/tags/{id}` | Deletar tag          | `id` (path)                     |
-
 ### Despesas — `/expenses`
 
 | Método | Endpoint                | Descrição                         | Parâmetros                                                                                    |
