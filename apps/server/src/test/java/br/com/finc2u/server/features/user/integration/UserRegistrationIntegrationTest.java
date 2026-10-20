@@ -1,5 +1,8 @@
 package br.com.finc2u.server.features.user.integration;
 
+import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.category.enums.DefaultCategory;
+import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.entity.User;
@@ -14,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +31,9 @@ class UserRegistrationIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CategoryService categoryService;
 
     @MockitoSpyBean
     private SalaryHistoryService salaryHistoryService;
@@ -63,6 +70,20 @@ class UserRegistrationIntegrationTest {
             () -> userService.create(user, BigDecimal.valueOf(3000), LocalDate.of(2026, 1, 1)));
 
         assertTrue(userRepository.findByEmail("rollback@email.com").isEmpty());
+    }
+
+    @Test
+    void create_shouldGenerateTheDefaultCategories() {
+        var user = newUser("categorias.padrao@email.com");
+
+        var savedUser = userService.create(user, BigDecimal.valueOf(3000), LocalDate.of(2026, 1, 1));
+
+        var categories = categoryService.getByUser(savedUser.getId());
+        var defaultNames = Arrays.stream(DefaultCategory.values())
+            .map(DefaultCategory::getCategoryName)
+            .toList();
+        assertEquals(defaultNames.size(), categories.size());
+        assertTrue(categories.stream().map(Category::getName).toList().containsAll(defaultNames));
     }
 
     private User newUser(String email) {
