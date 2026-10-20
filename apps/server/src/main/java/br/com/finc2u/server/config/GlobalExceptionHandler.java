@@ -2,6 +2,7 @@ package br.com.finc2u.server.config;
 
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ErrorResponse;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
@@ -48,6 +49,19 @@ public class GlobalExceptionHandler {
             status.value(),
             exception.getMessage(),
             "Regra de negócio violada.",
+            LocalDateTime.now()
+        );
+        return new ResponseEntity<>(error, status);
+    }
+
+    // HTTP 400
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidRequestException(InvalidRequestException exception) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        ErrorResponse error = new ErrorResponse(
+            status.value(),
+            exception.getMessage(),
+            "A requisição não pôde ser processada.",
             LocalDateTime.now()
         );
         return new ResponseEntity<>(error, status);
