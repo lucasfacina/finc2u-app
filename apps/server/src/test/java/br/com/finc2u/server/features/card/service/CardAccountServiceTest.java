@@ -79,6 +79,26 @@ public class CardAccountServiceTest {
     }
 
     @Test
+    void getByUserAndName_shouldReturnTheCardOfTheUser_ignoringCase() {
+        when(cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, "nubank"))
+            .thenReturn(Optional.of(cardAccount));
+
+        assertSame(cardAccount, cardAccountService.getByUserAndName(userId, "nubank"));
+    }
+
+    // Cartão de outro usuário não volta da consulta escopada: o erro é o mesmo de nome inexistente.
+    @Test
+    void getByUserAndName_shouldThrowResourceNotFoundException_whenNoCardOfTheUserHasThatName() {
+        when(cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, "Nubank"))
+            .thenReturn(Optional.empty());
+
+        var exception = assertThrows(ResourceNotFoundException.class,
+            () -> cardAccountService.getByUserAndName(userId, "Nubank"));
+
+        assertEquals("Conta/Cartão não encontrado com o nome: Nubank", exception.getMessage());
+    }
+
+    @Test
     void create_shouldReturnSavedCardAccount_whenUserExists() {
         when(userService.getById(userId))
             .thenReturn(user);
