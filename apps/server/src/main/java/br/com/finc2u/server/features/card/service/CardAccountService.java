@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.card.service;
 
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
@@ -22,6 +23,13 @@ public class CardAccountService {
     @Transactional
     public CardAccount create(CardAccount cardAccount, UUID userId) {
         User user = userService.getById(userId);
+
+        // A constraint unique do banco diferencia maiúsculas de minúsculas ("Nubank" × "nubank"); esta checagem não,
+        // e devolve um erro de negócio claro em vez de uma violação de integridade.
+        if (cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, cardAccount.getCardName()).isPresent()) {
+            throw new BusinessException("Cartão já cadastrado!");
+        }
+
         cardAccount.setUser(user);
 
         return cardAccountRepository.save(cardAccount);
@@ -40,14 +48,23 @@ public class CardAccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<CardAccount> getByUser(UUID userId) {
+    public List<CardAccount> getByUser(UUID userId, String name) {
         userService.getById(userId);
-        return cardAccountRepository.findByUserIdOrderByCardNameAsc(userId);
+        var searchTerm = name == null
+            ? ""
+            : name.trim();
+        return cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, searchTerm);
     }
 
     @Transactional
     public CardAccount update(UUID id, CardAccount cardUpdated) {
         CardAccount cardAccount = getById(id);
+
+        cardAccountRepository.findByUserIdAndCardNameIgnoreCase(cardAccount.getUser().getId(), cardUpdated.getCardName())
+            .filter(existing -> !existing.getId().equals(id))
+            .ifPresent(__ -> {
+                throw new BusinessException("Cartão já cadastrado!");
+            });
 
         cardAccount.setCardName(cardUpdated.getCardName());
         cardAccount.setClosingDate(cardUpdated.getClosingDate());

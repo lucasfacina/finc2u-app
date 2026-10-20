@@ -6,6 +6,7 @@ import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -13,7 +14,10 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
 @Entity
-@Table(name = "tb_card_account")
+@Table(
+    name = "tb_card_account",
+    uniqueConstraints = @UniqueConstraint(name = "uk_card_user_name", columnNames = {"user_id", "card_name"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
