@@ -79,6 +79,14 @@ class CategoryRepositoryTest {
         assertTrue(categoryRepository.findByUserIdAndNameIgnoreCase(beto.getId(), "Alimentação").isEmpty());
     }
 
+    @Test
+    void findByIdAndUserId_shouldNotFindACategoryOfAnotherUser() {
+        var category = persistCategory("Alimentação", ana);
+
+        assertTrue(categoryRepository.findByIdAndUserId(category.getId(), ana.getId()).isPresent());
+        assertTrue(categoryRepository.findByIdAndUserId(category.getId(), beto.getId()).isEmpty());
+    }
+
     private User persistUser(String name, String email) {
         var user = User.builder()
             .name(name)
