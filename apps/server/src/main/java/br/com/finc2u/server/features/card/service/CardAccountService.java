@@ -48,6 +48,12 @@ public class CardAccountService {
     }
 
     @Transactional(readOnly = true)
+    public CardAccount getByUserAndName(UUID userId, String name) {
+        return cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, name)
+            .orElseThrow(() -> new ResourceNotFoundException("Conta/Cartão não encontrado com o nome: " + name));
+    }
+
+    @Transactional(readOnly = true)
     public List<CardAccount> getByUser(UUID userId, String name) {
         userService.getById(userId);
         var searchTerm = name == null
