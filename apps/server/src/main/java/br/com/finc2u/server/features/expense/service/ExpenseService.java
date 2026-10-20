@@ -35,9 +35,13 @@ public class ExpenseService {
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId());
 
-        assertCardUsable(expense, command.purchaseDate() != null ? command.purchaseDate() : LocalDate.now(clock));
+        var today = LocalDate.now(clock);
+        var purchaseDate = command.purchaseDate() != null
+            ? command.purchaseDate()
+            : today;
+        assertCardUsable(expense, purchaseDate);
 
-        expense.prepareForPersistence(command.purchaseDate());
+        expense.prepareForPersistence(purchaseDate, today);
 
         return expenseRepository.save(expense);
     }
@@ -72,7 +76,11 @@ public class ExpenseService {
             assertCardUsable(expense, command.purchaseDate());
         }
 
-        expense.prepareForPersistence(command.purchaseDate());
+        var today = LocalDate.now(clock);
+        expense.prepareForPersistence(command.purchaseDate() != null
+            ? command.purchaseDate()
+            : today, today
+        );
 
         return expenseRepository.save(expense);
     }

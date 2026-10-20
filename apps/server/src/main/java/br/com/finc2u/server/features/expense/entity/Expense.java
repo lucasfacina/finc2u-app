@@ -50,7 +50,8 @@ public class Expense extends BaseModel {
     /*
      * Resolve a data de vencimento da despesa:
      * - Se dueDate já foi informado, ele prevalece (override manual).
-     * - Com cartão e sem dueDate: calcula a partir de purchaseDate + fechamento/vencimento do cartão.
+     * - Com cartão e sem dueDate: calcula a partir de purchaseDate + fechamento/vencimento do cartão. A data de compra
+     *   chega já resolvida (o service usa "hoje" quando o cliente não informa): a entidade não lê o relógio.
      * - Sem cartão e sem dueDate: erro (despesa avulsa exige vencimento manual).
      */
     public void resolveDueDate(LocalDate purchaseDate) {
@@ -66,19 +67,16 @@ public class Expense extends BaseModel {
             throw new BusinessException("Cartão não possui datas de fechamento/vencimento configuradas.");
         }
 
-        LocalDate purchase = purchaseDate != null
-            ? purchaseDate
-            : LocalDate.now();
-        this.dueDate = cardAccount.calculateInvoiceDueDate(purchase);
+        this.dueDate = cardAccount.calculateInvoiceDueDate(purchaseDate);
     }
 
     /*
      * Define o status de pagamento por padrão quando não informado:
-     * vencimento até hoje conta como PAID (assume pagamento em dia); vencimento futuro fica PENDING.
+     * vencimento até a data de referência (hoje) conta como PAID (assume pagamento em dia); vencimento futuro fica PENDING.
      */
-    public void resolveDefaultPaymentStatus() {
+    public void resolveDefaultPaymentStatus(LocalDate referenceDate) {
         if (paymentStatus == null) {
-            paymentStatus = !dueDate.isAfter(LocalDate.now())
+            paymentStatus = !dueDate.isAfter(referenceDate)
                 ? PaymentStatus.PAID
                 : PaymentStatus.PENDING;
         }
@@ -116,18 +114,19 @@ public class Expense extends BaseModel {
     /*
      * Normaliza o estado derivado da despesa antes de persistir, na ordem correta:
      * resolve o vencimento, define o status padrão (que depende do vencimento) e aplica
-     * as regras de parcelamento.
+     * as regras de parcelamento. As duas datas chegam resolvidas: a da compra (base do vencimento pelo cartão) e a de
+     * referência, que é "hoje" (base do status padrão).
      */
-    public void prepareForPersistence(LocalDate purchaseDate) {
+    public void prepareForPersistence(LocalDate purchaseDate, LocalDate referenceDate) {
         resolveDueDate(purchaseDate);
-        resolveDefaultPaymentStatus();
+        resolveDefaultPaymentStatus(referenceDate);
         applyInstallmentRules();
     }
 
 
-    // Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior a hoje).
-    public void markPaidIfOverdue() {
-        if (paymentStatus == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(LocalDate.now())) {
+    // Self-healing: atualiza a despesa para PAID quando está PENDING e já venceu (dueDate anterior à data de referência).
+    public void markPaidIfOverdue(LocalDate referenceDate) {
+        if (paymentStatus == PaymentStatus.PENDING && dueDate != null && dueDate.isBefore(referenceDate)) {
             paymentStatus = PaymentStatus.PAID;
         }
     }
