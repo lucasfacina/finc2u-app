@@ -26,24 +26,23 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
         }
 
         int current = source.getCurrentInstallment() != null
-                ? source.getCurrentInstallment()
-                : 1;
+            ? source.getCurrentInstallment()
+            : 1;
         int total = source.getTotalInstallment();
         int remaining = total - current;
 
         List<Expense> projections = new ArrayList<>();
         for (int i = 1; i <= remaining; i++) {
             Expense projection = Expense.builder()
-                    .description(source.getDescription() + " (" + (current + i) + "/" + total + ")")
-                    .value(source.getValue())
-                    .dueDate(source.getDueDate().plusMonths(i))
-                    .expenseType(source.getExpenseType())
-                    .paymentStatus(PaymentStatus.PENDING)
-                    .currentInstallment(current + i)
-                    .totalInstallment(total)
-                    .cardAccount(source.getCardAccount())
-                    .tags(source.getTags())
-                    .build();
+                .description(source.getDescription() + " (" + (current + i) + "/" + total + ")")
+                .value(source.getValue())
+                .dueDate(source.getDueDate().plusMonths(i))
+                .expenseType(source.getExpenseType())
+                .paymentStatus(PaymentStatus.PENDING)
+                .currentInstallment(current + i)
+                .totalInstallment(total)
+                .cardAccount(source.getCardAccount())
+                .build();
             projection.setId(source.getId());
             projection.setCreatedAt(source.getCreatedAt());
             projections.add(projection);
@@ -53,10 +52,10 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
 
     public Map<YearMonth, List<Expense>> getProjectionsByUser(UUID userId) {
         return expenseRepository.findByExpenseTypeAndUserId(ExpenseType.PARCELED, userId)
-                .stream()
-                .filter(expense -> expense.getPaymentStatus() == PaymentStatus.PENDING)
-                .flatMap(expense -> remainingInstallmentsOf(expense).stream())
-                .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getDueDate())));
+            .stream()
+            .filter(expense -> expense.getPaymentStatus() == PaymentStatus.PENDING)
+            .flatMap(expense -> remainingInstallmentsOf(expense).stream())
+            .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getDueDate())));
     }
 
 }

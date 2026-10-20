@@ -9,7 +9,6 @@ import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 public record ExpenseRequest(
@@ -44,10 +43,7 @@ public record ExpenseRequest(
     Integer totalInstallment,
 
     // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
-    UUID cardAccountId,
-
-    // Opcional: tags associadas à despesa (para fins de categorização/relatórios)
-    List<UUID> tagIds
+    UUID cardAccountId
 ) {
 
     public Expense toEntity() {
@@ -63,7 +59,7 @@ public record ExpenseRequest(
     }
 
     public ExpenseCommand toCommand() {
-        return new ExpenseCommand(toEntity(), cardAccountId(), purchaseDate(), tagIds());
+        return new ExpenseCommand(toEntity(), cardAccountId(), purchaseDate());
     }
 
 }

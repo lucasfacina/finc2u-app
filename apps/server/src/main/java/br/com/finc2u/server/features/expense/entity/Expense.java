@@ -5,7 +5,6 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -13,7 +12,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
 @Table(name = "tb_expense")
@@ -43,14 +41,6 @@ public class Expense extends BaseModel {
 
     @ManyToOne
     private CardAccount cardAccount;
-
-    @ManyToMany
-    @JoinTable(
-        name = "tb_expense_tag",
-        joinColumns = @JoinColumn(name = "expense_id"),
-        inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
-    private List<Tag> tags;
 
     /*
      * Resolve a data de vencimento da despesa:

@@ -9,7 +9,6 @@ import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
-import br.com.finc2u.server.features.tag.service.TagService;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,6 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final CardAccountService cardAccountService;
-    private final TagService tagService;
     private final UserService userService;
     private final ExpenseMapper expenseMapper;
 
@@ -34,7 +32,6 @@ public class ExpenseService {
         expense.setUser(userService.getById(userId));
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId());
-        expenseMapper.applyTags(expense, command.tagIds());
 
         expense.prepareForPersistence(command.purchaseDate());
 
@@ -64,7 +61,6 @@ public class ExpenseService {
         var expense = getById(id);
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId());
-        expenseMapper.applyTags(expense, command.tagIds());
         expenseMapper.applyEditableFields(expense, command.expense());
 
         expense.prepareForPersistence(command.purchaseDate());
