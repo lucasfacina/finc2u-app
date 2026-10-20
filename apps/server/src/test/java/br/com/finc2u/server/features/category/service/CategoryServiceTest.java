@@ -3,16 +3,19 @@ package br.com.finc2u.server.features.category.service;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.category.enums.DefaultCategory;
 import br.com.finc2u.server.features.category.repository.CategoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -218,6 +221,68 @@ class CategoryServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> categoryService.delete(categoryId));
         verify(categoryRepository, never()).delete(any(Category.class));
+    }
+
+    @Test
+    void createDefaults_shouldCreateAllDefaultCategoriesForTheUser_whenTheUserHasNone() {
+        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+            .thenReturn(List.of());
+
+        categoryService.createDefaults(user);
+
+        var created = savedCategories();
+        assertEquals(defaultNames(), created.stream().map(Category::getName).toList());
+        assertTrue(created.stream().allMatch(createdCategory -> createdCategory.getUser() == user));
+    }
+
+    @Test
+    void createDefaults_shouldCreateOnlyTheMissingOnes_ignoringCase() {
+        var existing = Category.builder()
+            .name("alimentação")
+            .user(user)
+            .build();
+        var custom = Category.builder()
+            .name("Pets")
+            .user(user)
+            .build();
+        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+            .thenReturn(List.of(existing, custom));
+
+        categoryService.createDefaults(user);
+
+        var createdNames = savedCategories().stream().map(Category::getName).toList();
+        assertEquals(DefaultCategory.values().length - 1, createdNames.size());
+        assertFalse(createdNames.contains("Alimentação"));
+        assertTrue(createdNames.contains("Transporte"));
+    }
+
+    @Test
+    void createDefaults_shouldNotDuplicateAnything_whenTheUserAlreadyHasAllOfThem() {
+        var existing = defaultNames().stream()
+            .map(name -> Category.builder()
+                .name(name)
+                .user(user)
+                .build())
+            .toList();
+        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+            .thenReturn(existing);
+
+        categoryService.createDefaults(user);
+
+        assertTrue(savedCategories().isEmpty());
+    }
+
+    private List<String> defaultNames() {
+        return Arrays.stream(DefaultCategory.values())
+            .map(DefaultCategory::getCategoryName)
+            .toList();
+    }
+
+    private List<Category> savedCategories() {
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Category>> captor = ArgumentCaptor.forClass(List.class);
+        verify(categoryRepository).saveAll(captor.capture());
+        return captor.getValue();
     }
 
 }
