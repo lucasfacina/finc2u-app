@@ -1,0 +1,77 @@
+package br.com.finc2u.server.features.category.service;
+
+import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.ResourceNotFoundException;
+import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.category.repository.CategoryRepository;
+import br.com.finc2u.server.features.user.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class CategoryService {
+
+    private final CategoryRepository categoryRepository;
+    private final UserService userService;
+
+    @Transactional
+    public Category create(Category category, UUID userId) {
+        var user = userService.getById(userId);
+
+        // A constraint unique do banco diferencia maiúsculas de minúsculas ("Lazer" × "lazer"); esta checagem não,
+        // e devolve um erro de negócio claro em vez de uma violação de integridade.
+        if (categoryRepository.findByUserIdAndNameIgnoreCase(userId, category.getName()).isPresent()) {
+            throw new BusinessException("Categoria já cadastrada!");
+        }
+
+        category.setUser(user);
+
+        return categoryRepository.save(category);
+    }
+
+    @Transactional(readOnly = true)
+    public Category getById(UUID id) {
+        return categoryRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com o ID: " + id));
+    }
+
+    // Categoria de outro usuário é tratada como inexistente: a resposta não revela que o id existe.
+    @Transactional(readOnly = true)
+    public Category getByIdAndUser(UUID id, UUID userId) {
+        return categoryRepository.findByIdAndUserId(id, userId)
+            .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com o ID: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Category> getByUser(UUID userId) {
+        userService.getById(userId);
+        return categoryRepository.findByUserIdOrderByNameAsc(userId);
+    }
+
+    @Transactional
+    public Category update(UUID id, Category categoryUpdated) {
+        var category = getById(id);
+
+        categoryRepository.findByUserIdAndNameIgnoreCase(category.getUser().getId(), categoryUpdated.getName())
+            .filter(existing -> !existing.getId().equals(id))
+            .ifPresent(__ -> {
+                throw new BusinessException("Categoria já cadastrada!");
+            });
+
+        category.setName(categoryUpdated.getName());
+
+        return categoryRepository.save(category);
+    }
+
+    @Transactional
+    public void delete(UUID id) {
+        var category = getById(id);
+        categoryRepository.delete(category);
+    }
+
+}
