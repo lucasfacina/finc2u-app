@@ -30,7 +30,7 @@ public class ExpenseService {
         var expense = command.expense();
         expense.setUser(userService.getById(userId));
 
-        expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId());
 
         assertCardUsable(expense, command.purchaseDate() != null ? command.purchaseDate() : LocalDate.now());
@@ -62,7 +62,7 @@ public class ExpenseService {
     public Expense update(UUID id, ExpenseCommand command) {
         var expense = getById(id);
 
-        expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId());
         expenseMapper.applyEditableFields(expense, command.expense());
 

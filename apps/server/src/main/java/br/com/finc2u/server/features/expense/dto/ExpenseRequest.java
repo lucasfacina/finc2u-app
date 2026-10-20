@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
@@ -46,8 +47,18 @@ public record ExpenseRequest(
     UUID categoryId,
 
     // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
-    UUID cardAccountId
+    UUID cardAccountId,
+
+    // Opcional: alternativa ao cardAccountId; resolvido entre os cartões do próprio usuário (sem diferenciar maiúsculas de minúsculas)
+    String cardName
 ) {
+
+    // O cartão é informado por id ou por nome, nunca pelos dois (consistência do próprio request).
+    @JsonIgnore
+    @AssertTrue(message = "Informe o cartão por id ou por nome, não pelos dois.")
+    public boolean isCardReferenceValid() {
+        return cardAccountId == null || cardName == null || cardName.isBlank();
+    }
 
     public Expense toEntity() {
         return Expense.builder()
@@ -62,7 +73,7 @@ public record ExpenseRequest(
     }
 
     public ExpenseCommand toCommand() {
-        return new ExpenseCommand(toEntity(), cardAccountId(), categoryId(), purchaseDate());
+        return new ExpenseCommand(toEntity(), cardAccountId(), cardName(), categoryId(), purchaseDate());
     }
 
 }
