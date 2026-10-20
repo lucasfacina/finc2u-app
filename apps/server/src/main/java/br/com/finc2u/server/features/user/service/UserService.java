@@ -3,11 +3,16 @@ package br.com.finc2u.server.features.user.service;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.features.user.event.UserRegisteredEvent;
 import br.com.finc2u.server.features.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,20 +21,27 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public User create(User user) {
+    public User create(User user, BigDecimal baseSalary, LocalDate effectiveFrom) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
             throw new BusinessException("E-mail já cadastrado!");
         }
 
-        return userRepository.save(user);
+        var savedUser = userRepository.save(user);
+        var salaryEffectiveFrom = effectiveFrom != null
+            ? effectiveFrom
+            : YearMonth.now().atDay(1);
+        eventPublisher.publishEvent(new UserRegisteredEvent(savedUser, baseSalary, salaryEffectiveFrom));
+
+        return savedUser;
     }
 
     @Transactional(readOnly = true)
     public User getById(UUID id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com o ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado com o ID: " + id));
     }
 
     @Transactional(readOnly = true)
@@ -42,7 +54,7 @@ public class UserService {
         User user = getById(id);
 
         if (!user.getEmail().equals(userUpdated.getEmail()) &&
-                userRepository.findByEmail(userUpdated.getEmail()).isPresent()) {
+            userRepository.findByEmail(userUpdated.getEmail()).isPresent()) {
             throw new BusinessException("E-mail já cadastrado!");
         }
 

@@ -22,16 +22,16 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest userRequest) {
-        User savedUser = userService.create(userRequest.toEntity());
+        User savedUser = userService.create(userRequest.toEntity(), userRequest.baseSalary(), userRequest.effectiveFrom());
         return new ResponseEntity<>(UserResponse.from(savedUser), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<UserResponse>> getAll() {
         List<UserResponse> userResponse = userService.getAll()
-                .stream()
-                .map(UserResponse::from)
-                .toList();
+            .stream()
+            .map(UserResponse::from)
+            .toList();
         return ResponseEntity.ok(userResponse);
     }
 
