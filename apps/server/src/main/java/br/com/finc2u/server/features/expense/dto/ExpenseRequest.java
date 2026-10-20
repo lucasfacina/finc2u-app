@@ -42,6 +42,9 @@ public record ExpenseRequest(
     @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Total de parcelas deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
     Integer totalInstallment,
 
+    @NotNull(message = "Categoria é obrigatória!")
+    UUID categoryId,
+
     // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
     UUID cardAccountId
 ) {
@@ -59,7 +62,7 @@ public record ExpenseRequest(
     }
 
     public ExpenseCommand toCommand() {
-        return new ExpenseCommand(toEntity(), cardAccountId(), purchaseDate());
+        return new ExpenseCommand(toEntity(), cardAccountId(), categoryId(), purchaseDate());
     }
 
 }

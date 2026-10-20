@@ -32,6 +32,7 @@ public class ExpenseService {
         expense.setUser(userService.getById(userId));
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyCategory(expense, command.categoryId());
 
         expense.prepareForPersistence(command.purchaseDate());
 
@@ -61,6 +62,7 @@ public class ExpenseService {
         var expense = getById(id);
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId());
+        expenseMapper.applyCategory(expense, command.categoryId());
         expenseMapper.applyEditableFields(expense, command.expense());
 
         expense.prepareForPersistence(command.purchaseDate());
