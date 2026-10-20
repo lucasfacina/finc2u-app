@@ -39,6 +39,7 @@ public class ExpenseSeeder implements Seeder {
                 .paymentStatus(PaymentStatus.PAID)
                 .user(context.getUser())
                 .cardAccount(context.card("Nubank"))
+                .category(context.category("Assinaturas"))
                 .build(),
             Expense.builder()
                 .description("iCloud")
@@ -48,6 +49,7 @@ public class ExpenseSeeder implements Seeder {
                 .paymentStatus(PaymentStatus.PAID)
                 .user(context.getUser())
                 .cardAccount(context.card("Nubank"))
+                .category(context.category("Assinaturas"))
                 .build(),
 
             // VARIABLE / PAID — em cartão, alimentação
@@ -59,6 +61,7 @@ public class ExpenseSeeder implements Seeder {
                 .paymentStatus(PaymentStatus.PAID)
                 .user(context.getUser())
                 .cardAccount(context.card("Nubank"))
+                .category(context.category("Alimentação"))
                 .build(),
 
             // PARCELED / PAID — parcela final (5/5), lazer
@@ -72,6 +75,7 @@ public class ExpenseSeeder implements Seeder {
                 .totalInstallment(5)
                 .user(context.getUser())
                 .cardAccount(context.card("Nubank"))
+                .category(context.category("Lazer"))
                 .build(),
 
             // PARCELED / PENDING — parcela em curso (4/10), outro cartão, lazer
@@ -84,6 +88,7 @@ public class ExpenseSeeder implements Seeder {
                 .currentInstallment(4).totalInstallment(10)
                 .user(context.getUser())
                 .cardAccount(context.card("Mercado Pago"))
+                .category(context.category("Lazer"))
                 .build(),
 
             // VARIABLE / PAID — saúde
@@ -95,6 +100,7 @@ public class ExpenseSeeder implements Seeder {
                 .paymentStatus(PaymentStatus.PAID)
                 .user(context.getUser())
                 .cardAccount(context.card("Mercado Pago"))
+                .category(context.category("Saúde"))
                 .build(),
 
             // FIXED / PAID — avulsa (sem cartão), assinaturas
@@ -105,6 +111,7 @@ public class ExpenseSeeder implements Seeder {
                 .expenseType(ExpenseType.FIXED)
                 .paymentStatus(PaymentStatus.PAID)
                 .user(context.getUser())
+                .category(context.category("Assinaturas"))
                 .build(),
 
             // FIXED / PENDING — avulsa (sem cartão), transporte
@@ -115,6 +122,7 @@ public class ExpenseSeeder implements Seeder {
                 .expenseType(ExpenseType.FIXED)
                 .paymentStatus(PaymentStatus.PENDING)
                 .user(context.getUser())
+                .category(context.category("Transporte"))
                 .build()
         );
 

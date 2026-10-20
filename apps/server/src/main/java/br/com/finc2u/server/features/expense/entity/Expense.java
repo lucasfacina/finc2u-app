@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.expense.entity;
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.user.entity.User;
@@ -41,6 +42,10 @@ public class Expense extends BaseModel {
 
     @ManyToOne
     private CardAccount cardAccount;
+
+    // LAZY: só as consultas que montam o ExpenseResponse carregam a categoria (via @EntityGraph); o resumo mensal não a lê.
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private Category category;
 
     /*
      * Resolve a data de vencimento da despesa:

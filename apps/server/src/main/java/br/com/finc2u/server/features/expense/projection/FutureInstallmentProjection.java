@@ -42,6 +42,7 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
                 .currentInstallment(current + i)
                 .totalInstallment(total)
                 .cardAccount(source.getCardAccount())
+                .category(source.getCategory())
                 .build();
             projection.setId(source.getId());
             projection.setCreatedAt(source.getCreatedAt());
