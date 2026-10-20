@@ -99,6 +99,19 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void create_shouldNotSave_whenCardOrCategoryDoesNotBelongToTheUser() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        doThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + cardAccountId))
+            .when(expenseMapper).applyCardAccount(expense, cardAccountId);
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, null)));
+
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
     void create_shouldKeepPendingStatus_whenLastInstallmentOfParceled() {
         expense.setExpenseType(ExpenseType.PARCELED);
         expense.setCurrentInstallment(3);
@@ -206,6 +219,19 @@ class ExpenseServiceTest {
         verify(expenseMapper).applyCategory(expense, categoryId);
         verify(expenseMapper).applyEditableFields(expense, updates);
         verify(expenseRepository).save(expense);
+    }
+
+    @Test
+    void update_shouldNotSave_whenCardOrCategoryDoesNotBelongToTheUser() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        doThrow(new ResourceNotFoundException("Categoria não encontrada com o ID: " + categoryId))
+            .when(expenseMapper).applyCategory(expense, categoryId);
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> expenseService.update(expenseId, command(expense, cardAccountId, null)));
+
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     @Test

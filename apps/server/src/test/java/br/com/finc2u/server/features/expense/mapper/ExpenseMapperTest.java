@@ -36,19 +36,40 @@ public class ExpenseMapperTest {
     private ExpenseMapper expenseMapper;
 
     @Test
-    void applyCardAccount_shouldResolveAndAttach_whenIdPresent() {
+    void applyCardAccount_shouldResolveTheCardOfTheExpenseOwnerAndAttach_whenIdPresent() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
         UUID cardId = UUID.randomUUID();
         CardAccount card = CardAccount.builder()
             .build();
         card.setId(cardId);
-        when(cardAccountService.getById(cardId))
+        when(cardAccountService.getByIdAndUser(cardId, owner.getId()))
             .thenReturn(card);
 
         Expense expense = Expense.builder()
+            .user(owner)
             .build();
         expenseMapper.applyCardAccount(expense, cardId);
 
         assertSame(card, expense.getCardAccount());
+    }
+
+    @Test
+    void applyCardAccount_shouldPropagateNotFound_whenCardDoesNotBelongToTheOwner() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        UUID cardId = UUID.randomUUID();
+        when(cardAccountService.getByIdAndUser(cardId, owner.getId()))
+            .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + cardId));
+
+        Expense expense = Expense.builder()
+            .user(owner)
+            .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCardAccount(expense, cardId));
+        assertNull(expense.getCardAccount());
     }
 
     @Test
