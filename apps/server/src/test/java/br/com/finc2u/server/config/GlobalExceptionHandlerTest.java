@@ -38,6 +38,17 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
+    // HTTP 400
+    @Test
+    void shouldHandleInvalidRequestException() throws Exception {
+        mockMvc.perform(get("/test/exceptions/invalid-request"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Requisição inválida."))
+            .andExpect(jsonPath("$.detail").value("A requisição não pôde ser processada."))
+            .andExpect(jsonPath("$.timestamp").exists());
+    }
+
     // HTTP 409
     @Test
     void shouldHandleDataIntegrityViolationException() throws Exception {

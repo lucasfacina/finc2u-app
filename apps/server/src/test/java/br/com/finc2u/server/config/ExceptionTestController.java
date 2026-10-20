@@ -1,6 +1,7 @@
 package br.com.finc2u.server.config;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import jakarta.validation.Valid;
@@ -30,6 +31,12 @@ public class ExceptionTestController {
     @GetMapping("/business")
     public void throwBusinessException() {
         throw new BusinessException("Erro de negócio.");
+    }
+
+    // HTTP 400
+    @GetMapping("/invalid-request")
+    public void throwInvalidRequestException() {
+        throw new InvalidRequestException("Requisição inválida.");
     }
 
     // HTTP 409
