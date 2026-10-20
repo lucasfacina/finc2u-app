@@ -165,36 +165,68 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 
 ### Usuários — `/users`
 
-| Método | Endpoint      | Descrição                | Parâmetros                       |
-|--------|---------------|--------------------------|----------------------------------|
-| POST   | `/users`      | Criar usuário            | Body: `UserRequest`              |
-| GET    | `/users`      | Listar todos os usuários | —                                |
-| GET    | `/users/{id}` | Buscar usuário por ID    | `id` (path)                      |
-| PUT    | `/users/{id}` | Atualizar usuário        | `id` (path), Body: `UserRequest` |
-| DELETE | `/users/{id}` | Deletar usuário          | `id` (path)                      |
+| Método | Endpoint      | Descrição                | Parâmetros                             |
+|--------|---------------|--------------------------|----------------------------------------|
+| POST   | `/users`      | Criar usuário            | Body: `UserRequest`                    |
+| GET    | `/users`      | Listar todos os usuários | —                                      |
+| GET    | `/users/{id}` | Buscar usuário por ID    | `id` (path)                            |
+| PUT    | `/users/{id}` | Atualizar usuário        | `id` (path), Body: `UserUpdateRequest` |
+| DELETE | `/users/{id}` | Deletar usuário          | `id` (path)                            |
+
+- **`POST /users`** — `{ name, email, baseSalary, savingsBalance?, effectiveFrom? }`. O cadastro cria, na mesma
+  transação, a **primeira vigência de salário** (`effectiveFrom`, padrão: dia 1 do mês atual) e as **8 categorias
+  padrão** (Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Assinaturas, Outros). Se qualquer passo falhar,
+  o usuário não é gravado.
+- **`PUT /users/{id}`** — `{ name, email, savingsBalance? }`. O salário **não** muda por aqui: use `/salary-history`.
+- **Resposta** (`UserResponse`) — `id`, `name`, `email`, `createdAt`, `baseSalary` (salário **vigente hoje**, `null` se
+  ainda não há vigência iniciada) e `savingsBalance`.
 
 ### Contas/Cartões — `/card-accounts`
 
-| Método | Endpoint              | Descrição                 | Parâmetros                                   |
-|--------|-----------------------|---------------------------|----------------------------------------------|
-| POST   | `/card-accounts`      | Criar conta/cartão        | `userId` (query), Body: `CardAccountRequest` |
-| GET    | `/card-accounts`      | Listar cartões do usuário | `userId` (query)                             |
-| GET    | `/card-accounts/{id}` | Buscar cartão por ID      | `id` (path)                                  |
-| PUT    | `/card-accounts/{id}` | Atualizar cartão          | `id` (path), Body: `CardAccountRequest`      |
-| DELETE | `/card-accounts/{id}` | Deletar cartão            | `id` (path)                                  |
+| Método | Endpoint              | Descrição                 | Parâmetros                                       |
+|--------|-----------------------|---------------------------|--------------------------------------------------|
+| POST   | `/card-accounts`      | Criar conta/cartão        | `userId` (query), Body: `CardAccountRequest`     |
+| GET    | `/card-accounts`      | Listar cartões do usuário | `userId`* (query), `name` (query, busca parcial) |
+| GET    | `/card-accounts/{id}` | Buscar cartão por ID      | `id` (path)                                      |
+| PUT    | `/card-accounts/{id}` | Atualizar cartão          | `id` (path), Body: `CardAccountRequest`          |
+| DELETE | `/card-accounts/{id}` | Deletar cartão            | `id` (path)                                      |
+
+- **`CardAccountRequest`** — `{ cardName, closingDate, dueDate, expiration? }`. O nome é **único por usuário** (sem
+  diferenciar maiúsculas de minúsculas; duplicado → 422). `expiration` é a validade no formato `"2030-05"` e não pode
+  estar no passado (400); uma compra depois do último dia desse mês é recusada (422, "Cartão expirado em 05/2030.").
+- **`name`** filtra pelo nome do cartão (parcial, sem diferenciar maiúsculas de minúsculas); sem ele, lista todos.
+
+### Categorias — `/categories`
+
+| Método | Endpoint           | Descrição                    | Parâmetros                                |
+|--------|--------------------|------------------------------|-------------------------------------------|
+| POST   | `/categories`      | Criar categoria              | `userId` (query), Body: `CategoryRequest` |
+| GET    | `/categories`      | Listar categorias do usuário | `userId`* (query)                         |
+| GET    | `/categories/{id}` | Buscar categoria por ID      | `id` (path)                               |
+| PUT    | `/categories/{id}` | Renomear categoria           | `id` (path), Body: `CategoryRequest`      |
+| DELETE | `/categories/{id}` | Deletar categoria            | `id` (path)                               |
+
+- **`CategoryRequest`** — `{ name }` (até 60 caracteres). O nome é **único por usuário** (sem diferenciar maiúsculas
+  de minúsculas; duplicado → 422). Apagar uma categoria que ainda tem despesas → 409.
 
 ### Despesas — `/expenses`
 
-| Método | Endpoint                | Descrição                         | Parâmetros                                                                                    |
-|--------|-------------------------|-----------------------------------|-----------------------------------------------------------------------------------------------|
-| POST   | `/expenses`             | Criar despesa (parcelas: 1 a 120) | `userId` (query), Body: `ExpenseRequest`                                                      |
-| GET    | `/expenses`             | Listar despesas do usuário        | `userId`* (query)                                                                             |
-| GET    | `/expenses/filters`     | Listar despesas com filtros       | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `minPrice`, `maxPrice` (query) |
-| GET    | `/expenses/{id}`        | Buscar despesa por ID             | `id` (path)                                                                                   |
-| GET    | `/expenses/projections` | Projeção de parcelas futuras      | `userId`* (query)                                                                             |
-| PUT    | `/expenses/{id}`        | Atualizar despesa                 | `id` (path), Body: `ExpenseRequest`                                                           |
-| PATCH  | `/expenses/{id}/status` | Atualizar status da despesa       | `id` (path), `status` (query)                                                                 |
-| DELETE | `/expenses/{id}`        | Deletar despesa                   | `id` (path)                                                                                   |
+| Método | Endpoint                | Descrição                         | Parâmetros                                                                                                  |
+|--------|-------------------------|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
+| POST   | `/expenses`             | Criar despesa (parcelas: 1 a 120) | `userId` (query), Body: `ExpenseRequest`                                                                    |
+| GET    | `/expenses`             | Listar despesas do usuário        | `userId`* (query)                                                                                           |
+| GET    | `/expenses/filters`     | Listar despesas com filtros       | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `categoryId`, `minPrice`, `maxPrice` (query) |
+| GET    | `/expenses/{id}`        | Buscar despesa por ID             | `id` (path)                                                                                                 |
+| GET    | `/expenses/projections` | Projeção de parcelas futuras      | `userId`* (query)                                                                                           |
+| PUT    | `/expenses/{id}`        | Atualizar despesa                 | `id` (path), Body: `ExpenseRequest`                                                                         |
+| PATCH  | `/expenses/{id}/status` | Atualizar status da despesa       | `id` (path), `status` (query)                                                                               |
+| DELETE | `/expenses/{id}`        | Deletar despesa                   | `id` (path)                                                                                                 |
+
+- **`ExpenseRequest`** — além dos campos da despesa, exige **`categoryId`** (400 se faltar; também no `PUT`) e aceita o
+  cartão por **`cardAccountId` ou `cardName`** (os dois → 400; nenhum → despesa avulsa, que exige `dueDate`). O
+  `cardName` é resolvido entre os cartões do próprio usuário.
+- Cartão e categoria precisam ser **do dono da despesa**: o de outro usuário é tratado como inexistente (404).
+- A resposta (`ExpenseResponse`) traz `cardName` e `category` (`{ id, name }`).
 
 ### Ganhos Extras — `/extra-incomes`
 
