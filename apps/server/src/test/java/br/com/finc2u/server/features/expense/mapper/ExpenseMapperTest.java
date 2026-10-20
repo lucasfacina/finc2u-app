@@ -1,10 +1,14 @@
 package br.com.finc2u.server.features.expense.mapper;
 
+import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.service.CardAccountService;
+import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +28,9 @@ public class ExpenseMapperTest {
 
     @Mock
     private CardAccountService cardAccountService;
+
+    @Mock
+    private CategoryService categoryService;
 
     @InjectMocks
     private ExpenseMapper expenseMapper;
@@ -54,6 +61,42 @@ public class ExpenseMapperTest {
 
         assertNull(expense.getCardAccount());
         verifyNoInteractions(cardAccountService);
+    }
+
+    @Test
+    void applyCategory_shouldResolveTheCategoryOfTheExpenseOwnerAndAttach() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        var categoryId = UUID.randomUUID();
+        var category = Category.of("Alimentação");
+        category.setId(categoryId);
+        when(categoryService.getByIdAndUser(categoryId, owner.getId()))
+            .thenReturn(category);
+
+        var expense = Expense.builder()
+            .user(owner)
+            .build();
+        expenseMapper.applyCategory(expense, categoryId);
+
+        assertSame(category, expense.getCategory());
+    }
+
+    @Test
+    void applyCategory_shouldPropagateNotFound_whenCategoryDoesNotBelongToTheOwner() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        var categoryId = UUID.randomUUID();
+        when(categoryService.getByIdAndUser(categoryId, owner.getId()))
+            .thenThrow(new ResourceNotFoundException("Categoria não encontrada com o ID: " + categoryId));
+
+        var expense = Expense.builder()
+            .user(owner)
+            .build();
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCategory(expense, categoryId));
+        assertNull(expense.getCategory());
     }
 
     @Test

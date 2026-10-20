@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.expense.repository;
 
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -21,15 +22,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /*
- * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição e cartão). O cenário tem
- * vários cartões: com um único cartão o N+1 passaria despercebido. A contagem usa
+ * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição, cartão e categoria). O cenário tem
+ * vários cartões e várias categorias: com um único cartão/categoria o N+1 passaria despercebido. A contagem usa
  * getPrepareStatementCount() (todo SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
  *
- * O total esperado das listagens é 2: a consulta de despesas (com o cartão no @EntityGraph) mais um custo FIXO do
+ * O total esperado das listagens é 2: a consulta de despesas (com cartão e categoria no @EntityGraph) mais um custo FIXO do
  * dono — o Expense.user é EAGER. Esse custo não cresce com os dados (toda consulta é escopada por um único usuário)
  * e some quando o Expense.user virar LAZY (Fase 11); aí este número deve cair para 1. O que o teste realmente
  * protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
@@ -66,7 +66,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findByUserId_shouldLoadCardInTheMainQuery() {
+    void findByUserId_shouldLoadCardAndCategoryInTheMainQuery() {
         var expenses = expenseRepository.findByUserId(user.getId());
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
@@ -82,6 +82,7 @@ class ExpenseRepositoryTest {
             null, // status
             null, // type
             null, // cardAccountId
+            null, // categoryId
             null, // minPrice
             null // maxPrice
         );
@@ -103,6 +104,27 @@ class ExpenseRepositoryTest {
     }
 
     @Test
+    void findAllBySpecification_shouldFilterByCategory() {
+        var categoryId = expenseRepository.findById(anyExpenseId).orElseThrow().getCategory().getId();
+        resetPersistenceContext();
+        var filter = new ExpenseFilter(
+            null, // month
+            null, // year
+            null, // status
+            null, // type
+            null, // cardAccountId
+            categoryId,
+            null, // minPrice
+            null // maxPrice
+        );
+
+        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter));
+
+        assertEquals(EXPENSES_PER_CARD, expenses.size());
+        assertTrue(expenses.stream().allMatch(expense -> expense.getCategory().getId().equals(categoryId)));
+    }
+
+    @Test
     void findByUserIdAndDueDateBetween_shouldLoadCardInTheMainQuery() {
         var expenses = expenseRepository.findByUserIdAndDueDateBetween(
             user.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
@@ -113,7 +135,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findById_shouldLoadCardInASingleQuery() {
+    void findById_shouldLoadCardAndCategoryInASingleQuery() {
         var expense = expenseRepository.findById(anyExpenseId).orElseThrow();
 
         ExpenseResponse.from(expense);
@@ -142,8 +164,9 @@ class ExpenseRepositoryTest {
     private void persistCardsWithExpenses(int cards, int firstCardNumber) {
         for (int card = firstCardNumber; card < firstCardNumber + cards; card++) {
             var cardAccount = persistCard("Cartão " + card);
+            var category = persistCategory("Categoria " + card);
             for (int i = 1; i <= EXPENSES_PER_CARD; i++) {
-                var expense = persistExpense("Despesa " + card + "." + i, cardAccount);
+                var expense = persistExpense("Despesa " + card + "." + i, cardAccount, category);
                 anyExpenseId = expense.getId();
             }
         }
@@ -158,6 +181,13 @@ class ExpenseRepositoryTest {
         return testEntityManager.persist(newUser);
     }
 
+    private Category persistCategory(String name) {
+        return testEntityManager.persist(Category.builder()
+            .name(name)
+            .user(user)
+            .build());
+    }
+
     private CardAccount persistCard(String name) {
         return testEntityManager.persist(CardAccount.builder()
             .cardName(name)
@@ -167,7 +197,7 @@ class ExpenseRepositoryTest {
             .build());
     }
 
-    private Expense persistExpense(String description, CardAccount cardAccount) {
+    private Expense persistExpense(String description, CardAccount cardAccount, Category category) {
         return testEntityManager.persist(Expense.builder()
             .description(description)
             .value(BigDecimal.valueOf(50))
@@ -176,6 +206,7 @@ class ExpenseRepositoryTest {
             .paymentStatus(PaymentStatus.PENDING)
             .user(user)
             .cardAccount(cardAccount)
+            .category(category)
             .build());
     }
 

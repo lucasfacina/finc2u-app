@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.expense.controller;
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.dto.ExpenseRequest;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
@@ -54,16 +55,20 @@ class ExpenseControllerTest {
     private ExpenseRequest request;
     private UUID expenseId;
     private UUID cardAccountId;
+    private UUID categoryId;
     private UUID userId;
 
     @BeforeEach
     void setUp() {
         expenseId = UUID.randomUUID();
         cardAccountId = UUID.randomUUID();
+        categoryId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
         CardAccount cardAccount = CardAccount.builder().cardName("Cartão Nu").build();
         cardAccount.setId(cardAccountId);
+        Category category = Category.of("Alimentação");
+        category.setId(categoryId);
 
         expense = Expense.builder()
             .description("Mercado")
@@ -72,6 +77,7 @@ class ExpenseControllerTest {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .cardAccount(cardAccount)
+            .category(category)
             .build();
         expense.setId(expenseId);
 
@@ -84,6 +90,7 @@ class ExpenseControllerTest {
             PaymentStatus.PENDING,
             null,
             null,
+            categoryId,
             cardAccountId
         );
     }
@@ -99,7 +106,58 @@ class ExpenseControllerTest {
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.id").value(expenseId.toString()))
-            .andExpect(jsonPath("$.description").value("Mercado"));
+            .andExpect(jsonPath("$.description").value("Mercado"))
+            .andExpect(jsonPath("$.category.id").value(categoryId.toString()))
+            .andExpect(jsonPath("$.category.name").value("Alimentação"));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCategoryIsMissing() throws Exception {
+        var requestWithoutCategory = new ExpenseRequest(
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            LocalDate.now(),
+            null,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            null,
+            cardAccountId
+        );
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithoutCategory)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void update_shouldReturnBadRequest_whenCategoryIsMissing() throws Exception {
+        var requestWithoutCategory = new ExpenseRequest(
+            "Mercado",
+            BigDecimal.valueOf(150.0),
+            ExpenseType.VARIABLE,
+            LocalDate.now(),
+            null,
+            PaymentStatus.PENDING,
+            null,
+            null,
+            null,
+            cardAccountId
+        );
+
+        mockMvc.perform(put("/expenses/{id}", expenseId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithoutCategory)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+
+        verifyNoInteractions(expenseService);
     }
 
     @Test
@@ -166,6 +224,7 @@ class ExpenseControllerTest {
             PaymentStatus.PENDING,
             null,
             null,
+            categoryId,
             cardAccountId
         );
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
@@ -183,6 +242,7 @@ class ExpenseControllerTest {
         var command = captor.getValue();
         assertEquals("Mercado", command.expense().getDescription());
         assertEquals(cardAccountId, command.cardAccountId());
+        assertEquals(categoryId, command.categoryId());
         assertEquals(purchaseDate, command.purchaseDate());
     }
 
@@ -209,6 +269,7 @@ class ExpenseControllerTest {
                 .param("status", "PAID")
                 .param("type", "PARCELED")
                 .param("cardAccountId", cardAccountId.toString())
+                .param("categoryId", categoryId.toString())
                 .param("minPrice", "100")
                 .param("maxPrice", "500"))
             .andExpect(status().isOk());
@@ -222,6 +283,7 @@ class ExpenseControllerTest {
         assertEquals(PaymentStatus.PAID, filter.status());
         assertEquals(ExpenseType.PARCELED, filter.type());
         assertEquals(cardAccountId, filter.cardAccountId());
+        assertEquals(categoryId, filter.categoryId());
         assertEquals(0, new BigDecimal("100").compareTo(filter.minPrice()));
         assertEquals(0, new BigDecimal("500").compareTo(filter.maxPrice()));
     }
@@ -325,7 +387,7 @@ class ExpenseControllerTest {
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
-            PaymentStatus.PENDING, currentInstallment, totalInstallment, cardAccountId
+            PaymentStatus.PENDING, currentInstallment, totalInstallment, categoryId, cardAccountId
         );
     }
 

@@ -50,12 +50,14 @@ class ExpenseServiceTest {
     private User user;
     private UUID expenseId;
     private UUID cardAccountId;
+    private UUID categoryId;
     private UUID userId;
 
     @BeforeEach
     void setUp() {
         expenseId = UUID.randomUUID();
         cardAccountId = UUID.randomUUID();
+        categoryId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
         cardAccount = CardAccount.builder()
@@ -91,6 +93,8 @@ class ExpenseServiceTest {
 
         assertNotNull(response);
         assertEquals(expense.getDescription(), response.getDescription());
+        verify(expenseMapper).applyCardAccount(expense, cardAccountId);
+        verify(expenseMapper).applyCategory(expense, categoryId);
         verify(expenseRepository, times(1)).save(any(Expense.class));
     }
 
@@ -188,7 +192,7 @@ class ExpenseServiceTest {
         var updates = Expense.builder()
             .description("Mercado do mês")
             .build();
-        var command = new ExpenseCommand(updates, cardAccountId, null);
+        var command = new ExpenseCommand(updates, cardAccountId, categoryId, null);
 
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
@@ -199,6 +203,7 @@ class ExpenseServiceTest {
 
         assertEquals(expenseId, response.getId());
         verify(expenseMapper).applyCardAccount(expense, cardAccountId);
+        verify(expenseMapper).applyCategory(expense, categoryId);
         verify(expenseMapper).applyEditableFields(expense, updates);
         verify(expenseRepository).save(expense);
     }
@@ -269,6 +274,7 @@ class ExpenseServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
             );
         List<Expense> response = expenseService.getWithFilters(userId, filter);
@@ -278,7 +284,7 @@ class ExpenseServiceTest {
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
-        return new ExpenseCommand(expense, cardAccountId, purchaseDate);
+        return new ExpenseCommand(expense, cardAccountId, categoryId, purchaseDate);
     }
 
 }
