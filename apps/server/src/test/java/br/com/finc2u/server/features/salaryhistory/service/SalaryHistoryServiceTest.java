@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.salaryhistory.service;
 
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
+import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,14 +14,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SalaryHistoryServiceTest {
@@ -140,6 +139,55 @@ class SalaryHistoryServiceTest {
         );
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(result));
+    }
+
+    @Test
+    void getCurrentBaseSalaries_shouldMapEachUserToTheCurrentSalary_inASingleQuery() {
+        var otherUserId = UUID.randomUUID();
+        var userIds = List.of(userId, otherUserId);
+        when(salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now()))
+            .thenReturn(List.of(
+                new CurrentSalary(userId, BigDecimal.valueOf(3500)),
+                new CurrentSalary(otherUserId, BigDecimal.valueOf(4200))));
+
+        Map<UUID, BigDecimal> result = salaryHistoryService.getCurrentBaseSalaries(userIds);
+
+        assertEquals(2, result.size());
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(userId)));
+        assertEquals(0, BigDecimal.valueOf(4200).compareTo(result.get(otherUserId)));
+        verify(salaryHistoryRepository).findCurrentSalaries(userIds, LocalDate.now());
+    }
+
+    @Test
+    void getCurrentBaseSalaries_shouldOmitUsersWithoutStartedSalary() {
+        var userIds = List.of(userId);
+        when(salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now())).thenReturn(List.of());
+
+        assertTrue(salaryHistoryService.getCurrentBaseSalaries(userIds).isEmpty());
+    }
+
+    @Test
+    void getCurrentBaseSalaries_shouldSkipTheQuery_whenThereAreNoUsers() {
+        assertTrue(salaryHistoryService.getCurrentBaseSalaries(List.of()).isEmpty());
+
+        verify(salaryHistoryRepository, never()).findCurrentSalaries(any(Collection.class), any(LocalDate.class));
+    }
+
+    @Test
+    void getCurrentBaseSalary_shouldReturnTheCurrentSalary() {
+        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), LocalDate.now()))
+            .thenReturn(List.of(new CurrentSalary(userId, BigDecimal.valueOf(3500))));
+
+        var result = salaryHistoryService.getCurrentBaseSalary(userId);
+
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.orElseThrow()));
+    }
+
+    @Test
+    void getCurrentBaseSalary_shouldBeEmpty_whenNoSalaryHasStarted() {
+        when(salaryHistoryRepository.findCurrentSalaries(List.of(userId), LocalDate.now())).thenReturn(List.of());
+
+        assertTrue(salaryHistoryService.getCurrentBaseSalary(userId).isEmpty());
     }
 
 }
