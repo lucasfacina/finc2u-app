@@ -27,11 +27,11 @@ public class CardAccountController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CardAccountResponse>> getByUserId(@RequestParam UUID userId) {
-        List<CardAccountResponse> cardAccountResponse = cardAccountService.getByUser(userId)
-                .stream()
-                .map(CardAccountResponse::from)
-                .toList();
+    public ResponseEntity<List<CardAccountResponse>> getByUserId(@RequestParam UUID userId, @RequestParam(required = false) String name) {
+        List<CardAccountResponse> cardAccountResponse = cardAccountService.getByUser(userId, name)
+            .stream()
+            .map(CardAccountResponse::from)
+            .toList();
         return ResponseEntity.ok(cardAccountResponse);
     }
 
