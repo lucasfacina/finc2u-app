@@ -21,11 +21,11 @@ public class ExpenseMapper {
     private final CardAccountService cardAccountService;
     private final CategoryService categoryService;
 
-    // Resolve e vincula o cartão; id nulo desvincula (despesa avulsa).
+    // Resolve e vincula o cartão do dono da despesa; id nulo desvincula (despesa avulsa). Cartão de outro usuário é tratado como inexistente.
     public void applyCardAccount(Expense expense, UUID cardAccountId) {
         expense.setCardAccount(cardAccountId == null
             ? null
-            : cardAccountService.getById(cardAccountId)
+            : cardAccountService.getByIdAndUser(cardAccountId, expense.getUser().getId())
         );
     }
 
