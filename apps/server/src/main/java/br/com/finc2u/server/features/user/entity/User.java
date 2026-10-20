@@ -24,7 +24,6 @@ public class User extends BaseModel {
 
     private BigDecimal savingsBalance;
 
-    // Saldo de poupança informado ou zero quando não há valor.
     public BigDecimal savingsBalanceOrZero() {
         return savingsBalance != null
             ? savingsBalance

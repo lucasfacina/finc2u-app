@@ -173,7 +173,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, status);
     }
 
-    // HTTP 500 — a exceção vai só para o log; o cliente recebe um detalhe fixo, sem informações internas.
+    // HTTP 500
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {
         log.error("Erro inesperado ao processar a requisição.", exception);

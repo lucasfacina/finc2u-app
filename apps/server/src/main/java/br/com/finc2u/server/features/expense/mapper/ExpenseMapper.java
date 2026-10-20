@@ -38,7 +38,6 @@ public class ExpenseMapper {
         expense.setCategory(categoryService.getByIdAndUser(categoryId, expense.getUser().getId()));
     }
 
-    // Copia os campos editáveis da despesa montada a partir do request para a entidade gerenciada.
     public void applyEditableFields(Expense target, Expense source) {
         target.setDescription(source.getDescription());
         target.setValue(source.getValue());
