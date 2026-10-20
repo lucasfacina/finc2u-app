@@ -24,35 +24,28 @@ public class CardSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        User user = context.getUser();
+        var user = context.getUser();
 
-        List<CardAccount> existingCards = cardAccountRepository.findByUserId(user.getId());
-        if (!existingCards.isEmpty()) {
-            existingCards.forEach(context::putCard);
-            return;
-        }
+        // Encontrar ou criar por item: cartão ausente é criado mesmo que os demais já existam (context.card nunca devolve null).
+        var existingCards = cardAccountRepository.findByUserId(user.getId());
+        existingCards.forEach(context::putCard);
 
-        createSeedCards(user).forEach(context::putCard);
+        var existingNames = existingCards.stream().map(CardAccount::getCardName).toList();
+        var missingCards = seedCards(user).stream()
+            .filter(card -> !existingNames.contains(card.getCardName()))
+            .toList();
+
+        cardAccountRepository.saveAll(missingCards).forEach(context::putCard);
     }
 
-    private List<CardAccount> createSeedCards(User user) {
-        List<CardAccount> cards = List.of(
-            CardAccount.builder()
-                .cardName("Nubank")
-                .closingDate(9)
-                .dueDate(15)
-                .expirationDate(YearMonth.of(2030, 12).atEndOfMonth())
-                .user(user)
-                .build(),
-            CardAccount.builder()
-                .cardName("Mercado Pago")
-                .closingDate(9)
-                .dueDate(14)
-                .user(user)
-                .build()
+    private List<CardAccount> seedCards(User user) {
+        var cards = List.of(
+            CardAccount.of("Nubank", 9, 15, YearMonth.of(2030, 12)),
+            CardAccount.of("Mercado Pago", 9, 14, null)
         );
+        cards.forEach(card -> card.setUser(user));
 
-        return cardAccountRepository.saveAll(cards);
+        return cards;
     }
 
 }
