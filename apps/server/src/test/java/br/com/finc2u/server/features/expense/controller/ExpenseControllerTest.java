@@ -84,8 +84,7 @@ class ExpenseControllerTest {
             PaymentStatus.PENDING,
             null,
             null,
-            cardAccountId,
-            null
+            cardAccountId
         );
     }
 
@@ -157,7 +156,6 @@ class ExpenseControllerTest {
 
     @Test
     void create_shouldPassRequestDataToServiceAsCommand() throws Exception {
-        var tagId = UUID.randomUUID();
         var purchaseDate = LocalDate.of(2026, 5, 20);
         var requestWithReferences = new ExpenseRequest(
             "Mercado",
@@ -168,8 +166,7 @@ class ExpenseControllerTest {
             PaymentStatus.PENDING,
             null,
             null,
-            cardAccountId,
-            List.of(tagId)
+            cardAccountId
         );
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
             .thenReturn(expense);
@@ -187,7 +184,6 @@ class ExpenseControllerTest {
         assertEquals("Mercado", command.expense().getDescription());
         assertEquals(cardAccountId, command.cardAccountId());
         assertEquals(purchaseDate, command.purchaseDate());
-        assertEquals(List.of(tagId), command.tagIds());
     }
 
     @Test
@@ -329,7 +325,7 @@ class ExpenseControllerTest {
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
-            PaymentStatus.PENDING, currentInstallment, totalInstallment, cardAccountId, null
+            PaymentStatus.PENDING, currentInstallment, totalInstallment, cardAccountId
         );
     }
 

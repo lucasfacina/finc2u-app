@@ -5,9 +5,6 @@ import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.tag.entity.Tag;
-import br.com.finc2u.server.features.tag.service.TagService;
-import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,7 +13,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -28,9 +24,6 @@ public class ExpenseMapperTest {
 
     @Mock
     private CardAccountService cardAccountService;
-
-    @Mock
-    private TagService tagService;
 
     @InjectMocks
     private ExpenseMapper expenseMapper;
@@ -61,36 +54,6 @@ public class ExpenseMapperTest {
 
         assertNull(expense.getCardAccount());
         verifyNoInteractions(cardAccountService);
-    }
-
-    @Test
-    void applyTags_shouldResolveTagsOfTheExpenseOwnerAndAttach_whenListPresent() {
-        var owner = User.builder()
-            .build();
-        owner.setId(UUID.randomUUID());
-        List<UUID> ids = List.of(UUID.randomUUID());
-        List<Tag> tags = List.of(Tag.builder()
-            .build());
-        when(tagService.getByIds(ids, owner.getId()))
-            .thenReturn(tags);
-
-        Expense expense = Expense.builder()
-            .user(owner)
-            .build();
-        expenseMapper.applyTags(expense, ids);
-
-        assertEquals(tags, expense.getTags());
-    }
-
-    @Test
-    void applyTags_shouldDoNothing_whenListNull() {
-        Expense expense = Expense.builder()
-            .build();
-
-        expenseMapper.applyTags(expense, null);
-
-        assertNull(expense.getTags());
-        verifyNoInteractions(tagService);
     }
 
     @Test

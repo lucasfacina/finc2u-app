@@ -185,11 +185,10 @@ class ExpenseServiceTest {
 
     @Test
     void update_shouldApplyCommandThroughMapperAndSave() {
-        var tagId = UUID.randomUUID();
         var updates = Expense.builder()
             .description("Mercado do mês")
             .build();
-        var command = new ExpenseCommand(updates, cardAccountId, null, List.of(tagId));
+        var command = new ExpenseCommand(updates, cardAccountId, null);
 
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
@@ -200,7 +199,6 @@ class ExpenseServiceTest {
 
         assertEquals(expenseId, response.getId());
         verify(expenseMapper).applyCardAccount(expense, cardAccountId);
-        verify(expenseMapper).applyTags(expense, List.of(tagId));
         verify(expenseMapper).applyEditableFields(expense, updates);
         verify(expenseRepository).save(expense);
     }
@@ -280,7 +278,7 @@ class ExpenseServiceTest {
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
-        return new ExpenseCommand(expense, cardAccountId, purchaseDate, null);
+        return new ExpenseCommand(expense, cardAccountId, purchaseDate);
     }
 
 }

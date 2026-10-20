@@ -7,7 +7,6 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.form.ExpenseResponse;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
-import br.com.finc2u.server.features.tag.entity.Tag;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
@@ -20,21 +19,20 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
- * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição, cartão e tags). O cenário tem
- * vários cartões e várias tags: com um único cartão/tag o N+1 passaria despercebido. A contagem usa
+ * Trava o N+1 nas consultas de despesa que alimentam o ExpenseResponse (descrição e cartão). O cenário tem
+ * vários cartões: com um único cartão o N+1 passaria despercebido. A contagem usa
  * getPrepareStatementCount() (todo SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
  *
- * O total esperado das listagens é 2: a consulta de despesas (com tags e cartão no @EntityGraph) mais um custo FIXO do
+ * O total esperado das listagens é 2: a consulta de despesas (com o cartão no @EntityGraph) mais um custo FIXO do
  * dono — o Expense.user é EAGER. Esse custo não cresce com os dados (toda consulta é escopada por um único usuário)
- * e some quando o Expense.user virar LAZY (Fase 11); aí este número deve cair para 1. O que o teste realmente protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
+ * e some quando o Expense.user virar LAZY (Fase 11); aí este número deve cair para 1. O que o teste realmente
+ * protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
  */
 @DataJpaTest
 class ExpenseRepositoryTest {
@@ -55,12 +53,10 @@ class ExpenseRepositoryTest {
     private Statistics statistics;
     private User user;
     private UUID anyExpenseId;
-    private List<Tag> tags;
 
     @BeforeEach
     void setUp() {
         user = persistUser();
-        tags = List.of(persistTag("Alimentação"), persistTag("Lazer"), persistTag("Assinaturas"));
         persistCardsWithExpenses(CARDS, 1);
 
         statistics = entityManager.getEntityManagerFactory()
@@ -70,7 +66,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findByUserId_shouldLoadCardAndTagsInTheMainQuery() {
+    void findByUserId_shouldLoadCardInTheMainQuery() {
         var expenses = expenseRepository.findByUserId(user.getId());
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
@@ -79,7 +75,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findAllBySpecification_shouldLoadCardAndTagsInTheMainQuery() {
+    void findAllBySpecification_shouldLoadCardInTheMainQuery() {
         var filter = new ExpenseFilter(
             null, // month
             null, // year
@@ -98,7 +94,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findByExpenseTypeAndUserId_shouldLoadCardAndTagsInTheMainQuery() {
+    void findByExpenseTypeAndUserId_shouldLoadCardInTheMainQuery() {
         var expenses = expenseRepository.findByExpenseTypeAndUserId(ExpenseType.VARIABLE, user.getId());
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
@@ -117,7 +113,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findById_shouldLoadCardAndTagsInASingleQuery() {
+    void findById_shouldLoadCardInASingleQuery() {
         var expense = expenseRepository.findById(anyExpenseId).orElseThrow();
 
         ExpenseResponse.from(expense);
@@ -162,13 +158,6 @@ class ExpenseRepositoryTest {
         return testEntityManager.persist(newUser);
     }
 
-    private Tag persistTag(String name) {
-        return testEntityManager.persist(Tag.builder()
-            .name(name)
-            .user(user)
-            .build());
-    }
-
     private CardAccount persistCard(String name) {
         return testEntityManager.persist(CardAccount.builder()
             .cardName(name)
@@ -187,7 +176,6 @@ class ExpenseRepositoryTest {
             .paymentStatus(PaymentStatus.PENDING)
             .user(user)
             .cardAccount(cardAccount)
-            .tags(new ArrayList<>(tags.subList(0, 2)))
             .build());
     }
 
