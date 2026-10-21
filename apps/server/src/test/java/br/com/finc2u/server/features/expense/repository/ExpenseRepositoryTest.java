@@ -8,18 +8,22 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.form.ExpenseResponse;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
+import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.EntityManager;
 import org.hibernate.SessionFactory;
+import org.hibernate.exception.ConstraintViolationException;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -274,6 +278,51 @@ class ExpenseRepositoryTest {
             "Mais cartões não podem gerar mais statements (N+1)");
     }
 
+    @Test
+    void existsByRecurringExpenseIdAndDueDate_shouldMatchOnlyTheSameModelAndDueDate() {
+        var model = persistRecurringExpense("Spotify");
+        var otherModel = persistRecurringExpense("Netflix");
+        persistInstance(model, LocalDate.of(2026, 10, 5));
+
+        assertTrue(expenseRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 5)));
+        assertFalse(expenseRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 11, 5)));
+        assertFalse(expenseRepository.existsByRecurringExpenseIdAndDueDate(otherModel.getId(), LocalDate.of(2026, 10, 5)));
+    }
+
+    // Trava a premissa da idempotência: o banco recusa a segunda despesa do mesmo modelo no mesmo vencimento.
+    @Test
+    void save_shouldFailWithUniqueViolation_whenTheModelAlreadyHasAnExpenseOnTheDueDate() {
+        var model = persistRecurringExpense("Spotify");
+        persistInstance(model, LocalDate.of(2026, 10, 5));
+
+        var exception = assertThrows(DataIntegrityViolationException.class,
+            () -> expenseRepository.saveAndFlush(newInstance(model, LocalDate.of(2026, 10, 5))));
+
+        ConstraintViolationException violation = null;
+        for (Throwable cause = exception; cause != null && violation == null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException constraintViolation) {
+                violation = constraintViolation;
+            }
+        }
+
+        assertNotNull(violation, "A causa deveria conter ConstraintViolationException.");
+        assertEquals(ConstraintViolationException.ConstraintKind.UNIQUE, violation.getKind());
+    }
+
+    @Test
+    void save_shouldAcceptTheSameDueDate_forAnotherModelAndForExpensesWithoutModel() {
+        var model = persistRecurringExpense("Spotify");
+        var otherModel = persistRecurringExpense("Netflix");
+        var dueDate = LocalDate.of(2026, 10, 5);
+        persistInstance(model, dueDate);
+
+        assertDoesNotThrow(() -> {
+            expenseRepository.saveAndFlush(newInstance(otherModel, dueDate));
+            expenseRepository.saveAndFlush(newInstance(null, dueDate));
+            expenseRepository.saveAndFlush(newInstance(null, dueDate));
+        });
+    }
+
     private void resetPersistenceContext() {
         testEntityManager.flush();
         testEntityManager.clear();
@@ -337,6 +386,30 @@ class ExpenseRepositoryTest {
             .cardAccount(cardAccount)
             .category(category)
             .build());
+    }
+
+    private RecurringExpense persistRecurringExpense(String description) {
+        var model = RecurringExpense.of(description, BigDecimal.TEN, 5, YearMonth.of(2026, 10), null);
+        model.setUser(user);
+        model.setCategory(persistCategory("Categoria " + description));
+        return testEntityManager.persist(model);
+    }
+
+    private Expense newInstance(RecurringExpense model, LocalDate dueDate) {
+        return Expense.builder()
+            .description("Instância")
+            .value(BigDecimal.TEN)
+            .dueDate(dueDate)
+            .expenseType(ExpenseType.FIXED)
+            .paymentStatus(PaymentStatus.PENDING)
+            .user(user)
+            .category(persistCategory("Categoria da instância " + UUID.randomUUID()))
+            .recurringExpense(model)
+            .build();
+    }
+
+    private void persistInstance(RecurringExpense model, LocalDate dueDate) {
+        testEntityManager.persistAndFlush(newInstance(model, dueDate));
     }
 
     private Expense persistExpense(String description, CardAccount cardAccount, Category category) {
