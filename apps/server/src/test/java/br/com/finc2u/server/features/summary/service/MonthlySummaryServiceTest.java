@@ -18,11 +18,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -49,6 +52,10 @@ class MonthlySummaryServiceTest {
     private SalaryHistoryService salaryHistoryService;
     @Mock
     private RecurringExpenseMaterializer recurringExpenseMaterializer;
+
+    @Spy
+    @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
+    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
@@ -146,6 +153,31 @@ class MonthlySummaryServiceTest {
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalPaid()));
         assertEquals(0, BigDecimal.valueOf(300).compareTo(result.getTotalPending()));
         verify(monthlySummaryRepository).save(any(MonthlySummary.class));
+    }
+
+    // O atraso é derivado da data do Clock (hoje = TODAY): pendente com vencimento antes dela entra no totalOverdue.
+    @Test
+    void calculateOrRecalculate_shouldDeriveTheOverdueTotalFromTheClock() {
+        var overdue = expenseOf(BigDecimal.valueOf(120), PaymentStatus.PENDING, TODAY.minusDays(5));
+        var notYetDue = expenseOf(BigDecimal.valueOf(80), PaymentStatus.PENDING, TODAY.plusDays(5));
+        var paidLate = expenseOf(BigDecimal.valueOf(300), PaymentStatus.PAID, TODAY.minusDays(5));
+        stubRepositories(List.of(overdue, notYetDue, paidLate), List.of(), null, null);
+
+        var summary = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertEquals(0, BigDecimal.valueOf(120).compareTo(summary.getTotalOverdue()));
+    }
+
+    @Test
+    void calculateOrRecalculate_shouldSumTheFixedExpenses() {
+        var fixed = expenseOf(BigDecimal.valueOf(20.90), PaymentStatus.PAID, TODAY.plusDays(2));
+        fixed.setExpenseType(ExpenseType.FIXED);
+        var variable = expenseOf(BigDecimal.valueOf(350), PaymentStatus.PAID, TODAY.plusDays(2));
+        stubRepositories(List.of(fixed, variable), List.of(), null, null);
+
+        var summary = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertEquals(0, BigDecimal.valueOf(20.90).compareTo(summary.getTotalFixed()));
     }
 
     @Test
