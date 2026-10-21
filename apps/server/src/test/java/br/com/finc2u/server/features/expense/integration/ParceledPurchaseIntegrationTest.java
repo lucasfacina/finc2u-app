@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.expense.integration;
 
+import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
@@ -104,6 +105,21 @@ class ParceledPurchaseIntegrationTest {
         assertThrows(RuntimeException.class, () -> expenseService.create(userId, purchase(userId, 4, 10)));
 
         assertTrue(expenseRepository.findByUserId(userId).isEmpty());
+    }
+
+    @Test
+    void deleteInstallmentGroup_shouldRemoveEveryInstallmentOfThePurchaseAndKeepTheOthers() {
+        var userId = registerUser("parcelas.grupo@email.com");
+        var removed = expenseService.create(userId, purchase(userId, 4, 10));
+        var kept = expenseService.create(userId, purchase(userId, 1, 3));
+
+        expenseService.deleteInstallmentGroup(removed.getInstallmentGroupId());
+
+        var remaining = expenseRepository.findByUserId(userId);
+        assertEquals(3, remaining.size());
+        assertTrue(remaining.stream().allMatch(e -> kept.getInstallmentGroupId().equals(e.getInstallmentGroupId())));
+        assertThrows(ResourceNotFoundException.class,
+            () -> expenseService.getByInstallmentGroup(removed.getInstallmentGroupId()));
     }
 
     private UUID registerUser(String email) {

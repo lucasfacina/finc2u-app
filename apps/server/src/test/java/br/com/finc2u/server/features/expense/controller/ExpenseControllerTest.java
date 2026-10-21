@@ -4,6 +4,7 @@ import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.InvalidRequestException;
+import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.dto.ExpenseRequest;
@@ -649,6 +650,65 @@ class ExpenseControllerTest {
         var captor = ArgumentCaptor.forClass(ExpenseCommand.class);
         verify(expenseService).create(eq(userId), captor.capture());
         assertEquals(LocalDate.of(2026, 6, 14), captor.getValue().expense().getPaidAt());
+    }
+
+    @Test
+    void getInstallmentGroup_shouldReturnTheInstallmentsOfThePurchase() throws Exception {
+        var groupId = UUID.randomUUID();
+        var next = Expense.builder()
+            .description("Mercado")
+            .value(BigDecimal.valueOf(150.0))
+            .dueDate(TODAY.plusMonths(1))
+            .expenseType(ExpenseType.PARCELED)
+            .paymentStatus(PaymentStatus.PENDING)
+            .currentInstallment(2)
+            .totalInstallment(2)
+            .installmentGroupId(groupId)
+            .category(expense.getCategory())
+            .build();
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(1);
+        expense.setTotalInstallment(2);
+        expense.setInstallmentGroupId(groupId);
+        when(expenseService.getByInstallmentGroup(groupId)).thenReturn(List.of(expense, next));
+
+        mockMvc.perform(get("/expenses/installment-groups/{groupId}", groupId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2))
+            .andExpect(jsonPath("$[0].currentInstallment").value(1))
+            .andExpect(jsonPath("$[1].currentInstallment").value(2))
+            .andExpect(jsonPath("$[1].installmentGroupId").value(groupId.toString()));
+    }
+
+    @Test
+    void getInstallmentGroup_shouldReturnNotFound_whenTheGroupDoesNotExist() throws Exception {
+        var groupId = UUID.randomUUID();
+        when(expenseService.getByInstallmentGroup(groupId))
+            .thenThrow(new ResourceNotFoundException("Compra parcelada não encontrada."));
+
+        mockMvc.perform(get("/expenses/installment-groups/{groupId}", groupId))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteInstallmentGroup_shouldReturnNoContent() throws Exception {
+        var groupId = UUID.randomUUID();
+        doNothing().when(expenseService).deleteInstallmentGroup(groupId);
+
+        mockMvc.perform(delete("/expenses/installment-groups/{groupId}", groupId))
+            .andExpect(status().isNoContent());
+
+        verify(expenseService).deleteInstallmentGroup(groupId);
+    }
+
+    @Test
+    void deleteInstallmentGroup_shouldReturnNotFound_whenTheGroupDoesNotExist() throws Exception {
+        var groupId = UUID.randomUUID();
+        doThrow(new ResourceNotFoundException("Compra parcelada não encontrada."))
+            .when(expenseService).deleteInstallmentGroup(groupId);
+
+        mockMvc.perform(delete("/expenses/installment-groups/{groupId}", groupId))
+            .andExpect(status().isNotFound());
     }
 
     @Test
