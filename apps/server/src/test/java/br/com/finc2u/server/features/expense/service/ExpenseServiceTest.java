@@ -574,6 +574,50 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void getByUserAndPeriod_shouldReturnTheExpensesOfThePeriod() {
+        var start = LocalDate.of(2026, 6, 1);
+        var end = LocalDate.of(2026, 6, 30);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.findByUserIdAndDueDateBetween(userId, start, end))
+            .thenReturn(List.of(expense));
+
+        var response = expenseService.getByUserAndPeriod(userId, start, end);
+
+        assertEquals(List.of(expense), response);
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldAcceptASingleDay_whenStartEqualsEnd() {
+        var day = LocalDate.of(2026, 6, 15);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.findByUserIdAndDueDateBetween(userId, day, day))
+            .thenReturn(List.of(expense));
+
+        assertEquals(List.of(expense), expenseService.getByUserAndPeriod(userId, day, day));
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldThrowInvalidRequestException_whenStartIsAfterEnd() {
+        var start = LocalDate.of(2026, 6, 30);
+        var end = LocalDate.of(2026, 6, 1);
+
+        assertThrows(InvalidRequestException.class, () -> expenseService.getByUserAndPeriod(userId, start, end));
+        verify(expenseRepository, never()).findByUserIdAndDueDateBetween(any(), any(), any());
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldThrowResourceNotFoundException_whenUserDoesNotExist() {
+        when(userService.getById(userId))
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> expenseService.getByUserAndPeriod(userId, LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)));
+        verify(expenseRepository, never()).findByUserIdAndDueDateBetween(any(), any(), any());
+    }
+
+    @Test
     void getWithFilters_shouldReturnFilteredExpenses() {
         when(userService.getById(userId))
             .thenReturn(user);
