@@ -61,4 +61,21 @@ public class RecurringExpense extends BaseModel {
             .build();
     }
 
+    // O modelo só gera despesa de startMonth a endMonth
+    public boolean isActiveIn(YearMonth month) {
+        return !month.isBefore(YearMonth.from(startMonth))
+            && (endMonth == null || !month.isAfter(YearMonth.from(endMonth)));
+    }
+
+    /*
+     * Vencimento da despesa do mês: o dia do modelo (em mês mais curto, o último dia). Com cartão, esse dia é o da
+     * compra e o vencimento segue a fatura em que ela cai (pode ser no mês seguinte).
+     */
+    public LocalDate dueDateIn(YearMonth month) {
+        var chargeDate = month.atDay(Math.min(dayOfMonth, month.lengthOfMonth()));
+        return cardAccount != null
+            ? cardAccount.calculateInvoiceDueDate(chargeDate)
+            : chargeDate;
+    }
+
 }
