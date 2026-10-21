@@ -36,8 +36,8 @@ public record ExpenseRequest(
     // Opcional: data real do pagamento. Só vale com PAID e não pode ser futura (422); desconhecida = ausente.
     LocalDate paidAt,
 
-    // Opcionais (só valem para PARCELED). Com valor informado, ficam entre 1 e o teto de parcelas; a relação
-    // parcela atual <= total é a guarda da entidade (422).
+    // Opcionais (só valem para PARCELED, senão 400). Com valor informado, ficam entre 1 e o teto de parcelas e a parcela
+    // atual não passa do total (400); a entidade mantém a mesma guarda (422) para quem não passa pelo request.
     @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Parcela atual deve ser no mínimo 1.")
     @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Parcela atual deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
     Integer currentInstallment,
@@ -62,6 +62,23 @@ public record ExpenseRequest(
     @SuppressWarnings("unused") // chamado pelo Bean Validation
     public boolean isCardReferenceValid() {
         return cardAccountId == null || cardName == null || cardName.isBlank();
+    }
+
+    // A parcela atual não passa do total (só dá para comparar quando os dois vêm).
+    @JsonIgnore
+    @AssertTrue(message = "A parcela atual não pode ser maior que o total de parcelas.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isInstallmentOrderValid() {
+        return currentInstallment == null || totalInstallment == null || currentInstallment <= totalInstallment;
+    }
+
+    // Parcelas só fazem sentido em PARCELED. Sem tipo informado, quem reclama é o @NotNull do próprio tipo.
+    @JsonIgnore
+    @AssertTrue(message = "Parcelas só podem ser informadas em despesas do tipo PARCELED.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isInstallmentsAllowedForType() {
+        return expenseType == null || expenseType == ExpenseType.PARCELED
+            || (currentInstallment == null && totalInstallment == null);
     }
 
     public Expense toEntity() {
