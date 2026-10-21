@@ -35,6 +35,8 @@ public class MonthlySummary extends BaseModel {
     private BigDecimal totalFixed;
     private BigDecimal totalExtras;
     private BigDecimal cashBalance;
+    // Boolean (não boolean): resumos anteriores à coluna ficam null até o próximo recálculo.
+    private Boolean previousMonthMissing;
     private BigDecimal savingsBalance;
     private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
@@ -64,6 +66,7 @@ public class MonthlySummary extends BaseModel {
         this.totalFixed = figures.totalFixed();
         this.totalExtras = figures.totalExtras();
         this.cashBalance = figures.cashBalance();
+        this.previousMonthMissing = figures.previousMonthMissing();
         this.savingsBalance = figures.savingsBalance();
         this.savingsYield = figures.savingsYield();
         this.remainingAmount = figures.remainingAmount();
