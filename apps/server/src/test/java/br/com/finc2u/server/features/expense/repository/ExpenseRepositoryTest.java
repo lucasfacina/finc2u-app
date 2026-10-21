@@ -35,17 +35,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * vários cartões e várias categorias: com um único cartão/categoria o N+1 passaria despercebido. A contagem usa
  * getPrepareStatementCount() (SQL preparado, inclusive carregamentos preguiçosos), não getQueryExecutionCount().
  *
- * O total esperado das listagens é 2: a consulta de despesas (com cartão e categoria no @EntityGraph) mais um custo FIXO do
- * dono — o Expense.user é EAGER. Esse custo não cresce com os dados (toda consulta é escopada por um único usuário)
- * e some quando o Expense.user passar a ser LAZY; aí este número deve cair para 1. O que o teste realmente
- * protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
+ * O total esperado das listagens é 1: a consulta de despesas, com cartão e categoria no @EntityGraph. O dono (Expense.user e
+ * CardAccount.user) é LAZY e nenhum Response o lê, então não há consulta extra. Antes do LAZY o total era 2 (um custo
+ * fixo do dono EAGER). O que o teste protege é o crescimento: shouldNotGrowWithTheNumberOfCards.
  */
 @DataJpaTest
 class ExpenseRepositoryTest {
 
     private static final int CARDS = 3;
     private static final int EXPENSES_PER_CARD = 2;
-    private static final int LIST_STATEMENTS = 2;
+    private static final int LIST_STATEMENTS = 1;
     private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
 
     @Autowired
