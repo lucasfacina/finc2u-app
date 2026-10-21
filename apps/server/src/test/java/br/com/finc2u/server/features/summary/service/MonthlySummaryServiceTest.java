@@ -4,9 +4,9 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
-import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
+import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
@@ -40,9 +40,9 @@ class MonthlySummaryServiceTest {
     @Mock
     private MonthlySummaryRepository monthlySummaryRepository;
     @Mock
-    private ExpenseRepository expenseRepository;
+    private ExpenseService expenseService;
     @Mock
-    private ExtraIncomeRepository extraIncomeRepository;
+    private ExtraIncomeService extraIncomeService;
     @Mock
     private UserService userService;
     @Mock
@@ -92,9 +92,9 @@ class MonthlySummaryServiceTest {
 
         when(userService.getById(userId))
             .thenReturn(user);
-        when(expenseRepository.findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+        when(expenseService.getByUserAndPeriod(eq(userId), any(LocalDate.class), any(LocalDate.class)))
             .thenReturn(expenses);
-        when(extraIncomeRepository.findByUserIdAndDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+        when(extraIncomeService.getByUserAndPeriod(eq(userId), any(LocalDate.class), any(LocalDate.class)))
             .thenReturn(extraIncomes);
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
             .thenReturn(Optional.ofNullable(existing));
@@ -114,9 +114,9 @@ class MonthlySummaryServiceTest {
 
         var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
-        var inOrder = inOrder(recurringExpenseMaterializer, expenseRepository);
+        var inOrder = inOrder(recurringExpenseMaterializer, expenseService);
         inOrder.verify(recurringExpenseMaterializer).materializeForUser(userId, YearMonth.of(YEAR, MONTH));
-        inOrder.verify(expenseRepository).findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class));
+        inOrder.verify(expenseService).getByUserAndPeriod(eq(userId), any(LocalDate.class), any(LocalDate.class));
         assertEquals(0, BigDecimal.valueOf(21.90).compareTo(result.getTotalExpenses()));
     }
 
