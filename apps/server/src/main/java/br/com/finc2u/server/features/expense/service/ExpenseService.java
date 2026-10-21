@@ -2,12 +2,14 @@ package br.com.finc2u.server.features.expense.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
+import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
+import br.com.finc2u.server.features.expense.vo.InstallmentSchedule;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,9 @@ public class ExpenseService {
 
         expense.prepareForPersistence(purchaseDate, today);
 
+        if (expense.getExpenseType() == ExpenseType.PARCELED) {
+            return saveInstallments(expense);
+        }
         return expenseRepository.save(expense);
     }
 
@@ -97,6 +102,14 @@ public class ExpenseService {
     public void delete(UUID id) {
         Expense expense = getById(id);
         expenseRepository.delete(expense);
+    }
+
+    // Compra parcelada vira uma linha por mês (k..N) ligadas por um grupo novo; tudo na transação do create. Devolve a
+    // parcela informada.
+    private Expense saveInstallments(Expense first) {
+        first.setInstallmentGroupId(UUID.randomUUID());
+        expenseRepository.saveAll(InstallmentSchedule.from(first).installments());
+        return first;
     }
 
     private void assertCardUsable(Expense expense, LocalDate purchaseDate) {
