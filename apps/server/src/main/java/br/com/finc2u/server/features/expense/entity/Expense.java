@@ -26,6 +26,10 @@ public class Expense extends BaseModel {
 
     private String description;
     private LocalDate dueDate;
+
+    // Data real do pagamento. Só existe com PAID; desconhecida = null (não se inventa data).
+    private LocalDate paidAt;
+
     private Integer currentInstallment;
     private Integer totalInstallment;
 
@@ -126,6 +130,34 @@ public class Expense extends BaseModel {
         resolveDueDate(purchaseDate);
         resolveDefaultPaymentStatus(referenceDate);
         applyInstallmentRules();
+        assertPaidAtConsistent(paymentStatus, paidAt, referenceDate);
+    }
+
+    /*
+     * Muda o status de pagamento mantendo o paidAt coerente: PAID sem data usa a data de referência (hoje); PENDING
+     * limpa o paidAt (informá-lo junto com PENDING é erro). Valida antes de alterar, para não deixar a entidade pela metade.
+     */
+    public void changePaymentStatus(PaymentStatus status, LocalDate paidAt, LocalDate referenceDate) {
+        var effectivePaidAt = status == PaymentStatus.PAID && paidAt == null
+            ? referenceDate
+            : paidAt;
+        assertPaidAtConsistent(status, effectivePaidAt, referenceDate);
+
+        this.paymentStatus = status;
+        this.paidAt = effectivePaidAt;
+    }
+
+    // O paidAt só vale com PAID e nunca é posterior à data de referência (hoje).
+    private static void assertPaidAtConsistent(PaymentStatus status, LocalDate paidAt, LocalDate referenceDate) {
+        if (paidAt == null) {
+            return;
+        }
+        if (status != PaymentStatus.PAID) {
+            throw new BusinessException("A data do pagamento só pode ser informada para despesa paga.");
+        }
+        if (paidAt.isAfter(referenceDate)) {
+            throw new BusinessException("A data do pagamento não pode ser posterior a hoje.");
+        }
     }
 
     /*
