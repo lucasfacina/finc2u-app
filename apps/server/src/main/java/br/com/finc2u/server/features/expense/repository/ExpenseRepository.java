@@ -35,6 +35,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     @EntityGraph(attributePaths = {"cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndDueDateBetween(UUID userId, LocalDate start, LocalDate end);
 
+    // As parcelas de uma compra (o groupId é gerado pelo servidor). Alimenta o ExpenseResponse: cartão e categoria no graph.
+    @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<Expense> findByInstallmentGroupIdOrderByCurrentInstallment(UUID installmentGroupId);
+
     // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(

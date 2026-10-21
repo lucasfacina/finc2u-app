@@ -59,6 +59,14 @@ public class ExpenseController {
         return ResponseEntity.ok(toResponse(expense));
     }
 
+    @GetMapping("/installment-groups/{groupId}")
+    public ResponseEntity<List<ExpenseResponse>> getInstallmentGroup(@PathVariable UUID groupId) {
+        var today = LocalDate.now(clock);
+        return ResponseEntity.ok(expenseService.getByInstallmentGroup(groupId).stream()
+            .map(expense -> ExpenseResponse.from(expense, today))
+            .toList());
+    }
+
     @GetMapping("/projections")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
@@ -84,6 +92,12 @@ public class ExpenseController {
                                                         @RequestParam(required = false) LocalDate paidAt) {
         Expense updatedExpenseStatus = expenseService.updateStatus(id, status, paidAt);
         return ResponseEntity.ok(toResponse(updatedExpenseStatus));
+    }
+
+    @DeleteMapping("/installment-groups/{groupId}")
+    public ResponseEntity<Void> deleteInstallmentGroup(@PathVariable UUID groupId) {
+        expenseService.deleteInstallmentGroup(groupId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

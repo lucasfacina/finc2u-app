@@ -104,6 +104,21 @@ public class ExpenseService {
         expenseRepository.delete(expense);
     }
 
+    @Transactional(readOnly = true)
+    public List<Expense> getByInstallmentGroup(UUID groupId) {
+        var installments = expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId);
+        if (installments.isEmpty()) {
+            throw new ResourceNotFoundException("Compra parcelada não encontrada com o grupo: " + groupId);
+        }
+        return installments;
+    }
+
+    // Remove a compra parcelada inteira; delete(id) continua removendo uma parcela só.
+    @Transactional
+    public void deleteInstallmentGroup(UUID groupId) {
+        expenseRepository.deleteAll(getByInstallmentGroup(groupId));
+    }
+
     // Compra parcelada vira uma linha por mês (k..N) ligadas por um grupo novo; tudo na transação do create. Devolve a
     // parcela informada.
     private Expense saveInstallments(Expense first) {
