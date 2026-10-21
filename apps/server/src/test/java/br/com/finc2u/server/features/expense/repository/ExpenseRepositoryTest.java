@@ -316,15 +316,15 @@ class ExpenseRepositoryTest {
             .build());
     }
 
-    private Expense persistParceled(String description, CardAccount cardAccount, Category category,
-                                    PaymentStatus paymentStatus, LocalDate dueDate, User owner) {
-        return persistParceled(description, cardAccount, category, paymentStatus, dueDate, owner, UUID.randomUUID(), 2);
+    private void persistParceled(String description, CardAccount cardAccount, Category category,
+                                 PaymentStatus paymentStatus, LocalDate dueDate, User owner) {
+        persistParceled(description, cardAccount, category, paymentStatus, dueDate, owner, UUID.randomUUID(), 2);
     }
 
-    private Expense persistParceled(String description, CardAccount cardAccount, Category category,
-                                    PaymentStatus paymentStatus, LocalDate dueDate, User owner, UUID groupId,
-                                    int currentInstallment) {
-        return testEntityManager.persist(Expense.builder()
+    private void persistParceled(String description, CardAccount cardAccount, Category category,
+                                 PaymentStatus paymentStatus, LocalDate dueDate, User owner, UUID groupId,
+                                 int currentInstallment) {
+        testEntityManager.persist(Expense.builder()
             .description(description)
             .value(BigDecimal.valueOf(50))
             .dueDate(dueDate)
