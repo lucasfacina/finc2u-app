@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -17,7 +18,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tb_expense")
+@Table(
+    name = "tb_expense",
+    uniqueConstraints = @UniqueConstraint(name = "uk_expense_recurring_due_date", columnNames = {"recurring_expense_id", "due_date"})
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,6 +59,9 @@ public class Expense extends BaseModel {
     // LAZY: só as consultas que montam o ExpenseResponse carregam a categoria (via @EntityGraph); o resumo mensal não a lê.
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private RecurringExpense recurringExpense;
 
     /*
      * Resolve a data de vencimento da despesa:
