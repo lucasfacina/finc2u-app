@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -116,9 +117,9 @@ class UserOwnedResponsesIntegrationTest {
         var calculated = monthlySummaryService.calculateOrRecalculate(userId, period.getMonthValue(), period.getYear()).summary();
         var history = monthlySummaryService.getByUser(userId);
 
-        assertEquals(userId, MonthlySummaryResponse.from(calculated).userId());
+        assertEquals(userId, MonthlySummaryResponse.from(calculated, List.of()).userId());
         assertEquals(1, history.size());
-        assertEquals(userId, MonthlySummaryResponse.from(history.getFirst()).userId());
+        assertEquals(userId, MonthlySummaryResponse.from(history.getFirst().summary(), history.getFirst().categoryTotals()).userId());
     }
 
     private UUID registerUser(String email) {
