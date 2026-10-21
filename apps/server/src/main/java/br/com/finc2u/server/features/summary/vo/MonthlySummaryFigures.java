@@ -14,6 +14,7 @@ public record MonthlySummaryFigures(
     BigDecimal totalFixed,
     BigDecimal totalExtras,
     BigDecimal cashBalance,
+    boolean previousMonthMissing,
     BigDecimal savingsBalance,
     BigDecimal savingsYield,
     BigDecimal remainingAmount,

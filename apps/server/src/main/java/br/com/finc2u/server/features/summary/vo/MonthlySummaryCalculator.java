@@ -15,6 +15,8 @@ import java.util.List;
  * -> totalOverdue    = soma das despesas PENDING com vencimento antes da data de referência (atraso derivado, D13)
  * -> totalFixed      = soma das despesas do tipo FIXED, pagas ou não
  * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
+ * -> previousMonthMissing = true quando não há resumo do mês anterior: o cashBalance zero vem dessa falta (o cálculo
+ *                    não inventa histórico), e o cliente fica sabendo. Vale também para o primeiro mês do usuário
  * -> totalIncome     = baseSalary + totalExtras + cashBalance
  * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
  * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
@@ -29,9 +31,10 @@ public final class MonthlySummaryCalculator {
     public static MonthlySummaryFigures calculate(MonthlySummaryInput input) {
         var totals = MonthlySummaryTotals.from(input.expenses(), input.extraIncomes());
 
-        var cashBalance = input.previousRemainingAmount() != null
-            ? input.previousRemainingAmount()
-            : BigDecimal.ZERO;
+        var previousMonthMissing = input.previousRemainingAmount() == null;
+        var cashBalance = previousMonthMissing
+            ? BigDecimal.ZERO
+            : input.previousRemainingAmount();
 
         var savingsYield = input.previousSavingsBalance() != null
             ? input.savingsBalance().subtract(input.previousSavingsBalance())
@@ -62,6 +65,7 @@ public final class MonthlySummaryCalculator {
             totals.totalFixed(),
             totals.totalExtras(),
             cashBalance,
+            previousMonthMissing,
             input.savingsBalance(),
             savingsYield,
             totalIncome.subtract(totals.totalExpenses()),
