@@ -33,6 +33,9 @@ public record ExpenseRequest(
     // Opcional: quando ausente, a despesa nasce PENDING. Com vencimento anterior a hoje, é obrigatório informar (400).
     PaymentStatus paymentStatus,
 
+    // Opcional: data real do pagamento. Só vale com PAID e não pode ser futura (422); desconhecida = ausente.
+    LocalDate paidAt,
+
     // Opcionais (só valem para PARCELED). Com valor informado, ficam entre 1 e o teto de parcelas; a relação
     // parcela atual <= total é a guarda da entidade (422).
     @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Parcela atual deve ser no mínimo 1.")
@@ -68,6 +71,7 @@ public record ExpenseRequest(
             .dueDate(this.dueDate())
             .expenseType(this.expenseType())
             .paymentStatus(this.paymentStatus())
+            .paidAt(this.paidAt())
             .currentInstallment(this.currentInstallment())
             .totalInstallment(this.totalInstallment())
             .build();

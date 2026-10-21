@@ -19,6 +19,7 @@ public record ExpenseResponse(
     ExpenseType expenseType,
     PaymentStatus paymentStatus,
     boolean overdue,
+    LocalDate paidAt,
     Integer currentInstallment,
     Integer totalInstallment,
     String cardName,
@@ -36,6 +37,7 @@ public record ExpenseResponse(
             expense.getExpenseType(),
             expense.getPaymentStatus(),
             expense.isOverdue(referenceDate),
+            expense.getPaidAt(),
             expense.getCurrentInstallment(),
             expense.getTotalInstallment(),
             expense.getCardAccount() != null

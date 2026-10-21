@@ -44,6 +44,7 @@ public class ExpenseMapper {
         target.setDueDate(source.getDueDate());
         target.setExpenseType(source.getExpenseType());
         target.setPaymentStatus(source.getPaymentStatus());
+        target.setPaidAt(source.getPaidAt());
         target.setCurrentInstallment(source.getCurrentInstallment());
         target.setTotalInstallment(source.getTotalInstallment());
     }

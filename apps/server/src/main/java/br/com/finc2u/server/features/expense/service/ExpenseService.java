@@ -86,9 +86,9 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Expense updateStatus(UUID id, PaymentStatus status) {
+    public Expense updateStatus(UUID id, PaymentStatus status, LocalDate paidAt) {
         Expense expense = getById(id);
-        expense.setPaymentStatus(status);
+        expense.changePaymentStatus(status, paidAt, LocalDate.now(clock));
 
         return expenseRepository.save(expense);
     }
