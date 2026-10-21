@@ -191,7 +191,7 @@ class ExpenseControllerTest {
     @Test
     void getProjections_shouldFlagOverdueRelativeToTheClock() throws Exception {
         expense.setDueDate(TODAY.minusDays(1));
-        when(futureInstallmentProjection.getProjectionsByUser(userId))
+        when(futureInstallmentProjection.getProjectionsByUser(userId, TODAY))
             .thenReturn(Map.of(YearMonth.of(2026, 6), List.of(expense)));
 
         mockMvc.perform(get("/expenses/projections").param("userId", userId.toString()))
