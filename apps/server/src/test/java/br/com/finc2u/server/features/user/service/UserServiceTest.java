@@ -38,6 +38,7 @@ public class UserServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Spy
+    @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
     private Clock clock = Clock.fixed(LocalDate.of(2026, 3, 15).atStartOfDay(ZoneId.systemDefault()).toInstant(),
         ZoneId.systemDefault());
 

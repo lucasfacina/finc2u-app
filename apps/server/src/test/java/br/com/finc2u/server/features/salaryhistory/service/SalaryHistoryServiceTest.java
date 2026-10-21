@@ -35,6 +35,7 @@ class SalaryHistoryServiceTest {
     private UserService userService;
 
     @Spy
+    @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
     private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
