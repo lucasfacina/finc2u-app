@@ -505,6 +505,29 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void getWithFilters_shouldReturnBadRequest_whenMonthIsInformedWithoutYear() throws Exception {
+        mockMvc.perform(get("/expenses/filters")
+                .param("userId", userId.toString())
+                .param("month", "5"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Erro de validação."))
+            .andExpect(jsonPath("$.detail").value(containsString("Informe o ano junto com o mês.")));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void getWithFilters_shouldReturnOk_whenOnlyYearIsInformed() throws Exception {
+        when(expenseService.getWithFilters(eq(userId), any()))
+            .thenReturn(List.of(expense));
+
+        mockMvc.perform(get("/expenses/filters")
+                .param("userId", userId.toString())
+                .param("year", "2026"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
     void getWithFilters_shouldReturnBadRequest_whenYearIsBelowMinimum() throws Exception {
         mockMvc.perform(get("/expenses/filters")
                 .param("userId", userId.toString())

@@ -414,7 +414,7 @@ class ExpenseServiceTest {
 
         ExpenseFilter filter =
             new ExpenseFilter(expense.getDueDate().getMonthValue(),
-                null, // year
+                expense.getDueDate().getYear(),
                 null, // status
                 null, // type
                 null, // cardAccountId
