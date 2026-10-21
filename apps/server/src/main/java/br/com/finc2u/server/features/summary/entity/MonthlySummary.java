@@ -31,6 +31,8 @@ public class MonthlySummary extends BaseModel {
     private BigDecimal totalExpenses;
     private BigDecimal totalPaid;
     private BigDecimal totalPending;
+    private BigDecimal totalOverdue;
+    private BigDecimal totalFixed;
     private BigDecimal totalExtras;
     private BigDecimal cashBalance;
     private BigDecimal savingsBalance;
@@ -58,6 +60,8 @@ public class MonthlySummary extends BaseModel {
         this.totalExpenses = figures.totalExpenses();
         this.totalPaid = figures.totalPaid();
         this.totalPending = figures.totalPending();
+        this.totalOverdue = figures.totalOverdue();
+        this.totalFixed = figures.totalFixed();
         this.totalExtras = figures.totalExtras();
         this.cashBalance = figures.cashBalance();
         this.savingsBalance = figures.savingsBalance();
