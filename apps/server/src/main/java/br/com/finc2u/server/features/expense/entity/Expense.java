@@ -128,4 +128,12 @@ public class Expense extends BaseModel {
         applyInstallmentRules();
     }
 
+    /*
+     * Atraso derivado: PENDING com vencimento anterior à data de referência. Não é coluna nem status: nenhum job
+     * muda a despesa, e a mesma data de referência produz sempre a mesma resposta.
+     */
+    public boolean isOverdue(LocalDate referenceDate) {
+        return paymentStatus == PaymentStatus.PENDING && dueDate.isBefore(referenceDate);
+    }
+
 }
