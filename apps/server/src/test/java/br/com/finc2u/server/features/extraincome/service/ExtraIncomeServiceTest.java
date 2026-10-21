@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.extraincome.service;
 
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
@@ -45,24 +46,24 @@ class ExtraIncomeServiceTest {
         userId = UUID.randomUUID();
 
         user = User.builder()
-                .build();
+            .build();
         user.setId(userId);
 
         extraIncome = ExtraIncome.builder()
-                .description("Freela site")
-                .value(BigDecimal.valueOf(800))
-                .date(LocalDate.of(2026, 5, 10))
-                .user(user)
-                .build();
+            .description("Freela site")
+            .value(BigDecimal.valueOf(800))
+            .date(LocalDate.of(2026, 5, 10))
+            .user(user)
+            .build();
         extraIncome.setId(extraIncomeId);
     }
 
     @Test
     void create_shouldAssociateUserAndSave() {
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(extraIncomeRepository.save(any(ExtraIncome.class)))
-                .thenReturn(extraIncome);
+            .thenReturn(extraIncome);
 
         ExtraIncome result = extraIncomeService.create(extraIncome, userId);
 
@@ -74,7 +75,7 @@ class ExtraIncomeServiceTest {
     @Test
     void getById_shouldReturnExtra_whenExists() {
         when(extraIncomeRepository.findById(extraIncomeId))
-                .thenReturn(Optional.of(extraIncome));
+            .thenReturn(Optional.of(extraIncome));
 
         ExtraIncome result = extraIncomeService.getById(extraIncomeId);
 
@@ -85,7 +86,7 @@ class ExtraIncomeServiceTest {
     @Test
     void getById_shouldThrow_whenNotFound() {
         when(extraIncomeRepository.findById(extraIncomeId))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.getById(extraIncomeId));
     }
@@ -93,9 +94,9 @@ class ExtraIncomeServiceTest {
     @Test
     void getByUser_shouldReturnList() {
         when(userService.getById(userId))
-                .thenReturn(user);
+            .thenReturn(user);
         when(extraIncomeRepository.findByUserId(userId))
-                .thenReturn(List.of(extraIncome));
+            .thenReturn(List.of(extraIncome));
 
         List<ExtraIncome> result = extraIncomeService.getByUser(userId);
 
@@ -106,15 +107,15 @@ class ExtraIncomeServiceTest {
     @Test
     void update_shouldUpdateFieldsAndSave() {
         ExtraIncome updates = ExtraIncome.builder()
-                .description("Freela app")
-                .value(BigDecimal.valueOf(1200))
-                .date(LocalDate.of(2026, 5, 20))
-                .build();
+            .description("Freela app")
+            .value(BigDecimal.valueOf(1200))
+            .date(LocalDate.of(2026, 5, 20))
+            .build();
 
         when(extraIncomeRepository.findById(extraIncomeId))
-                .thenReturn(Optional.of(extraIncome));
+            .thenReturn(Optional.of(extraIncome));
         when(extraIncomeRepository.save(any(ExtraIncome.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
+            .thenAnswer(inv -> inv.getArgument(0));
 
         ExtraIncome result = extraIncomeService.update(extraIncomeId, updates);
 
@@ -125,9 +126,43 @@ class ExtraIncomeServiceTest {
     }
 
     @Test
+    void getByUserAndPeriod_shouldReturnTheIncomesOfThePeriod() {
+        var start = LocalDate.of(2026, 5, 1);
+        var end = LocalDate.of(2026, 5, 31);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(extraIncomeRepository.findByUserIdAndDateBetween(userId, start, end))
+            .thenReturn(List.of(extraIncome));
+
+        var result = extraIncomeService.getByUserAndPeriod(userId, start, end);
+
+        assertEquals(List.of(extraIncome), result);
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldAcceptASingleDayPeriod() {
+        var day = LocalDate.of(2026, 5, 10);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(extraIncomeRepository.findByUserIdAndDateBetween(userId, day, day))
+            .thenReturn(List.of(extraIncome));
+
+        assertEquals(1, extraIncomeService.getByUserAndPeriod(userId, day, day).size());
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldThrowInvalidRequest_whenStartIsAfterEnd() {
+        var exception = assertThrows(InvalidRequestException.class, () -> extraIncomeService.getByUserAndPeriod(
+            userId, LocalDate.of(2026, 5, 31), LocalDate.of(2026, 5, 1)));
+
+        assertEquals("A data inicial não pode ser posterior à data final.", exception.getMessage());
+        verifyNoInteractions(userService, extraIncomeRepository);
+    }
+
+    @Test
     void delete_shouldCallRepositoryDelete() {
         when(extraIncomeRepository.findById(extraIncomeId))
-                .thenReturn(Optional.of(extraIncome));
+            .thenReturn(Optional.of(extraIncome));
         doNothing().when(extraIncomeRepository).delete(extraIncome);
 
         extraIncomeService.delete(extraIncomeId);
@@ -138,7 +173,7 @@ class ExtraIncomeServiceTest {
     @Test
     void delete_shouldThrow_whenNotFound() {
         when(extraIncomeRepository.findById(extraIncomeId))
-                .thenReturn(Optional.empty());
+            .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.delete(extraIncomeId));
     }
