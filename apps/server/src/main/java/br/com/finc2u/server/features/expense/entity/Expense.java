@@ -50,7 +50,8 @@ public class Expense extends BaseModel {
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
 
-    @ManyToOne(optional = false)
+    // LAZY: nenhum Response lê o dono da despesa (só o id dele é usado, e o id de um proxy não gera consulta).
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User user;
 
     @ManyToOne
