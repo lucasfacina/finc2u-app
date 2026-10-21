@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.summary.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -10,15 +11,15 @@ import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
+import br.com.finc2u.server.features.summary.entity.MonthlySummaryCategoryTotal;
+import br.com.finc2u.server.features.summary.repository.MonthlySummaryCategoryTotalRepository;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -43,6 +44,8 @@ class MonthlySummaryServiceTest {
     @Mock
     private MonthlySummaryRepository monthlySummaryRepository;
     @Mock
+    private MonthlySummaryCategoryTotalRepository categoryTotalRepository;
+    @Mock
     private ExpenseService expenseService;
     @Mock
     private ExtraIncomeService extraIncomeService;
@@ -57,11 +60,16 @@ class MonthlySummaryServiceTest {
     @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
     private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
+    @Captor
+    private ArgumentCaptor<List<MonthlySummaryCategoryTotal>> categoryTotalsCaptor;
+
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
 
     private UUID userId;
     private User user;
+    private Category groceries;
+    private Category leisure;
     private final int MONTH = 6, YEAR = 2026;
 
     @BeforeEach
@@ -71,6 +79,16 @@ class MonthlySummaryServiceTest {
             .savingsBalance(BigDecimal.valueOf(1000))
             .build();
         user.setId(userId);
+        groceries = categoryOf("Alimentação");
+        leisure = categoryOf("Lazer");
+    }
+
+    private Category categoryOf(String name) {
+        var category = Category.builder()
+            .name(name)
+            .build();
+        category.setId(UUID.randomUUID());
+        return category;
     }
 
     private Expense expenseOf(BigDecimal value, PaymentStatus status, LocalDate dueDate) {
@@ -80,6 +98,7 @@ class MonthlySummaryServiceTest {
             .paymentStatus(status)
             .dueDate(dueDate)
             .user(user)
+            .category(groceries)
             .build();
     }
 
@@ -356,20 +375,40 @@ class MonthlySummaryServiceTest {
     }
 
     @Test
-    void getByUserAndPeriod_shouldReturnSummary_whenExists() {
+    void getByUserAndPeriod_shouldReturnSummaryWithItsCategoryTotals_whenExists() {
+        var summaryId = UUID.randomUUID();
         MonthlySummary summary = MonthlySummary.builder()
             .month(MONTH)
             .year(YEAR)
             .user(user)
             .build();
+        summary.setId(summaryId);
+        var groceriesTotal = MonthlySummaryCategoryTotal.of(summary, groceries, BigDecimal.valueOf(300));
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
-            .thenReturn(Optional.ofNullable(summary));
+            .thenReturn(Optional.of(summary));
+        when(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(summaryId)))
+            .thenReturn(List.of(groceriesTotal));
 
-        MonthlySummary result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
+        var result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
 
-        assertNotNull(result);
-        assertEquals(MONTH, result.getMonth());
-        assertEquals(YEAR, result.getYear());
+        assertSame(summary, result.summary());
+        assertEquals(List.of(groceriesTotal), result.categoryTotals());
+    }
+
+    @Test
+    void getByUserAndPeriod_shouldReturnAnEmptyCategoryList_whenTheSummaryHasNoExpenses() {
+        MonthlySummary summary = MonthlySummary.builder()
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .build();
+        summary.setId(UUID.randomUUID());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
+            .thenReturn(Optional.of(summary));
+
+        var result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
+
+        assertTrue(result.categoryTotals().isEmpty());
     }
 
     @Test
@@ -379,21 +418,125 @@ class MonthlySummaryServiceTest {
 
         assertThrows(ResourceNotFoundException.class,
             () -> monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR));
+        verifyNoInteractions(categoryTotalRepository);
+    }
+
+    // O histórico não faz uma consulta por resumo: os totais de todos vêm numa chamada só e são distribuídos por resumo.
+    @Test
+    void getByUser_shouldReadTheCategoryTotalsOfAllTheSummariesInASingleCall() {
+        var may = summaryOf(5);
+        var june = summaryOf(6);
+        var mayTotal = MonthlySummaryCategoryTotal.of(may, groceries, BigDecimal.valueOf(100));
+        var juneGroceries = MonthlySummaryCategoryTotal.of(june, groceries, BigDecimal.valueOf(200));
+        var juneLeisure = MonthlySummaryCategoryTotal.of(june, leisure, BigDecimal.valueOf(50));
+        when(monthlySummaryRepository.findByUserId(userId))
+            .thenReturn(List.of(may, june));
+        when(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(may.getId(), june.getId())))
+            .thenReturn(List.of(mayTotal, juneGroceries, juneLeisure));
+
+        var result = monthlySummaryService.getByUser(userId);
+
+        assertEquals(2, result.size());
+        assertEquals(List.of(mayTotal), result.get(0).categoryTotals());
+        assertEquals(List.of(juneGroceries, juneLeisure), result.get(1).categoryTotals());
+        verify(categoryTotalRepository, times(1)).findBySummaryIdInOrderByCategoryNameAsc(anyCollection());
     }
 
     @Test
-    void getByUser_shouldReturnList() {
-        MonthlySummary summary = MonthlySummary.builder()
-            .month(MONTH)
+    void getByUser_shouldNotQueryTheCategoryTotals_whenThereAreNoSummaries() {
+        when(monthlySummaryRepository.findByUserId(userId))
+            .thenReturn(List.of());
+
+        var result = monthlySummaryService.getByUser(userId);
+
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(categoryTotalRepository);
+    }
+
+    // ---- totais por categoria ----
+
+    @Test
+    void calculateOrRecalculate_shouldSaveTheTotalPerCategory_sortedByCategoryName() {
+        var groceryShopping = expenseOf(BigDecimal.valueOf(300), PaymentStatus.PAID, TODAY.plusDays(2));
+        var groceryDelivery = expenseOf(BigDecimal.valueOf(50), PaymentStatus.PENDING, TODAY.plusDays(3));
+        var cinema = expenseOf(BigDecimal.valueOf(70), PaymentStatus.PENDING, TODAY.plusDays(4));
+        cinema.setCategory(leisure);
+        stubRepositories(List.of(cinema, groceryShopping, groceryDelivery), List.of(), null, null);
+
+        monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        verify(categoryTotalRepository).saveAll(categoryTotalsCaptor.capture());
+        var saved = categoryTotalsCaptor.getValue();
+        assertEquals(List.of("Alimentação", "Lazer"), saved.stream().map(total -> total.getCategory().getName()).toList());
+        assertEquals(0, BigDecimal.valueOf(350).compareTo(saved.get(0).getTotal()));
+        assertEquals(0, BigDecimal.valueOf(70).compareTo(saved.get(1).getTotal()));
+    }
+
+    @Test
+    void calculateOrRecalculate_shouldNotDeleteAnyCategoryTotal_whenTheSummaryIsNew() {
+        stubRepositories(List.of(expenseOf(BigDecimal.TEN, PaymentStatus.PENDING, TODAY.plusDays(1))), List.of(), null, null);
+
+        monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        verify(categoryTotalRepository, never()).deleteBySummaryId(any());
+    }
+
+    // No recálculo os totais antigos saem antes dos novos entrarem (senão o mesmo mês teria duas linhas por categoria).
+    @Test
+    void calculateOrRecalculate_shouldReplaceTheOldCategoryTotals_whenTheSummaryAlreadyExists() {
+        var existing = summaryOf(MONTH);
+        stubRepositories(List.of(expenseOf(BigDecimal.TEN, PaymentStatus.PENDING, TODAY.plusDays(1))), List.of(), existing, null);
+
+        monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        var inOrder = inOrder(categoryTotalRepository);
+        inOrder.verify(categoryTotalRepository).deleteBySummaryId(existing.getId());
+        inOrder.verify(categoryTotalRepository).saveAll(anyList());
+    }
+
+    @Test
+    void calculateOrRecalculate_shouldSaveNoCategoryTotal_whenTheMonthHasNoExpense() {
+        stubRepositories(List.of(), List.of(), null, null);
+
+        monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        verify(categoryTotalRepository).saveAll(categoryTotalsCaptor.capture());
+        assertTrue(categoryTotalsCaptor.getValue().isEmpty());
+    }
+
+    // ---- exclusão ----
+
+    // Os totais por categoria saem antes do resumo (FK).
+    @Test
+    void delete_shouldRemoveTheCategoryTotalsBeforeTheSummary() {
+        var summary = summaryOf(MONTH);
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
+            .thenReturn(Optional.of(summary));
+
+        monthlySummaryService.delete(userId, MONTH, YEAR);
+
+        var inOrder = inOrder(categoryTotalRepository, monthlySummaryRepository);
+        inOrder.verify(categoryTotalRepository).deleteBySummaryId(summary.getId());
+        inOrder.verify(monthlySummaryRepository).delete(summary);
+    }
+
+    @Test
+    void delete_shouldThrow_whenTheSummaryDoesNotExist() {
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> monthlySummaryService.delete(userId, MONTH, YEAR));
+        verify(monthlySummaryRepository, never()).delete(any(MonthlySummary.class));
+    }
+
+    private MonthlySummary summaryOf(int month) {
+        var summary = MonthlySummary.builder()
+            .month(month)
             .year(YEAR)
             .user(user)
             .build();
-        when(monthlySummaryRepository.findByUserId(userId))
-            .thenReturn(List.of(summary));
-
-        List<MonthlySummary> result = monthlySummaryService.getByUser(userId);
-
-        assertEquals(1, result.size());
+        summary.setId(UUID.randomUUID());
+        return summary;
     }
 
 }
