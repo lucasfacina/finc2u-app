@@ -31,7 +31,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
 
     boolean existsByUserId(UUID userId);
 
-    @EntityGraph(attributePaths = {"cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
+    // Alimenta o resumo mensal: o cálculo por categoria lê a categoria (LAZY) e o cartão vem junto, então os dois entram no graph.
+    @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndDueDateBetween(UUID userId, LocalDate start, LocalDate end);
 
     // As parcelas de uma compra (o groupId é gerado pelo servidor). Alimenta o ExpenseResponse: cartão e categoria no graph.
