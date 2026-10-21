@@ -4,6 +4,7 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -11,6 +12,7 @@ import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
+import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -473,6 +476,51 @@ class ExpenseServiceTest {
         assertThrows(ResourceNotFoundException.class,
             () -> expenseService.update(expenseId, command(expense, cardAccountId, null)));
         verify(expenseRepository, never()).save(any());
+    }
+
+    @Test
+    void createFromRecurrence_shouldSaveAFixedPendingExpenseWithTheDataOfTheModel() {
+        var category = Category.builder()
+            .name("Assinaturas")
+            .build();
+        var recurringExpense = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 25, YearMonth.of(2026, 8), null);
+        recurringExpense.setId(UUID.randomUUID());
+        recurringExpense.setUser(user);
+        recurringExpense.setCategory(category);
+        recurringExpense.setCardAccount(cardAccount);
+        var dueDate = LocalDate.of(2026, 10, 25);
+        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+            .thenReturn(false);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var created = expenseService.createFromRecurrence(recurringExpense, dueDate).orElseThrow();
+
+        assertEquals("Spotify", created.getDescription());
+        assertEquals(BigDecimal.valueOf(21.90), created.getValue());
+        assertEquals(dueDate, created.getDueDate());
+        assertEquals(ExpenseType.FIXED, created.getExpenseType());
+        assertEquals(PaymentStatus.PENDING, created.getPaymentStatus());
+        assertNull(created.getPaidAt());
+        assertSame(user, created.getUser());
+        assertSame(category, created.getCategory());
+        assertSame(cardAccount, created.getCardAccount());
+        assertSame(recurringExpense, created.getRecurringExpense());
+    }
+
+    // Rodar duas vezes não duplica: a despesa do modelo naquele vencimento já existe.
+    @Test
+    void createFromRecurrence_shouldReturnEmptyAndNotSave_whenTheModelAlreadyHasTheExpenseOnTheDueDate() {
+        var recurringExpense = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 25, YearMonth.of(2026, 8), null);
+        recurringExpense.setId(UUID.randomUUID());
+        var dueDate = LocalDate.of(2026, 10, 25);
+        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+            .thenReturn(true);
+
+        var created = expenseService.createFromRecurrence(recurringExpense, dueDate);
+
+        assertTrue(created.isEmpty());
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     @Test
