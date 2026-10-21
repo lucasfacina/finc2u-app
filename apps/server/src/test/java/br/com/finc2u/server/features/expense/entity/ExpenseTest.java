@@ -113,6 +113,48 @@ public class ExpenseTest {
         assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }
 
+    // ---- isOverdue ----
+
+    @Test
+    void isOverdue_shouldBeTrue_whenPendingAndDueDateIsBeforeReferenceDate() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(1))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        assertTrue(expense.isOverdue(TODAY));
+    }
+
+    @Test
+    void isOverdue_shouldBeFalse_whenDueDateIsToday() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY)
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        assertFalse(expense.isOverdue(TODAY));
+    }
+
+    @Test
+    void isOverdue_shouldBeFalse_whenDueDateIsInTheFuture() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.plusDays(1))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        assertFalse(expense.isOverdue(TODAY));
+    }
+
+    @Test
+    void isOverdue_shouldBeFalse_whenPaid() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusMonths(1))
+            .paymentStatus(PaymentStatus.PAID)
+            .build();
+
+        assertFalse(expense.isOverdue(TODAY));
+    }
+
     // ---- applyInstallmentRules ----
 
     @Test
