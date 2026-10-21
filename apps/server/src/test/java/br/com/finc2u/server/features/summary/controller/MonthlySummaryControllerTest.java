@@ -63,6 +63,7 @@ class MonthlySummaryControllerTest {
             .totalFixed(BigDecimal.valueOf(60))
             .totalExtras(BigDecimal.valueOf(200))
             .cashBalance(BigDecimal.valueOf(100))
+            .previousMonthMissing(true)
             .savingsBalance(BigDecimal.valueOf(1000))
             .remainingAmount(BigDecimal.valueOf(2500))
             .build();
@@ -89,6 +90,7 @@ class MonthlySummaryControllerTest {
             .andExpect(jsonPath("$.totalExpenses").value(800))
             .andExpect(jsonPath("$.totalOverdue").value(120))
             .andExpect(jsonPath("$.totalFixed").value(60))
+            .andExpect(jsonPath("$.previousMonthMissing").value(true))
             .andExpect(jsonPath("$.categoryTotals[0].categoryName").value("Alimentação"));
     }
 
