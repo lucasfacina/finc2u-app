@@ -112,6 +112,19 @@ class RecurringExpenseIntegrationTest {
         assertEquals(2, instancesOf(userId).size());
     }
 
+    @Test
+    void delete_shouldKeepTheGeneratedExpensesWithoutTheModel() {
+        var userId = registerUser("recorrente.apagar@email.com");
+        var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+
+        recurringExpenseService.delete(model.getId());
+
+        var instances = instancesOf(userId);
+        assertEquals(2, instances.size());
+        assertTrue(instances.stream().allMatch(expense -> expense.getRecurringExpense() == null));
+        assertTrue(recurringExpenseService.getByUser(userId).isEmpty());
+    }
+
     private UUID registerUser(String email) {
         var user = User.builder()
             .name("Ana")
