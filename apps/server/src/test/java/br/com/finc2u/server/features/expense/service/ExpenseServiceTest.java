@@ -524,6 +524,15 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void detachFromRecurringExpense_shouldAskTheRepositoryToDetachTheExpensesOfTheModel() {
+        var recurringExpenseId = UUID.randomUUID();
+
+        expenseService.detachFromRecurringExpense(recurringExpenseId);
+
+        verify(expenseRepository).detachFromRecurringExpense(recurringExpenseId);
+    }
+
+    @Test
     void getById_shouldReturnExpense_whenIdExists() {
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
