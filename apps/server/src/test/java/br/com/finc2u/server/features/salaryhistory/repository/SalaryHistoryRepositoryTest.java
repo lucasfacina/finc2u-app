@@ -102,6 +102,47 @@ class SalaryHistoryRepositoryTest {
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
+    // Consulta que o resumo usa para o salário do mês: a vigência mais recente com effectiveFrom <= o início do período.
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldAcceptAVigenciaStartingExactlyOnTheDate() {
+        var found = salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            ana.getId(), LocalDate.of(2026, 8, 1));
+
+        assertEquals(0, BigDecimal.valueOf(3500).compareTo(found.orElseThrow().getBaseSalary()));
+    }
+
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldReturnThePreviousVigencia_theDayBeforeTheNextOne() {
+        var found = salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            ana.getId(), LocalDate.of(2026, 7, 31));
+
+        assertEquals(0, BigDecimal.valueOf(3000).compareTo(found.orElseThrow().getBaseSalary()));
+    }
+
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldReturnTheLatestVigencia_afterTheLastOne() {
+        var found = salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            ana.getId(), LocalDate.of(2030, 1, 1));
+
+        assertEquals(0, BigDecimal.valueOf(9999).compareTo(found.orElseThrow().getBaseSalary()));
+    }
+
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldBeEmpty_beforeTheFirstVigencia() {
+        var found = salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            ana.getId(), LocalDate.of(2025, 12, 31));
+
+        assertTrue(found.isEmpty());
+    }
+
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldNeverUseTheVigenciaOfAnotherUser() {
+        var found = salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            beto.getId(), LocalDate.of(2026, 2, 1));
+
+        assertTrue(found.isEmpty());
+    }
+
     private Map<UUID, CurrentSalary> bySalaryUser(List<CurrentSalary> salaries) {
         return salaries.stream()
             .collect(Collectors.toMap(CurrentSalary::userId, Function.identity()));
