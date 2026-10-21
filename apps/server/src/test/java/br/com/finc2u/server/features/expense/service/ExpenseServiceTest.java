@@ -277,6 +277,49 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void getByInstallmentGroup_shouldReturnTheInstallmentsOfThePurchase() {
+        var groupId = UUID.randomUUID();
+        when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
+            .thenReturn(List.of(expense));
+
+        var result = expenseService.getByInstallmentGroup(groupId);
+
+        assertEquals(List.of(expense), result);
+    }
+
+    @Test
+    void getByInstallmentGroup_shouldThrowResourceNotFound_whenTheGroupDoesNotExist() {
+        var groupId = UUID.randomUUID();
+        when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
+            .thenReturn(List.of());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.getByInstallmentGroup(groupId));
+    }
+
+    @Test
+    void deleteInstallmentGroup_shouldDeleteEveryInstallmentOfThePurchase() {
+        var groupId = UUID.randomUUID();
+        var other = Expense.builder().description("Mercado 2/2").build();
+        when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
+            .thenReturn(List.of(expense, other));
+
+        expenseService.deleteInstallmentGroup(groupId);
+
+        verify(expenseRepository).deleteAll(List.of(expense, other));
+    }
+
+    @Test
+    void deleteInstallmentGroup_shouldThrowResourceNotFoundAndDeleteNothing_whenTheGroupDoesNotExist() {
+        var groupId = UUID.randomUUID();
+        when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
+            .thenReturn(List.of());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.deleteInstallmentGroup(groupId));
+
+        verify(expenseRepository, never()).deleteAll(any());
+    }
+
+    @Test
     void updateStatus_shouldMarkPaidWithToday_whenPaidAtIsNotInformed() {
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));

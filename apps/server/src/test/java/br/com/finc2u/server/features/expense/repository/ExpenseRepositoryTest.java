@@ -20,6 +20,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -188,6 +189,32 @@ class ExpenseRepositoryTest {
     }
 
     @Test
+    void findByInstallmentGroupId_shouldReturnOnlyThatPurchaseOrderedByInstallment_inOneQuery() {
+        var cardAccount = persistCard("Cartão do grupo");
+        var category = persistCategory("Categoria do grupo");
+        var groupId = UUID.randomUUID();
+        for (var installment : List.of(3, 1, 2)) {
+            persistParceled("Compra " + installment + "/3", cardAccount, category, PaymentStatus.PENDING,
+                TODAY.plusMonths(installment), user, groupId, installment);
+        }
+        persistParceled("Outra compra", cardAccount, category, PaymentStatus.PENDING, TODAY.plusMonths(1), user,
+            UUID.randomUUID(), 1);
+        resetPersistenceContext();
+
+        var found = expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId);
+
+        found.forEach(expense -> ExpenseResponse.from(expense, TODAY));
+        assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
+        assertEquals(List.of(1, 2, 3), found.stream().map(Expense::getCurrentInstallment).toList());
+        assertTrue(found.stream().allMatch(expense -> groupId.equals(expense.getInstallmentGroupId())));
+    }
+
+    @Test
+    void findByInstallmentGroupId_shouldBeEmpty_whenTheGroupDoesNotExist() {
+        assertTrue(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(UUID.randomUUID()).isEmpty());
+    }
+
+    @Test
     void shouldPersistTheInstallmentGroupId() {
         var groupId = UUID.randomUUID();
         var saved = testEntityManager.persist(Expense.builder()
@@ -291,15 +318,21 @@ class ExpenseRepositoryTest {
 
     private Expense persistParceled(String description, CardAccount cardAccount, Category category,
                                     PaymentStatus paymentStatus, LocalDate dueDate, User owner) {
+        return persistParceled(description, cardAccount, category, paymentStatus, dueDate, owner, UUID.randomUUID(), 2);
+    }
+
+    private Expense persistParceled(String description, CardAccount cardAccount, Category category,
+                                    PaymentStatus paymentStatus, LocalDate dueDate, User owner, UUID groupId,
+                                    int currentInstallment) {
         return testEntityManager.persist(Expense.builder()
             .description(description)
             .value(BigDecimal.valueOf(50))
             .dueDate(dueDate)
             .expenseType(ExpenseType.PARCELED)
             .paymentStatus(paymentStatus)
-            .currentInstallment(2)
+            .currentInstallment(currentInstallment)
             .totalInstallment(3)
-            .installmentGroupId(UUID.randomUUID())
+            .installmentGroupId(groupId)
             .user(owner)
             .cardAccount(cardAccount)
             .category(category)
