@@ -6,6 +6,7 @@ import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import br.com.finc2u.server.features.user.entity.User;
@@ -42,6 +43,9 @@ class RecurringExpenseServiceTest {
 
     @Mock
     private CardAccountService cardAccountService;
+
+    @Mock
+    private RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     @InjectMocks
     private RecurringExpenseService recurringExpenseService;
@@ -106,6 +110,24 @@ class RecurringExpenseServiceTest {
         assertSame(card, model.getCardAccount());
     }
 
+    // As despesas do mês corrente e do seguinte nascem junto com o modelo, na mesma transação.
+    @Test
+    void create_shouldMaterializeTheUpcomingMonthsOfTheSavedModel() {
+        var model = newModel("Spotify");
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(categoryService.getByIdAndUser(categoryId, userId))
+            .thenReturn(category);
+        when(recurringExpenseRepository.save(model))
+            .thenReturn(saved);
+
+        recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null), userId);
+
+        var inOrder = inOrder(recurringExpenseRepository, recurringExpenseMaterializer);
+        inOrder.verify(recurringExpenseRepository).save(model);
+        inOrder.verify(recurringExpenseMaterializer).materializeUpcoming(saved);
+    }
+
     @Test
     void create_shouldLeaveTheCardEmpty_whenNoCardIsInformed() {
         var model = newModel("Aluguel");
@@ -133,6 +155,7 @@ class RecurringExpenseServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.create(command, userId));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
+        verifyNoInteractions(recurringExpenseMaterializer);
     }
 
     @Test
