@@ -22,6 +22,7 @@ public record ExpenseResponse(
     LocalDate paidAt,
     Integer currentInstallment,
     Integer totalInstallment,
+    UUID installmentGroupId,
     String cardName,
     CategoryResponse category
 ) {
@@ -40,6 +41,7 @@ public record ExpenseResponse(
             expense.getPaidAt(),
             expense.getCurrentInstallment(),
             expense.getTotalInstallment(),
+            expense.getInstallmentGroupId(),
             expense.getCardAccount() != null
                 ? expense.getCardAccount().getCardName()
                 : null,

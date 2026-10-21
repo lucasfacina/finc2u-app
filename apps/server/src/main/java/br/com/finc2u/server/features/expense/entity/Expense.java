@@ -14,6 +14,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Table(name = "tb_expense")
@@ -32,6 +33,9 @@ public class Expense extends BaseModel {
 
     private Integer currentInstallment;
     private Integer totalInstallment;
+
+    // Liga todas as parcelas de uma mesma compra (só PARCELED); nulo nas demais despesas.
+    private UUID installmentGroupId;
 
     @Column(name = "expense_value")
     private BigDecimal value;
