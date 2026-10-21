@@ -62,7 +62,7 @@ public class ExpenseController {
     @GetMapping("/projections")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
-        Map<YearMonth, List<ExpenseResponse>> expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId)
+        Map<YearMonth, List<ExpenseResponse>> expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId, today)
             .entrySet().stream()
             .collect(Collectors.toMap(
                 Map.Entry::getKey, entry -> entry.getValue()

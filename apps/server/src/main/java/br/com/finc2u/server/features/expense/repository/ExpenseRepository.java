@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.expense.repository;
 
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
+import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -34,7 +35,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     @EntityGraph(attributePaths = {"cardAccount"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndDueDateBetween(UUID userId, LocalDate start, LocalDate end);
 
+    // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<Expense> findByExpenseTypeAndUserId(ExpenseType type, UUID userId);
+    List<Expense> findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+        UUID userId, ExpenseType type, PaymentStatus status, LocalDate referenceDate);
 
 }

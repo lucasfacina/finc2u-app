@@ -6,8 +6,8 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -17,45 +17,15 @@ import java.util.stream.Collectors;
 public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
 
     /*
-     * Monta as parcelas virtuais (não persistidas) restantes de uma despesa parcelada, uma por mês
-     * subsequente ao vencimento atual; já na última parcela, retorna lista vazia.
+     * Parcelas futuras do usuário, agrupadas pelo mês de vencimento. Desde que a compra parcelada é materializada (uma
+     * linha por parcela), a projeção só lê as linhas reais: PARCELED e PENDING com vencimento posterior à data de
+     * referência (hoje, vinda do Clock do chamador). Nada é montado em memória.
      */
-    private static List<Expense> remainingInstallmentsOf(Expense source) {
-        if (source.getTotalInstallment() == null) {
-            return List.of();
-        }
-
-        int current = source.getCurrentInstallment() != null
-            ? source.getCurrentInstallment()
-            : 1;
-        int total = source.getTotalInstallment();
-        int remaining = total - current;
-
-        List<Expense> projections = new ArrayList<>();
-        for (int i = 1; i <= remaining; i++) {
-            Expense projection = Expense.builder()
-                .description(source.getDescription() + " (" + (current + i) + "/" + total + ")")
-                .value(source.getValue())
-                .dueDate(source.getDueDate().plusMonths(i))
-                .expenseType(source.getExpenseType())
-                .paymentStatus(PaymentStatus.PENDING)
-                .currentInstallment(current + i)
-                .totalInstallment(total)
-                .cardAccount(source.getCardAccount())
-                .category(source.getCategory())
-                .build();
-            projection.setId(source.getId());
-            projection.setCreatedAt(source.getCreatedAt());
-            projections.add(projection);
-        }
-        return projections;
-    }
-
-    public Map<YearMonth, List<Expense>> getProjectionsByUser(UUID userId) {
-        return expenseRepository.findByExpenseTypeAndUserId(ExpenseType.PARCELED, userId)
+    public Map<YearMonth, List<Expense>> getProjectionsByUser(UUID userId, LocalDate referenceDate) {
+        return expenseRepository
+            .findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+                userId, ExpenseType.PARCELED, PaymentStatus.PENDING, referenceDate)
             .stream()
-            .filter(expense -> expense.getPaymentStatus() == PaymentStatus.PENDING)
-            .flatMap(expense -> remainingInstallmentsOf(expense).stream())
             .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getDueDate())));
     }
 
