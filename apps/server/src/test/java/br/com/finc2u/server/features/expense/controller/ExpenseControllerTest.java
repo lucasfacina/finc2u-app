@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -340,6 +341,42 @@ class ExpenseControllerTest {
     @Test
     void create_shouldReturnBadRequest_whenTotalInstallmentExceedsMaximum() throws Exception {
         performCreateWithInstallments(1, BusinessConstants.MAX_INSTALLMENTS + 1)
+            .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCurrentInstallmentIsGreaterThanTotal() throws Exception {
+        performCreateWithInstallments(5, 3)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value(containsString("A parcela atual não pode ser maior que o total de parcelas.")));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenInstallmentsAreInformedForNonParceledType() throws Exception {
+        var variableWithInstallments = new ExpenseRequest(
+            "Mercado", BigDecimal.valueOf(150.0), ExpenseType.VARIABLE, TODAY, null,
+            PaymentStatus.PENDING, null, 1, 3, categoryId, cardAccountId, null
+        );
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(variableWithInstallments)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.detail").value(containsString("Parcelas só podem ser informadas em despesas do tipo PARCELED.")));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void update_shouldReturnBadRequest_whenCurrentInstallmentIsGreaterThanTotal() throws Exception {
+        mockMvc.perform(put("/expenses/{id}", expenseId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(parceledRequest(5, 3))))
             .andExpect(status().isBadRequest());
 
         verifyNoInteractions(expenseService);
