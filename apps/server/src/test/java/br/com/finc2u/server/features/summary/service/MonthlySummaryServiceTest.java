@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
+import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
@@ -21,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,6 +47,8 @@ class MonthlySummaryServiceTest {
     private UserService userService;
     @Mock
     private SalaryHistoryService salaryHistoryService;
+    @Mock
+    private RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
@@ -100,6 +104,20 @@ class MonthlySummaryServiceTest {
             .thenAnswer(inv -> inv.getArgument(0));
         when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class)))
             .thenReturn(BigDecimal.valueOf(3000));
+    }
+
+    // B1: o resumo de um mês futuro enxerga a assinatura porque as despesas recorrentes do mês são geradas antes da soma.
+    @Test
+    void calculateOrRecalculate_shouldMaterializeTheRecurringExpensesOfTheMonthBeforeReadingTheExpenses() {
+        var subscription = expenseOf(BigDecimal.valueOf(21.90), PaymentStatus.PENDING, LocalDate.of(YEAR, MONTH, 25));
+        stubRepositories(List.of(subscription), List.of(), null, null);
+
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        var inOrder = inOrder(recurringExpenseMaterializer, expenseRepository);
+        inOrder.verify(recurringExpenseMaterializer).materializeForUser(userId, YearMonth.of(YEAR, MONTH));
+        inOrder.verify(expenseRepository).findByUserIdAndDueDateBetween(eq(userId), any(LocalDate.class), any(LocalDate.class));
+        assertEquals(0, BigDecimal.valueOf(21.90).compareTo(result.getTotalExpenses()));
     }
 
     @Test
