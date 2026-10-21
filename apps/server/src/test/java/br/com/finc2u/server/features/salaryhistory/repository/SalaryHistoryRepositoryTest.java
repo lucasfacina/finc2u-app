@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.salaryhistory.repository;
 
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
+import br.com.finc2u.server.features.salaryhistory.form.SalaryHistoryResponse;
 import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.EntityManager;
@@ -141,6 +142,25 @@ class SalaryHistoryRepositoryTest {
             beto.getId(), LocalDate.of(2026, 2, 1));
 
         assertTrue(found.isEmpty());
+    }
+
+    // O SalaryHistoryResponse lê só o id do dono (LAZY): o histórico inteiro sai numa consulta, com a resposta montada.
+    @Test
+    void findByUserIdOrderByEffectiveFromDesc_shouldServeTheHistoryInASingleStatement_evenReadingTheResponse() {
+        var responses = salaryHistoryRepository.findByUserIdOrderByEffectiveFromDesc(ana.getId()).stream()
+            .map(SalaryHistoryResponse::from)
+            .toList();
+
+        assertEquals(3, responses.size());
+        assertEquals(1, statistics.getPrepareStatementCount());
+    }
+
+    @Test
+    void findFirstByUserIdAndEffectiveFromLessThanEqual_shouldServeTheCurrentSalaryInASingleStatement() {
+        salaryHistoryRepository.findFirstByUserIdAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            ana.getId(), LocalDate.of(2026, 10, 1));
+
+        assertEquals(1, statistics.getPrepareStatementCount());
     }
 
     private Map<UUID, CurrentSalary> bySalaryUser(List<CurrentSalary> salaries) {
