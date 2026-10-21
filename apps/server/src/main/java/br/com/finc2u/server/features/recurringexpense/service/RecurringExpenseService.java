@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.recurringexpense.service;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.category.service.CategoryService;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
@@ -23,6 +24,7 @@ public class RecurringExpenseService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final CardAccountService cardAccountService;
+    private final ExpenseService expenseService;
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     @Transactional
@@ -62,9 +64,11 @@ public class RecurringExpenseService {
         return recurringExpenseRepository.save(recurringExpense);
     }
 
+    // As despesas já geradas ficam (sem modelo): apagar o modelo não apaga o histórico. Para parar de gerar, use o endMonth.
     @Transactional
     public void delete(UUID id) {
         var recurringExpense = getById(id);
+        expenseService.detachFromRecurringExpense(id);
         recurringExpenseRepository.delete(recurringExpense);
     }
 
