@@ -1,9 +1,12 @@
 package br.com.finc2u.server.features.summary.controller;
 
 import br.com.finc2u.server.config.GlobalExceptionHandler;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
+import br.com.finc2u.server.features.summary.entity.MonthlySummaryCategoryTotal;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
 import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +41,7 @@ class MonthlySummaryControllerTest {
 
     private UUID userId;
     private MonthlySummary summary;
+    private MonthlySummaryCategoryTotal groceriesTotal;
     private final int MONTH = 6, YEAR = 2026;
 
     @BeforeEach
@@ -62,13 +66,19 @@ class MonthlySummaryControllerTest {
             .savingsBalance(BigDecimal.valueOf(1000))
             .remainingAmount(BigDecimal.valueOf(2500))
             .build();
+
+        var groceries = Category.builder()
+            .name("Alimentação")
+            .build();
+        groceries.setId(UUID.randomUUID());
+        groceriesTotal = MonthlySummaryCategoryTotal.of(summary, groceries, BigDecimal.valueOf(300));
     }
 
     @Test
     void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
         when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
-            .thenReturn(new MonthlySummaryResult(summary, true));
+            .thenReturn(new MonthlySummaryResult(summary, List.of(groceriesTotal), true));
 
         mockMvc.perform(post("/monthly-summary")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -78,14 +88,15 @@ class MonthlySummaryControllerTest {
             .andExpect(jsonPath("$.year").value(YEAR))
             .andExpect(jsonPath("$.totalExpenses").value(800))
             .andExpect(jsonPath("$.totalOverdue").value(120))
-            .andExpect(jsonPath("$.totalFixed").value(60));
+            .andExpect(jsonPath("$.totalFixed").value(60))
+            .andExpect(jsonPath("$.categoryTotals[0].categoryName").value("Alimentação"));
     }
 
     @Test
     void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
         when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
-            .thenReturn(new MonthlySummaryResult(summary, false));
+            .thenReturn(new MonthlySummaryResult(summary, List.of(), false));
 
         mockMvc.perform(post("/monthly-summary")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -130,24 +141,28 @@ class MonthlySummaryControllerTest {
     @Test
     void getHistoryByUserId_shouldReturnOk() throws Exception {
         when(monthlySummaryService.getByUser(userId))
-            .thenReturn(List.of(summary));
+            .thenReturn(List.of(new MonthlySummaryDetail(summary, List.of(groceriesTotal))));
 
         mockMvc.perform(get("/monthly-summary/history")
                 .param("userId", userId.toString()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].month").value(MONTH))
-            .andExpect(jsonPath("$[0].totalExpenses").value(800));
+            .andExpect(jsonPath("$[0].totalExpenses").value(800))
+            .andExpect(jsonPath("$[0].categoryTotals[0].categoryName").value("Alimentação"))
+            .andExpect(jsonPath("$[0].categoryTotals[0].total").value(300));
     }
 
     @Test
     void getPeriodByUserId_shouldReturnOk() throws Exception {
         when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
-            .thenReturn(summary);
+            .thenReturn(new MonthlySummaryDetail(summary, List.of(groceriesTotal)));
 
         mockMvc.perform(get("/monthly-summary/{userId}/{year}/{month}", userId, YEAR, MONTH))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.month").value(MONTH))
-            .andExpect(jsonPath("$.remainingAmount").value(2500));
+            .andExpect(jsonPath("$.remainingAmount").value(2500))
+            .andExpect(jsonPath("$.categoryTotals[0].categoryId").value(groceriesTotal.getCategory().getId().toString()))
+            .andExpect(jsonPath("$.categoryTotals[0].total").value(300));
     }
 
     @Test
