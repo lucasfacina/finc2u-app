@@ -17,7 +17,8 @@ import java.time.LocalDate;
 @Builder
 public class SalaryHistory extends BaseModel {
 
-    @ManyToOne
+    // LAZY: o SalaryHistoryResponse lê só o id do dono (o id de um proxy não gera consulta).
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
