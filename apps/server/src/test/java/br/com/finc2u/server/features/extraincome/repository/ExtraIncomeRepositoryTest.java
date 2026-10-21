@@ -1,7 +1,11 @@
 package br.com.finc2u.server.features.extraincome.repository;
 
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
+import br.com.finc2u.server.features.extraincome.form.ExtraIncomeResponse;
 import br.com.finc2u.server.features.user.entity.User;
+import jakarta.persistence.EntityManager;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +28,9 @@ class ExtraIncomeRepositoryTest {
 
     @Autowired
     private TestEntityManager testEntityManager;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private User ana;
 
@@ -75,6 +82,42 @@ class ExtraIncomeRepositoryTest {
             ana.getId(), LocalDate.of(2027, 1, 1), LocalDate.of(2027, 1, 31));
 
         assertTrue(found.isEmpty());
+    }
+
+    // O ExtraIncomeResponse lê só o id do dono (LAZY): montar a resposta não custa nenhuma consulta a mais.
+    @Test
+    void findByUserId_shouldServeTheListingInASingleStatement_evenReadingTheResponse() {
+        var statistics = resetStatistics();
+
+        var responses = extraIncomeRepository.findByUserId(ana.getId()).stream()
+            .map(ExtraIncomeResponse::from)
+            .toList();
+
+        assertEquals(5, responses.size());
+        assertEquals(1, statistics.getPrepareStatementCount());
+    }
+
+    @Test
+    void findByUserIdAndDateBetween_shouldServeThePeriodInASingleStatement_evenReadingTheResponse() {
+        var statistics = resetStatistics();
+
+        var responses = extraIncomeRepository.findByUserIdAndDateBetween(
+                ana.getId(), LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 30)).stream()
+            .map(ExtraIncomeResponse::from)
+            .toList();
+
+        assertEquals(3, responses.size());
+        assertEquals(1, statistics.getPrepareStatementCount());
+    }
+
+    private Statistics resetStatistics() {
+        testEntityManager.flush();
+        testEntityManager.clear();
+        var statistics = entityManager.getEntityManagerFactory()
+            .unwrap(SessionFactory.class)
+            .getStatistics();
+        statistics.clear();
+        return statistics;
     }
 
     private User persistUser(String name, String email) {
