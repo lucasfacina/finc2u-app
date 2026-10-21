@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MonthlySummaryCalculatorTest {
 
@@ -79,6 +79,34 @@ class MonthlySummaryCalculatorTest {
         var figures = MonthlySummaryCalculator.calculate(
             input(List.of(), List.of(), 3000, 0, null, null));
 
+        assertMoney(0, figures.cashBalance());
+    }
+
+    // Sem resumo do mês anterior o cashBalance é zero e isso fica explícito: o cliente sabe que o zero vem da falta.
+    @Test
+    void calculate_shouldFlagThePreviousMonthAsMissing_whenThereIsNoPreviousSummary() {
+        var figures = MonthlySummaryCalculator.calculate(
+            input(List.of(), List.of(), 3000, 0, null, null));
+
+        assertTrue(figures.previousMonthMissing());
+        assertMoney(0, figures.cashBalance());
+    }
+
+    @Test
+    void calculate_shouldNotFlagThePreviousMonthAsMissing_whenThereIsAPreviousSummary() {
+        var figures = MonthlySummaryCalculator.calculate(
+            input(List.of(), List.of(), 3000, 0, money(350), null));
+
+        assertFalse(figures.previousMonthMissing());
+    }
+
+    // Um mês anterior que fechou em zero existe: o zero do cashBalance, aqui, não é falta de resumo.
+    @Test
+    void calculate_shouldNotFlagThePreviousMonthAsMissing_whenItClosedAtZero() {
+        var figures = MonthlySummaryCalculator.calculate(
+            input(List.of(), List.of(), 3000, 0, BigDecimal.ZERO, null));
+
+        assertFalse(figures.previousMonthMissing());
         assertMoney(0, figures.cashBalance());
     }
 
