@@ -8,8 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 
 class MonthlySummaryTest {
 
@@ -45,6 +44,7 @@ class MonthlySummaryTest {
             BigDecimal.valueOf(120),
             BigDecimal.valueOf(500),
             BigDecimal.valueOf(200),
+            true,
             BigDecimal.valueOf(1500),
             BigDecimal.valueOf(300),
             BigDecimal.valueOf(2700),
@@ -60,6 +60,7 @@ class MonthlySummaryTest {
         assertEquals(0, BigDecimal.valueOf(120).compareTo(summary.getTotalFixed()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(summary.getTotalExtras()));
         assertEquals(0, BigDecimal.valueOf(200).compareTo(summary.getCashBalance()));
+        assertTrue(summary.getPreviousMonthMissing());
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
         assertEquals(0, BigDecimal.valueOf(300).compareTo(summary.getSavingsYield()));
         assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
