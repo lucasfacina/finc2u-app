@@ -37,7 +37,8 @@ public class MonthlySummary extends BaseModel {
     private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
 
-    @ManyToOne
+    // LAZY: o MonthlySummaryResponse lê só o id do dono (o id de um proxy não gera consulta).
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
