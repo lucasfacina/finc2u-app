@@ -9,8 +9,11 @@ import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
+import br.com.finc2u.server.features.summary.entity.MonthlySummaryCategoryTotal;
+import br.com.finc2u.server.features.summary.repository.MonthlySummaryCategoryTotalRepository;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryCalculator;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryInput;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
 import br.com.finc2u.server.features.user.entity.User;
@@ -25,14 +28,17 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MonthlySummaryService {
 
     private final MonthlySummaryRepository monthlySummaryRepository;
+    private final MonthlySummaryCategoryTotalRepository categoryTotalRepository;
     private final ExpenseService expenseService;
     private final ExtraIncomeService extraIncomeService;
     private final UserService userService;
@@ -44,7 +50,8 @@ public class MonthlySummaryService {
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
      * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features, recupera ou
      * cria o resumo e o mês anterior, delega o cálculo ao MonthlySummaryCalculator (puro) e grava o resultado. Não altera
-     * nenhuma despesa. Devolve também se o resumo foi criado agora ou recalculado.
+     * nenhuma despesa. Grava também os totais por categoria (no recálculo, os antigos saem). Devolve se o resumo foi criado
+     * agora ou recalculado.
      */
     @Transactional
     public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
@@ -62,7 +69,7 @@ public class MonthlySummaryService {
         BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
 
         Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
-        summary.apply(MonthlySummaryCalculator.calculate(new MonthlySummaryInput(
+        var figures = MonthlySummaryCalculator.calculate(new MonthlySummaryInput(
             expenses,
             extraIncomes,
             LocalDate.now(clock),
@@ -70,26 +77,56 @@ public class MonthlySummaryService {
             user.savingsBalanceOrZero(),
             previous.map(MonthlySummary::getRemainingAmount).orElse(null),
             previous.map(MonthlySummary::getSavingsBalance).orElse(null)
-        )));
+        ));
+        summary.apply(figures);
 
-        return new MonthlySummaryResult(monthlySummaryRepository.save(summary), existing.isEmpty());
+        var saved = monthlySummaryRepository.save(summary);
+        if (existing.isPresent()) {
+            categoryTotalRepository.deleteBySummaryId(saved.getId());
+        }
+        var categoryTotals = categoryTotalRepository.saveAll(figures.categoryTotals().stream()
+            .map(total -> MonthlySummaryCategoryTotal.of(saved, total.category(), total.total()))
+            .toList());
+
+        return new MonthlySummaryResult(saved, categoryTotals, existing.isEmpty());
+    }
+
+    // O histórico lê os totais por categoria de todos os resumos numa consulta só (sem uma por resumo).
+    @Transactional(readOnly = true)
+    public List<MonthlySummaryDetail> getByUser(UUID userId) {
+        var summaries = monthlySummaryRepository.findByUserId(userId);
+        var categoryTotalsBySummary = categoryTotalsOf(summaries);
+        return summaries.stream()
+            .map(summary -> new MonthlySummaryDetail(summary, categoryTotalsBySummary.getOrDefault(summary.getId(), List.of())))
+            .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<MonthlySummary> getByUser(UUID userId) {
-        return monthlySummaryRepository.findByUserId(userId);
+    public MonthlySummaryDetail getByUserAndPeriod(UUID userId, Integer month, Integer year) {
+        var summary = findByPeriod(userId, month, year);
+        return new MonthlySummaryDetail(summary, categoryTotalsOf(List.of(summary)).getOrDefault(summary.getId(), List.of()));
     }
 
-    @Transactional(readOnly = true)
-    public MonthlySummary getByUserAndPeriod(UUID userId, Integer month, Integer year) {
+    // Os totais por categoria saem antes do resumo (FK).
+    @Transactional
+    public void delete(UUID userId, Integer month, Integer year) {
+        MonthlySummary summary = findByPeriod(userId, month, year);
+        categoryTotalRepository.deleteBySummaryId(summary.getId());
+        monthlySummaryRepository.delete(summary);
+    }
+
+    private MonthlySummary findByPeriod(UUID userId, Integer month, Integer year) {
         return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
             .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
     }
 
-    @Transactional
-    public void delete(UUID userId, Integer month, Integer year) {
-        MonthlySummary summary = getByUserAndPeriod(userId, month, year);
-        monthlySummaryRepository.delete(summary);
+    private Map<UUID, List<MonthlySummaryCategoryTotal>> categoryTotalsOf(List<MonthlySummary> summaries) {
+        if (summaries.isEmpty()) {
+            return Map.of();
+        }
+        return categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(summaries.stream().map(MonthlySummary::getId).toList())
+            .stream()
+            .collect(Collectors.groupingBy(categoryTotal -> categoryTotal.getSummary().getId()));
     }
 
     private Optional<MonthlySummary> findPreviousMonth(UUID userId, MonthlyPeriod period) {

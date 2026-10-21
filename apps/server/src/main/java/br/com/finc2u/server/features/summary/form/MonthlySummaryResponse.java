@@ -1,9 +1,11 @@
 package br.com.finc2u.server.features.summary.form;
 
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
+import br.com.finc2u.server.features.summary.entity.MonthlySummaryCategoryTotal;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record MonthlySummaryResponse(
@@ -22,10 +24,11 @@ public record MonthlySummaryResponse(
     BigDecimal savingsBalance,
     BigDecimal savingsYield,
     BigDecimal remainingAmount,
+    List<CategoryTotalResponse> categoryTotals,
     LocalDateTime updatedAt
 ) {
 
-    public static MonthlySummaryResponse from(MonthlySummary summary) {
+    public static MonthlySummaryResponse from(MonthlySummary summary, List<MonthlySummaryCategoryTotal> categoryTotals) {
         return new MonthlySummaryResponse(
             summary.getUser().getId(),
             summary.getMonth(),
@@ -42,6 +45,7 @@ public record MonthlySummaryResponse(
             summary.getSavingsBalance(),
             summary.getSavingsYield(),
             summary.getRemainingAmount(),
+            categoryTotals.stream().map(CategoryTotalResponse::from).toList(),
             summary.getUpdatedAt()
         );
     }

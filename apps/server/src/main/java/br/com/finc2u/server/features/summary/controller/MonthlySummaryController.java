@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.summary.controller;
 
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
-import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.form.MonthlySummaryResponse;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
 import jakarta.validation.Valid;
@@ -27,7 +26,7 @@ public class MonthlySummaryController {
             monthlySummaryRequest.month(),
             monthlySummaryRequest.year()
         );
-        return new ResponseEntity<>(MonthlySummaryResponse.from(result.summary()),
+        return new ResponseEntity<>(MonthlySummaryResponse.from(result.summary(), result.categoryTotals()),
             result.created()
                 ? HttpStatus.CREATED
                 : HttpStatus.OK
@@ -36,17 +35,16 @@ public class MonthlySummaryController {
 
     @GetMapping("/history")
     public ResponseEntity<List<MonthlySummaryResponse>> getHistoryByUserId(@RequestParam UUID userId) {
-        List<MonthlySummary> monthHistory = monthlySummaryService.getByUser(userId);
-        List<MonthlySummaryResponse> monthlySummaryResponse = monthHistory.stream()
-            .map(MonthlySummaryResponse::from)
+        List<MonthlySummaryResponse> monthlySummaryResponse = monthlySummaryService.getByUser(userId).stream()
+            .map(detail -> MonthlySummaryResponse.from(detail.summary(), detail.categoryTotals()))
             .toList();
         return ResponseEntity.ok(monthlySummaryResponse);
     }
 
     @GetMapping("/{userId}/{year}/{month}")
     public ResponseEntity<MonthlySummaryResponse> getPeriodByUserId(@PathVariable UUID userId, @PathVariable Integer year, @PathVariable Integer month) {
-        MonthlySummary monthlySummary = monthlySummaryService.getByUserAndPeriod(userId, month, year);
-        return ResponseEntity.ok(MonthlySummaryResponse.from(monthlySummary));
+        var detail = monthlySummaryService.getByUserAndPeriod(userId, month, year);
+        return ResponseEntity.ok(MonthlySummaryResponse.from(detail.summary(), detail.categoryTotals()));
     }
 
     @DeleteMapping("/{userId}/{year}/{month}")
