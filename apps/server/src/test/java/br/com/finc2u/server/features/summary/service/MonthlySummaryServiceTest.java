@@ -112,7 +112,7 @@ class MonthlySummaryServiceTest {
         var subscription = expenseOf(BigDecimal.valueOf(21.90), PaymentStatus.PENDING, LocalDate.of(YEAR, MONTH, 25));
         stubRepositories(List.of(subscription), List.of(), null, null);
 
-        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         var inOrder = inOrder(recurringExpenseMaterializer, expenseService);
         inOrder.verify(recurringExpenseMaterializer).materializeForUser(userId, YearMonth.of(YEAR, MONTH));
@@ -140,7 +140,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(800).compareTo(result.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalPaid()));
@@ -165,7 +165,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(200).compareTo(result.getTotalExpenses()));
     }
@@ -185,7 +185,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(PaymentStatus.PENDING, overdue.getPaymentStatus());
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getTotalPaid()));
@@ -203,7 +203,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalExtras()));
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getRemainingAmount()));
@@ -225,7 +225,7 @@ class MonthlySummaryServiceTest {
             previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
@@ -246,7 +246,7 @@ class MonthlySummaryServiceTest {
             previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
@@ -260,7 +260,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(result.getSavingsBalance()));
     }
@@ -281,10 +281,35 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getCashBalance()));
         verify(monthlySummaryRepository, times(1)).save(any(MonthlySummary.class));
+    }
+
+    // O service decide se o cálculo criou o resumo ou recalculou um existente (o controller só traduz em 201 ou 200).
+    @Test
+    void calculateOrRecalculate_shouldReportCreated_whenThePeriodHadNoSummary() {
+        stubRepositories(List.of(), List.of(), null, null);
+
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        assertTrue(result.created());
+    }
+
+    @Test
+    void calculateOrRecalculate_shouldReportNotCreated_whenThePeriodAlreadyHadASummary() {
+        var existing = MonthlySummary.builder()
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .build();
+        stubRepositories(List.of(), List.of(), existing, null);
+
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
+
+        assertFalse(result.created());
+        assertSame(existing, result.summary());
     }
 
     @Test
