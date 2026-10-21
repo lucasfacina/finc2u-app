@@ -206,6 +206,17 @@ class RecurringExpenseServiceTest {
         verifyNoInteractions(recurringExpenseRepository);
     }
 
+    // O mês é o filtro: modelo sem término, ou que termina nele ou depois, entra; o repositório recebe o dia 1 do mês.
+    @Test
+    void getActiveIn_shouldReturnTheModelsThatHaveNotEndedBeforeTheMonth() {
+        when(recurringExpenseRepository.findByEndMonthIsNullOrEndMonthGreaterThanEqual(LocalDate.of(2026, 10, 1)))
+            .thenReturn(List.of(saved));
+
+        var response = recurringExpenseService.getActiveIn(YearMonth.of(2026, 10));
+
+        assertEquals(List.of(saved), response);
+    }
+
     @Test
     void update_shouldCopyTheEditableFieldsAndResolveTheReferencesFromTheOwner() {
         var newCategoryId = UUID.randomUUID();
