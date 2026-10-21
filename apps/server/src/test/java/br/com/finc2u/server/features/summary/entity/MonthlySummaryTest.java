@@ -40,6 +40,8 @@ class MonthlySummaryTest {
             BigDecimal.valueOf(1000),
             BigDecimal.valueOf(600),
             BigDecimal.valueOf(400),
+            BigDecimal.valueOf(150),
+            BigDecimal.valueOf(120),
             BigDecimal.valueOf(500),
             BigDecimal.valueOf(200),
             BigDecimal.valueOf(1500),
@@ -52,6 +54,8 @@ class MonthlySummaryTest {
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(summary.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(600).compareTo(summary.getTotalPaid()));
         assertEquals(0, BigDecimal.valueOf(400).compareTo(summary.getTotalPending()));
+        assertEquals(0, BigDecimal.valueOf(150).compareTo(summary.getTotalOverdue()));
+        assertEquals(0, BigDecimal.valueOf(120).compareTo(summary.getTotalFixed()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(summary.getTotalExtras()));
         assertEquals(0, BigDecimal.valueOf(200).compareTo(summary.getCashBalance()));
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
