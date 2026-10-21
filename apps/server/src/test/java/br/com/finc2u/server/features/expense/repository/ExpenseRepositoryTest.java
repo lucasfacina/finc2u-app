@@ -167,6 +167,35 @@ class ExpenseRepositoryTest {
     }
 
     @Test
+    void shouldPersistTheInstallmentGroupId() {
+        var groupId = UUID.randomUUID();
+        var saved = testEntityManager.persist(Expense.builder()
+            .description("Notebook")
+            .value(BigDecimal.valueOf(500))
+            .dueDate(LocalDate.of(2026, 7, 10))
+            .expenseType(ExpenseType.PARCELED)
+            .paymentStatus(PaymentStatus.PENDING)
+            .currentInstallment(2)
+            .totalInstallment(10)
+            .installmentGroupId(groupId)
+            .user(user)
+            .category(persistCategory("Compras"))
+            .build());
+        resetPersistenceContext();
+
+        var found = expenseRepository.findById(saved.getId()).orElseThrow();
+
+        assertEquals(groupId, found.getInstallmentGroupId());
+    }
+
+    @Test
+    void shouldLeaveTheInstallmentGroupIdEmpty_whenTheExpenseIsNotParceled() {
+        var found = expenseRepository.findById(anyExpenseId).orElseThrow();
+
+        assertNull(found.getInstallmentGroupId());
+    }
+
+    @Test
     void findByUserIdAndDueDateBetween_shouldLoadCardInTheMainQuery() {
         var expenses = expenseRepository.findByUserIdAndDueDateBetween(
             user.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));

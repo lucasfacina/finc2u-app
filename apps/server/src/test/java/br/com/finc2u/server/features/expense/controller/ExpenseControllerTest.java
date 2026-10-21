@@ -160,6 +160,17 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void getById_shouldExposeTheInstallmentGroupId() throws Exception {
+        var groupId = UUID.randomUUID();
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setInstallmentGroupId(groupId);
+        when(expenseService.getById(expenseId)).thenReturn(expense);
+
+        mockMvc.perform(get("/expenses/{id}", expenseId))
+            .andExpect(jsonPath("$.installmentGroupId").value(groupId.toString()));
+    }
+
+    @Test
     void getAllByUserId_shouldFlagOverdueOfEachExpense() throws Exception {
         var paid = Expense.builder()
             .description("Luz")
