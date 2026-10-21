@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.summary.vo;
 
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -15,6 +16,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MonthlySummaryCalculatorTest {
 
     private static final LocalDate REFERENCE_DATE = LocalDate.of(2026, 6, 15);
+    private static final Category GROCERIES = categoryOf("Alimentação");
+    private static final Category LEISURE = categoryOf("Lazer");
+
+    private static Category categoryOf(String name) {
+        return Category.builder()
+            .name(name)
+            .build();
+    }
 
     private static BigDecimal money(double value) {
         return BigDecimal.valueOf(value);
@@ -26,11 +35,16 @@ class MonthlySummaryCalculatorTest {
     }
 
     private static Expense expense(double value, PaymentStatus status, ExpenseType type, LocalDate dueDate) {
+        return expense(value, status, type, dueDate, GROCERIES);
+    }
+
+    private static Expense expense(double value, PaymentStatus status, ExpenseType type, LocalDate dueDate, Category category) {
         return Expense.builder()
             .value(money(value))
             .paymentStatus(status)
             .expenseType(type)
             .dueDate(dueDate)
+            .category(category)
             .build();
     }
 
@@ -121,6 +135,41 @@ class MonthlySummaryCalculatorTest {
         assertMoney(0, figures.totalExpenses());
         assertMoney(0, figures.totalExtras());
         assertMoney(3000, figures.remainingAmount());
+    }
+
+    // ---- totais por categoria (base do orçamento) ----
+
+    @Test
+    void calculate_shouldSumTheExpensesOfEachCategory_paidOrPending_sortedByName() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(
+            expense(70, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(3), LEISURE),
+            expense(300, PaymentStatus.PAID, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(1), GROCERIES),
+            expense(50, PaymentStatus.PENDING, ExpenseType.FIXED, REFERENCE_DATE.plusDays(2), GROCERIES)
+        ), List.of(), 3000, 0, null, null));
+
+        assertEquals(List.of("Alimentação", "Lazer"),
+            figures.categoryTotals().stream().map(total -> total.category().getName()).toList());
+        assertMoney(350, figures.categoryTotals().get(0).total());
+        assertMoney(70, figures.categoryTotals().get(1).total());
+    }
+
+    @Test
+    void calculate_shouldMatchTheSumOfTheCategoryTotalsWithTheTotalExpenses() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(
+            expense(70, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(3), LEISURE),
+            expense(300, PaymentStatus.PAID, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(1), GROCERIES)
+        ), List.of(), 3000, 0, null, null));
+
+        var sum = figures.categoryTotals().stream().map(CategoryTotal::total).reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertEquals(0, figures.totalExpenses().compareTo(sum));
+    }
+
+    @Test
+    void calculate_shouldReturnNoCategoryTotal_whenTheMonthHasNoExpense() {
+        var figures = MonthlySummaryCalculator.calculate(
+            input(List.of(), List.of(extraIncome(500)), 3000, 0, null, null));
+
+        assertEquals(List.of(), figures.categoryTotals());
     }
 
     // ---- totalOverdue: atraso derivado da data de referência (D13) ----
