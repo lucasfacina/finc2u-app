@@ -83,9 +83,9 @@ class ParceledPurchaseIntegrationTest {
         var userId = registerUser("parcelas.resumo@email.com");
         expenseService.create(userId, purchase(userId, 4, 10));
 
-        var july = monthlySummaryService.calculateOrRecalculate(userId, 7, 2026);
-        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026);
-        var january = monthlySummaryService.calculateOrRecalculate(userId, 1, 2027);
+        var july = monthlySummaryService.calculateOrRecalculate(userId, 7, 2026).summary();
+        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026).summary();
+        var january = monthlySummaryService.calculateOrRecalculate(userId, 1, 2027).summary();
 
         assertEquals(0, BigDecimal.valueOf(100).compareTo(july.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(100).compareTo(december.getTotalExpenses()));

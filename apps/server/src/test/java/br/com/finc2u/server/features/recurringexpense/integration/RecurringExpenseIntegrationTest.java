@@ -81,9 +81,9 @@ class RecurringExpenseIntegrationTest {
         var userId = registerUser("recorrente.resumo@email.com");
         recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
 
-        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026);
+        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026).summary();
         monthlySummaryService.calculateOrRecalculate(userId, 12, 2026);
-        var january = monthlySummaryService.calculateOrRecalculate(userId, 1, 2027);
+        var january = monthlySummaryService.calculateOrRecalculate(userId, 1, 2027).summary();
 
         assertEquals(0, BigDecimal.valueOf(21.90).compareTo(december.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(21.90).compareTo(january.getTotalExpenses()));
@@ -95,7 +95,7 @@ class RecurringExpenseIntegrationTest {
         var userId = registerUser("recorrente.passado@email.com");
         recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
 
-        var september = monthlySummaryService.calculateOrRecalculate(userId, 9, 2026);
+        var september = monthlySummaryService.calculateOrRecalculate(userId, 9, 2026).summary();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(september.getTotalExpenses()));
         assertEquals(2, instancesOf(userId).size());
@@ -106,7 +106,7 @@ class RecurringExpenseIntegrationTest {
         var userId = registerUser("recorrente.fim@email.com");
         recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), YearMonth.of(2026, 11)), userId);
 
-        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026);
+        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026).summary();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(december.getTotalExpenses()));
         assertEquals(2, instancesOf(userId).size());

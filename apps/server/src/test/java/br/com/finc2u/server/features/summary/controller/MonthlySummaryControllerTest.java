@@ -4,6 +4,7 @@ import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
 import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,54 +45,50 @@ class MonthlySummaryControllerTest {
         userId = UUID.randomUUID();
 
         User user = User.builder()
-                .build();
+            .build();
         user.setId(userId);
 
         summary = MonthlySummary.builder()
-                .month(MONTH)
-                .year(YEAR)
-                .user(user)
-                .totalExpenses(BigDecimal.valueOf(800))
-                .totalPaid(BigDecimal.valueOf(500))
-                .totalPending(BigDecimal.valueOf(300))
-                .totalExtras(BigDecimal.valueOf(200))
-                .cashBalance(BigDecimal.valueOf(100))
-                .savingsBalance(BigDecimal.valueOf(1000))
-                .remainingAmount(BigDecimal.valueOf(2500))
-                .build();
+            .month(MONTH)
+            .year(YEAR)
+            .user(user)
+            .totalExpenses(BigDecimal.valueOf(800))
+            .totalPaid(BigDecimal.valueOf(500))
+            .totalPending(BigDecimal.valueOf(300))
+            .totalExtras(BigDecimal.valueOf(200))
+            .cashBalance(BigDecimal.valueOf(100))
+            .savingsBalance(BigDecimal.valueOf(1000))
+            .remainingAmount(BigDecimal.valueOf(2500))
+            .build();
     }
 
     @Test
     void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
-                .thenReturn(false);
         when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
-                .thenReturn(summary);
+            .thenReturn(new MonthlySummaryResult(summary, true));
 
         mockMvc.perform(post("/monthly-summary")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.month").value(MONTH))
-                .andExpect(jsonPath("$.year").value(YEAR))
-                .andExpect(jsonPath("$.totalExpenses").value(800));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.month").value(MONTH))
+            .andExpect(jsonPath("$.year").value(YEAR))
+            .andExpect(jsonPath("$.totalExpenses").value(800));
     }
 
     @Test
     void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.existsByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
-                .thenReturn(true);
         when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
-                .thenReturn(summary);
+            .thenReturn(new MonthlySummaryResult(summary, false));
 
         mockMvc.perform(post("/monthly-summary")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.month").value(MONTH))
-                .andExpect(jsonPath("$.totalExpenses").value(800));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.month").value(MONTH))
+            .andExpect(jsonPath("$.totalExpenses").value(800));
     }
 
     @Test
@@ -99,9 +96,9 @@ class MonthlySummaryControllerTest {
         MonthlySummaryRequest request = new MonthlySummaryRequest(null, MONTH, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -110,9 +107,9 @@ class MonthlySummaryControllerTest {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, 0, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -121,32 +118,32 @@ class MonthlySummaryControllerTest {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, 1999);
 
         mockMvc.perform(post("/monthly-summary")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest());
     }
 
     @Test
     void getHistoryByUserId_shouldReturnOk() throws Exception {
         when(monthlySummaryService.getByUser(userId))
-                .thenReturn(List.of(summary));
+            .thenReturn(List.of(summary));
 
         mockMvc.perform(get("/monthly-summary/history")
-                        .param("userId", userId.toString()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].month").value(MONTH))
-                .andExpect(jsonPath("$[0].totalExpenses").value(800));
+                .param("userId", userId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].month").value(MONTH))
+            .andExpect(jsonPath("$[0].totalExpenses").value(800));
     }
 
     @Test
     void getPeriodByUserId_shouldReturnOk() throws Exception {
         when(monthlySummaryService.getByUserAndPeriod(eq(userId), eq(MONTH), eq(YEAR)))
-                .thenReturn(summary);
+            .thenReturn(summary);
 
         mockMvc.perform(get("/monthly-summary/{userId}/{year}/{month}", userId, YEAR, MONTH))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.month").value(MONTH))
-                .andExpect(jsonPath("$.remainingAmount").value(2500));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.month").value(MONTH))
+            .andExpect(jsonPath("$.remainingAmount").value(2500));
     }
 
     @Test
@@ -154,7 +151,7 @@ class MonthlySummaryControllerTest {
         doNothing().when(monthlySummaryService).delete(eq(userId), eq(MONTH), eq(YEAR));
 
         mockMvc.perform(delete("/monthly-summary/{userId}/{year}/{month}", userId, YEAR, MONTH))
-                .andExpect(status().isNoContent());
+            .andExpect(status().isNoContent());
     }
 
 }
