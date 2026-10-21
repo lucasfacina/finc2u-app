@@ -3,9 +3,9 @@ package br.com.finc2u.server.features.summary.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
-import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
-import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
+import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
@@ -29,15 +29,15 @@ import java.util.UUID;
 public class MonthlySummaryService {
 
     private final MonthlySummaryRepository monthlySummaryRepository;
-    private final ExpenseRepository expenseRepository;
-    private final ExtraIncomeRepository extraIncomeRepository;
+    private final ExpenseService expenseService;
+    private final ExtraIncomeService extraIncomeService;
     private final UserService userService;
     private final SalaryHistoryService salaryHistoryService;
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     /*
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
-     * mês futuro já enxerga a assinatura), busca despesas/extras do mês,
+     * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features,
      * agrega os totais (MonthlySummaryTotals), recupera ou cria o resumo + o restante do mês anterior, e delega o
      * cálculo à própria entidade. Não altera nenhuma despesa.
      */
@@ -48,8 +48,8 @@ public class MonthlySummaryService {
 
         recurringExpenseMaterializer.materializeForUser(userId, YearMonth.of(year, month));
 
-        List<Expense> expenses = expenseRepository.findByUserIdAndDueDateBetween(userId, period.start(), period.end());
-        List<ExtraIncome> extraIncomes = extraIncomeRepository.findByUserIdAndDateBetween(userId, period.start(), period.end());
+        List<Expense> expenses = expenseService.getByUserAndPeriod(userId, period.start(), period.end());
+        List<ExtraIncome> extraIncomes = extraIncomeService.getByUserAndPeriod(userId, period.start(), period.end());
 
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
