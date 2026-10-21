@@ -212,33 +212,75 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 
 ### Despesas — `/expenses`
 
-| Método | Endpoint                | Descrição                         | Parâmetros                                                                                                  |
-|--------|-------------------------|-----------------------------------|-------------------------------------------------------------------------------------------------------------|
-| POST   | `/expenses`             | Criar despesa (parcelas: 1 a 120) | `userId` (query), Body: `ExpenseRequest`                                                                    |
-| GET    | `/expenses`             | Listar despesas do usuário        | `userId`* (query)                                                                                           |
-| GET    | `/expenses/filters`     | Listar despesas com filtros       | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `categoryId`, `minPrice`, `maxPrice` (query) |
-| GET    | `/expenses/{id}`        | Buscar despesa por ID             | `id` (path)                                                                                                 |
-| GET    | `/expenses/projections` | Projeção de parcelas futuras      | `userId`* (query)                                                                                           |
-| PUT    | `/expenses/{id}`        | Atualizar despesa                 | `id` (path), Body: `ExpenseRequest`                                                                         |
-| PATCH  | `/expenses/{id}/status` | Atualizar status da despesa       | `id` (path), `status` (query)                                                                               |
-| DELETE | `/expenses/{id}`        | Deletar despesa                   | `id` (path)                                                                                                 |
+| Método | Endpoint                                 | Descrição                                 | Parâmetros                                                                                                             |
+|--------|------------------------------------------|-------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| POST   | `/expenses`                              | Criar despesa (compra parcelada: 1 a 120) | `userId` (query), Body: `ExpenseRequest`                                                                               |
+| GET    | `/expenses`                              | Listar despesas do usuário                | `userId`* (query)                                                                                                      |
+| GET    | `/expenses/filters`                      | Listar despesas com filtros               | `userId`*, `month`, `year`, `status`, `type`, `cardAccountId`, `categoryId`, `minPrice`, `maxPrice`, `overdue` (query) |
+| GET    | `/expenses/{id}`                         | Buscar despesa por ID                     | `id` (path)                                                                                                            |
+| GET    | `/expenses/projections`                  | Projeção de parcelas futuras              | `userId`* (query)                                                                                                      |
+| GET    | `/expenses/installment-groups/{groupId}` | Consultar a compra parcelada inteira      | `groupId` (path)                                                                                                       |
+| PUT    | `/expenses/{id}`                         | Atualizar despesa (uma parcela)           | `id` (path), Body: `ExpenseRequest`                                                                                    |
+| PATCH  | `/expenses/{id}/status`                  | Atualizar status (e data do pagamento)    | `id` (path), `status`* (query), `paidAt` (query, YYYY-MM-DD)                                                           |
+| DELETE | `/expenses/{id}`                         | Deletar despesa (uma parcela)             | `id` (path)                                                                                                            |
+| DELETE | `/expenses/installment-groups/{groupId}` | Deletar a compra parcelada inteira        | `groupId` (path)                                                                                                       |
 
 - **`ExpenseRequest`** — além dos campos da despesa, exige **`categoryId`** (400 se faltar; também no `PUT`) e aceita o
   cartão por **`cardAccountId` ou `cardName`** (os dois → 400; nenhum → despesa avulsa, que exige `dueDate`). O
   `cardName` é resolvido entre os cartões do próprio usuário.
 - Cartão e categoria precisam ser **do dono da despesa**: o de outro usuário é tratado como inexistente (404).
-- A resposta (`ExpenseResponse`) traz `cardName` e `category` (`{ id, name }`).
+- **Status:** só existem `PENDING` e `PAID`. Se `paymentStatus` não vier, a despesa nasce `PENDING`; com vencimento
+  **anterior a hoje** o status é obrigatório (400, "informe se a despesa já foi paga") — o sistema não adivinha. O
+  atraso
+  não é um status: é **derivado** (`overdue` = `PENDING` com vencimento antes de hoje) e não é salvo.
+- **`paidAt`** (data real do pagamento, opcional): só vale com `PAID` e não pode ser futura (422). No `PATCH /status`,
+  marcar `PAID` sem `paidAt` usa **hoje**; voltar a `PENDING` limpa a data.
+- **Compra parcelada** (`type=PARCELED`, `currentInstallment` = k, `totalInstallment` = N): o `POST` grava as parcelas
+  **k..N, uma por mês**, todas com o mesmo `installmentGroupId` (só a informada recebe o `paymentStatus` enviado; as
+  futuras nascem `PENDING`), e **devolve só a parcela informada**. Parcela atual maior que o total, ou parcelas em outro
+  tipo → 400. `PUT`, `PATCH` e `DELETE /expenses/{id}` atuam em **uma** parcela; a compra inteira se consulta e se
+  remove
+  pelos endpoints de `installment-groups`.
+- **Filtros:** `overdue=true` devolve só as pendentes já vencidas; `month` sem `year` → 400.
+- **Projeção** (`/expenses/projections`): as parcelas futuras reais (`PENDING`, vencimento depois de hoje), agrupadas
+  por
+  mês; cada item tem id próprio e a descrição original — exiba "2/3" com `currentInstallment`/`totalInstallment`.
+- A resposta (`ExpenseResponse`) traz `overdue`, `paidAt`, `installmentGroupId`, `cardName` e `category`
+  (`{ id, name }`).
+
+### Despesas Recorrentes — `/recurring-expenses`
+
+| Método | Endpoint                   | Descrição                    | Parâmetros                                        |
+|--------|----------------------------|------------------------------|---------------------------------------------------|
+| POST   | `/recurring-expenses`      | Criar o modelo recorrente    | `userId` (query), Body: `RecurringExpenseRequest` |
+| GET    | `/recurring-expenses`      | Listar os modelos do usuário | `userId`* (query)                                 |
+| GET    | `/recurring-expenses/{id}` | Buscar modelo por ID         | `id` (path)                                       |
+| PUT    | `/recurring-expenses/{id}` | Atualizar o modelo           | `id` (path), Body: `RecurringExpenseRequest`      |
+| DELETE | `/recurring-expenses/{id}` | Deletar o modelo             | `id` (path)                                       |
+
+- **`RecurringExpenseRequest`** —
+  `{ description, value, dayOfMonth, startMonth, endMonth?, categoryId, cardAccountId? }`.
+  `dayOfMonth` vai de 1 a 31 (em mês mais curto, a despesa vence no último dia); `startMonth` e `endMonth` usam o
+  formato
+  `"2026-10"`, e o término não pode ser anterior ao início (400). Categoria e cartão precisam ser do dono (404).
+- O modelo **não é uma despesa**: ele gera **uma despesa por mês** (`FIXED`, `PENDING`), sem duplicar. Com cartão, o
+  vencimento segue a fatura em que a compra (no `dayOfMonth`) cai.
+- **Quando as despesas são geradas:** ao criar o modelo (mês corrente e seguinte), ao calcular o resumo de um mês
+  (`POST /monthly-summary`) e por um **job mensal** (dia 1, 03:00), ligado por `app.scheduling.enabled`
+  (`true` em dev; desligado nos testes). Meses anteriores ao corrente nunca são gerados.
+- **Editar** o modelo vale daqui para frente (as despesas já geradas não mudam). **Apagar** o modelo mantém as despesas
+  já geradas. Para parar de gerar, defina o `endMonth`.
 
 ### Ganhos Extras — `/extra-incomes`
 
-| Método | Endpoint                | Descrição                        | Parâmetros                                                    |
-|--------|-------------------------|----------------------------------|---------------------------------------------------------------|
-| POST   | `/extra-incomes`        | Registrar ganho extra            | `userId` (query), Body: `ExtraIncomeRequest`                  |
-| GET    | `/extra-incomes`        | Listar ganhos extras do usuário  | `userId`* (query)                                             |
-| GET    | `/extra-incomes/period` | Listar ganhos extras por período | `userId`*, `startDate`, `endDate` (query, formato YYYY-MM-DD) |
-| GET    | `/extra-incomes/{id}`   | Buscar ganho extra por ID        | `id` (path)                                                   |
-| PUT    | `/extra-incomes/{id}`   | Atualizar ganho extra            | `id` (path), Body: `ExtraIncomeRequest`                       |
-| DELETE | `/extra-incomes/{id}`   | Deletar ganho extra              | `id` (path)                                                   |
+| Método | Endpoint                | Descrição                        | Parâmetros                                                                        |
+|--------|-------------------------|----------------------------------|-----------------------------------------------------------------------------------|
+| POST   | `/extra-incomes`        | Registrar ganho extra            | `userId` (query), Body: `ExtraIncomeRequest`                                      |
+| GET    | `/extra-incomes`        | Listar ganhos extras do usuário  | `userId`* (query)                                                                 |
+| GET    | `/extra-incomes/period` | Listar ganhos extras por período | `userId`*, `startDate`, `endDate` (query, YYYY-MM-DD; início depois do fim → 400) |
+| GET    | `/extra-incomes/{id}`   | Buscar ganho extra por ID        | `id` (path)                                                                       |
+| PUT    | `/extra-incomes/{id}`   | Atualizar ganho extra            | `id` (path), Body: `ExtraIncomeRequest`                                           |
+| DELETE | `/extra-incomes/{id}`   | Deletar ganho extra              | `id` (path)                                                                       |
 
 ### Resumo Mensal — `/monthly-summary`
 
@@ -248,6 +290,10 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 | GET    | `/monthly-summary/history`                 | Listar histórico de resumos do usuário | `userId`* (query)                |
 | GET    | `/monthly-summary/{userId}/{year}/{month}` | Buscar resumo por período              | `userId`, `year`, `month` (path) |
 | DELETE | `/monthly-summary/{userId}/{year}/{month}` | Deletar resumo de um período           | `userId`, `year`, `month` (path) |
+
+- **`POST /monthly-summary`** recalcula o resumo do período e **não altera nenhuma despesa** (despesa vencida e pendente
+  continua `PENDING`). Antes de somar, gera as despesas recorrentes que faltam no mês — por isso o resumo de um **mês
+  futuro** já enxerga as parcelas e as assinaturas.
 
 ### Histórico de Salários — `/salary-history`
 
