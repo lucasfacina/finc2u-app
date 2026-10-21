@@ -25,7 +25,8 @@ public class ExtraIncome extends BaseModel {
     @Column(name = "received_date")
     private LocalDate date;
 
-    @ManyToOne(optional = false)
+    // LAZY: o ExtraIncomeResponse lê só o id do dono (o id de um proxy não gera consulta).
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
