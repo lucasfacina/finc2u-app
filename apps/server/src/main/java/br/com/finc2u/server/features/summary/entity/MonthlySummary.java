@@ -1,6 +1,6 @@
 package br.com.finc2u.server.features.summary.entity;
 
-import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryFigures;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -51,41 +51,18 @@ public class MonthlySummary extends BaseModel {
             .build();
     }
 
-    /*
-     * Recalcula o resumo do período: resolve o caixa, tira o snapshot da poupança e deriva os campos
-     * compostos a partir dos totais agregados.
-     * -> baseSalary      = salário vigente no período (resolvido pelo service via SalaryHistory; zero antes da primeira vigência)
-     * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
-     * -> totalIncome     = baseSalary + totalExtras + cashBalance
-     * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
-     * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
-     * -> savingsBalance vem do User (snapshot no momento do cálculo).
-     */
-    public void resolveTotals(
-        MonthlySummaryTotals totals,
-        BigDecimal previousMonthRemaining,
-        BigDecimal previousMonthSavingsBalance,
-        BigDecimal baseSalaryForPeriod
-    ) {
-        this.cashBalance = previousMonthRemaining != null
-            ? previousMonthRemaining
-            : BigDecimal.ZERO;
-
-        this.savingsBalance = user.savingsBalanceOrZero();
-
-        this.savingsYield = previousMonthSavingsBalance != null
-            ? this.savingsBalance.subtract(previousMonthSavingsBalance)
-            : BigDecimal.ZERO;
-
-        this.baseSalary = baseSalaryForPeriod;
-
-        this.totalIncome = this.baseSalary.add(totals.totalExtras()).add(this.cashBalance);
-
-        this.totalExpenses = totals.totalExpenses();
-        this.totalPaid = totals.totalPaid();
-        this.totalPending = totals.totalPending();
-        this.totalExtras = totals.totalExtras();
-        this.remainingAmount = this.totalIncome.subtract(totals.totalExpenses());
+    // Grava os números calculados (MonthlySummaryCalculator); a entidade não calcula, só guarda o resumo do período.
+    public void apply(MonthlySummaryFigures figures) {
+        this.baseSalary = figures.baseSalary();
+        this.totalIncome = figures.totalIncome();
+        this.totalExpenses = figures.totalExpenses();
+        this.totalPaid = figures.totalPaid();
+        this.totalPending = figures.totalPending();
+        this.totalExtras = figures.totalExtras();
+        this.cashBalance = figures.cashBalance();
+        this.savingsBalance = figures.savingsBalance();
+        this.savingsYield = figures.savingsYield();
+        this.remainingAmount = figures.remainingAmount();
     }
 
 }

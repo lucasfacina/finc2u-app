@@ -10,8 +10,9 @@ import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpe
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryCalculator;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryInput;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
-import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.vo.MonthlyPeriod;
@@ -38,9 +39,9 @@ public class MonthlySummaryService {
 
     /*
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
-     * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features,
-     * agrega os totais (MonthlySummaryTotals), recupera ou cria o resumo + o restante do mês anterior, e delega o
-     * cálculo à própria entidade. Não altera nenhuma despesa. Devolve também se o resumo foi criado agora ou recalculado.
+     * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features, recupera ou
+     * cria o resumo e o mês anterior, delega o cálculo ao MonthlySummaryCalculator (puro) e grava o resultado. Não altera
+     * nenhuma despesa. Devolve também se o resumo foi criado agora ou recalculado.
      */
     @Transactional
     public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
@@ -52,20 +53,20 @@ public class MonthlySummaryService {
         List<Expense> expenses = expenseService.getByUserAndPeriod(userId, period.start(), period.end());
         List<ExtraIncome> extraIncomes = extraIncomeService.getByUserAndPeriod(userId, period.start(), period.end());
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
-
         Optional<MonthlySummary> existing = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year);
         MonthlySummary summary = existing.orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
 
         BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
 
         Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
-        summary.resolveTotals(
-            totals,
+        summary.apply(MonthlySummaryCalculator.calculate(new MonthlySummaryInput(
+            expenses,
+            extraIncomes,
+            baseSalary,
+            user.savingsBalanceOrZero(),
             previous.map(MonthlySummary::getRemainingAmount).orElse(null),
-            previous.map(MonthlySummary::getSavingsBalance).orElse(null),
-            baseSalary
-        );
+            previous.map(MonthlySummary::getSavingsBalance).orElse(null)
+        )));
 
         return new MonthlySummaryResult(monthlySummaryRepository.save(summary), existing.isEmpty());
     }
