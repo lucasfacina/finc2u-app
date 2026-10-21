@@ -81,7 +81,7 @@ public class ExpenseTest {
 
     @Test
     void resolveDefaultPaymentStatus_shouldBePending_whenNullAndDueDateIsToday() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY)
             .build();
 
@@ -117,7 +117,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldKeepPaidAtNull_whenPaidWithoutDate() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PAID)
             .expenseType(ExpenseType.VARIABLE)
@@ -130,7 +130,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldAcceptPaidAtUpToToday_whenPaid() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PAID)
             .paidAt(TODAY)
@@ -142,7 +142,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInTheFuture() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PAID)
             .paidAt(TODAY.plusDays(1))
@@ -156,7 +156,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInformedForPendingExpense() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(3))
             .paymentStatus(PaymentStatus.PENDING)
             .paidAt(TODAY)
@@ -170,7 +170,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInformedAndStatusDefaultsToPending() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(3))
             .paidAt(TODAY)
             .expenseType(ExpenseType.VARIABLE)
@@ -183,7 +183,7 @@ public class ExpenseTest {
 
     @Test
     void changePaymentStatus_shouldDefaultPaidAtToReferenceDate_whenMarkedPaidWithoutDate() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -196,7 +196,7 @@ public class ExpenseTest {
 
     @Test
     void changePaymentStatus_shouldKeepInformedPaidAt_whenMarkedPaid() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -208,7 +208,7 @@ public class ExpenseTest {
 
     @Test
     void changePaymentStatus_shouldClearPaidAt_whenBackToPending() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PAID)
             .paidAt(TODAY.minusDays(2))
@@ -222,7 +222,7 @@ public class ExpenseTest {
 
     @Test
     void changePaymentStatus_shouldThrowAndKeepState_whenPaidAtIsInTheFuture() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -236,7 +236,7 @@ public class ExpenseTest {
 
     @Test
     void changePaymentStatus_shouldThrow_whenPaidAtIsInformedForPending() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(3))
             .paymentStatus(PaymentStatus.PAID)
             .build();
@@ -249,7 +249,7 @@ public class ExpenseTest {
 
     @Test
     void isOverdue_shouldBeTrue_whenPendingAndDueDateIsBeforeReferenceDate() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(1))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -259,7 +259,7 @@ public class ExpenseTest {
 
     @Test
     void isOverdue_shouldBeFalse_whenDueDateIsToday() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY)
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -269,7 +269,7 @@ public class ExpenseTest {
 
     @Test
     void isOverdue_shouldBeFalse_whenDueDateIsInTheFuture() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(1))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -279,7 +279,7 @@ public class ExpenseTest {
 
     @Test
     void isOverdue_shouldBeFalse_whenPaid() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusMonths(1))
             .paymentStatus(PaymentStatus.PAID)
             .build();
@@ -461,11 +461,11 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldThrowInvalidRequest_whenStatusIsMissingAndResolvedDueDateIsInThePast() {
-        CardAccount card = CardAccount.builder()
+        var card = CardAccount.builder()
             .closingDate(30)
             .dueDate(15)
             .build();
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(card)
             .expenseType(ExpenseType.VARIABLE)
             .build();
