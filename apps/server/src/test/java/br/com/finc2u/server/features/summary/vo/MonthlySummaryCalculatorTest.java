@@ -7,21 +7,30 @@ import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MonthlySummaryCalculatorTest {
 
+    private static final LocalDate REFERENCE_DATE = LocalDate.of(2026, 6, 15);
+
     private static BigDecimal money(double value) {
         return BigDecimal.valueOf(value);
     }
 
+    // Sem vencimento informado, a despesa vence depois da data de referência (não conta como atrasada).
     private static Expense expense(double value, PaymentStatus status) {
+        return expense(value, status, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(10));
+    }
+
+    private static Expense expense(double value, PaymentStatus status, ExpenseType type, LocalDate dueDate) {
         return Expense.builder()
             .value(money(value))
             .paymentStatus(status)
-            .expenseType(ExpenseType.VARIABLE)
+            .expenseType(type)
+            .dueDate(dueDate)
             .build();
     }
 
@@ -33,8 +42,8 @@ class MonthlySummaryCalculatorTest {
 
     private static MonthlySummaryInput input(List<Expense> expenses, List<ExtraIncome> extraIncomes, double baseSalary,
                                              double savingsBalance, BigDecimal previousRemaining, BigDecimal previousSavings) {
-        return new MonthlySummaryInput(expenses, extraIncomes, money(baseSalary), money(savingsBalance), previousRemaining,
-            previousSavings);
+        return new MonthlySummaryInput(expenses, extraIncomes, REFERENCE_DATE, money(baseSalary), money(savingsBalance),
+            previousRemaining, previousSavings);
     }
 
     private static void assertMoney(double expected, BigDecimal actual) {
@@ -112,6 +121,65 @@ class MonthlySummaryCalculatorTest {
         assertMoney(0, figures.totalExpenses());
         assertMoney(0, figures.totalExtras());
         assertMoney(3000, figures.remainingAmount());
+    }
+
+    // ---- totalOverdue: atraso derivado da data de referência (D13) ----
+
+    @Test
+    void calculate_shouldSumOnlyThePendingExpensesDueBeforeTheReferenceDate_asOverdue() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(
+            expense(100, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE.minusDays(1)),
+            expense(40, PaymentStatus.PENDING, ExpenseType.FIXED, REFERENCE_DATE.minusDays(30)),
+            expense(500, PaymentStatus.PAID, ExpenseType.VARIABLE, REFERENCE_DATE.minusDays(10)),
+            expense(70, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(1))
+        ), List.of(), 3000, 0, null, null));
+
+        assertMoney(140, figures.totalOverdue());
+    }
+
+    // Vence hoje não é atraso: o atraso é estritamente anterior à data de referência.
+    @Test
+    void calculate_shouldNotCountAnExpenseDueOnTheReferenceDate_asOverdue() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(
+            expense(100, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE)
+        ), List.of(), 3000, 0, null, null));
+
+        assertMoney(0, figures.totalOverdue());
+    }
+
+    @Test
+    void calculate_shouldReturnZeroOverdue_whenNothingIsLate() {
+        var figures = MonthlySummaryCalculator.calculate(input(
+            List.of(expense(100, PaymentStatus.PENDING), expense(50, PaymentStatus.PAID)), List.of(), 3000, 0, null, null));
+
+        assertMoney(0, figures.totalOverdue());
+    }
+
+    @Test
+    void calculate_shouldDeriveTheOverdueFromTheReferenceDate_notFromTheClock() {
+        var expenses = List.of(expense(100, PaymentStatus.PENDING, ExpenseType.VARIABLE, LocalDate.of(2026, 6, 10)));
+
+        var beforeDue = MonthlySummaryCalculator.calculate(new MonthlySummaryInput(expenses, List.of(),
+            LocalDate.of(2026, 6, 10), money(3000), money(0), null, null));
+        var afterDue = MonthlySummaryCalculator.calculate(new MonthlySummaryInput(expenses, List.of(),
+            LocalDate.of(2026, 6, 11), money(3000), money(0), null, null));
+
+        assertMoney(0, beforeDue.totalOverdue());
+        assertMoney(100, afterDue.totalOverdue());
+    }
+
+    // ---- totalFixed ----
+
+    @Test
+    void calculate_shouldSumTheFixedExpenses_paidOrNot_andLeaveTheOthersOut() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(
+            expense(20.90, PaymentStatus.PAID, ExpenseType.FIXED, REFERENCE_DATE.plusDays(5)),
+            expense(39.00, PaymentStatus.PENDING, ExpenseType.FIXED, REFERENCE_DATE.plusDays(5)),
+            expense(350, PaymentStatus.PAID, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(5)),
+            expense(100, PaymentStatus.PENDING, ExpenseType.PARCELED, REFERENCE_DATE.plusDays(5))
+        ), List.of(), 3000, 0, null, null));
+
+        assertMoney(59.90, figures.totalFixed());
     }
 
     // ---- baseSalary (snapshot do período) ----
