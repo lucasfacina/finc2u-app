@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.EntityManager;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -85,6 +86,24 @@ class RecurringExpenseRepositoryTest {
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
+    // O Response lê a categoria (LAZY) fora da transação: o findById tem que trazê-la numa consulta só, com o cartão.
+    @Test
+    void findById_shouldLoadTheCategoryAndTheCardInASingleStatement() {
+        var model = persistModel("Spotify", ana, persistCategory("Assinaturas", ana), null);
+        var statistics = entityManager.getEntityManagerFactory()
+            .unwrap(SessionFactory.class)
+            .getStatistics();
+        entityManager.flush();
+        entityManager.clear();
+        statistics.clear();
+
+        var found = recurringExpenseRepository.findById(model.getId()).orElseThrow();
+
+        assertTrue(Hibernate.isInitialized(found.getCategory()));
+        assertEquals("Assinaturas", found.getCategory().getName());
+        assertEquals(1, statistics.getPrepareStatementCount());
+    }
+
     @Test
     void save_shouldKeepTheMonthsAsTheFirstDay_andAcceptNoEndMonthAndNoCard() {
         var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 31, YearMonth.of(2026, 10), null);
@@ -126,12 +145,12 @@ class RecurringExpenseRepositoryTest {
             .build());
     }
 
-    private void persistModel(String description, User user, Category category, CardAccount card) {
+    private RecurringExpense persistModel(String description, User user, Category category, CardAccount card) {
         var model = RecurringExpense.of(description, BigDecimal.TEN, 5, YearMonth.of(2026, 10), YearMonth.of(2027, 3));
         model.setUser(user);
         model.setCategory(category);
         model.setCardAccount(card);
-        testEntityManager.persist(model);
+        return testEntityManager.persist(model);
     }
 
 }
