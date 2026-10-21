@@ -10,6 +10,7 @@ import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.expense.vo.InstallmentSchedule;
+import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -117,6 +119,29 @@ public class ExpenseService {
     @Transactional
     public void deleteInstallmentGroup(UUID groupId) {
         expenseRepository.deleteAll(getByInstallmentGroup(groupId));
+    }
+
+    /*
+     * Cria a despesa do modelo recorrente no vencimento: FIXED e PENDING, com os dados do modelo. Idempotente: se o modelo
+     * já tem despesa nesse vencimento, não cria nada. O cartão não é revalidado (a validade vale na data da compra).
+     */
+    @Transactional
+    public Optional<Expense> createFromRecurrence(RecurringExpense recurringExpense, LocalDate dueDate) {
+        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
+            return Optional.empty();
+        }
+
+        return Optional.of(expenseRepository.save(Expense.builder()
+            .description(recurringExpense.getDescription())
+            .value(recurringExpense.getValue())
+            .dueDate(dueDate)
+            .expenseType(ExpenseType.FIXED)
+            .paymentStatus(PaymentStatus.PENDING)
+            .user(recurringExpense.getUser())
+            .cardAccount(recurringExpense.getCardAccount())
+            .category(recurringExpense.getCategory())
+            .recurringExpense(recurringExpense)
+            .build()));
     }
 
     // Compra parcelada vira uma linha por mês (k..N) ligadas por um grupo novo; tudo na transação do create. Devolve a
