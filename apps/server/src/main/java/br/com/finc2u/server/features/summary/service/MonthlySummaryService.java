@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +38,7 @@ public class MonthlySummaryService {
     private final UserService userService;
     private final SalaryHistoryService salaryHistoryService;
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
+    private final Clock clock;
 
     /*
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
@@ -62,6 +65,7 @@ public class MonthlySummaryService {
         summary.apply(MonthlySummaryCalculator.calculate(new MonthlySummaryInput(
             expenses,
             extraIncomes,
+            LocalDate.now(clock),
             baseSalary,
             user.savingsBalanceOrZero(),
             previous.map(MonthlySummary::getRemainingAmount).orElse(null),

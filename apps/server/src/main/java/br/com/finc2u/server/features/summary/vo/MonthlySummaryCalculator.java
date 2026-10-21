@@ -1,11 +1,15 @@
 package br.com.finc2u.server.features.summary.vo;
 
+import br.com.finc2u.server.features.expense.entity.Expense;
+
 import java.math.BigDecimal;
 
 /*
  * O cálculo do resumo mensal, puro: só números entram e saem (sem Spring, banco ou relógio), então o mesmo MonthlySummaryInput
  * produz sempre o mesmo MonthlySummaryFigures. Quem lê os dados e grava o resultado é o MonthlySummaryService.
  * -> baseSalary      = salário vigente no período (zero antes da primeira vigência)
+ * -> totalOverdue    = soma das despesas PENDING com vencimento antes da data de referência (atraso derivado, D13)
+ * -> totalFixed      = soma das despesas do tipo FIXED, pagas ou não
  * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
  * -> totalIncome     = baseSalary + totalExtras + cashBalance
  * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
@@ -28,6 +32,11 @@ public final class MonthlySummaryCalculator {
             ? input.savingsBalance().subtract(input.previousSavingsBalance())
             : BigDecimal.ZERO;
 
+        var totalOverdue = input.expenses().stream()
+            .filter(expense -> expense.isOverdue(input.referenceDate()))
+            .map(Expense::getValue)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         var totalIncome = input.baseSalary().add(totals.totalExtras()).add(cashBalance);
 
         return new MonthlySummaryFigures(
@@ -36,6 +45,8 @@ public final class MonthlySummaryCalculator {
             totals.totalExpenses(),
             totals.totalPaid(),
             totals.totalPending(),
+            totalOverdue,
+            totals.totalFixed(),
             totals.totalExtras(),
             cashBalance,
             input.savingsBalance(),

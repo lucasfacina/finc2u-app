@@ -9,6 +9,8 @@ public record MonthlySummaryFigures(
     BigDecimal totalExpenses,
     BigDecimal totalPaid,
     BigDecimal totalPending,
+    BigDecimal totalOverdue,
+    BigDecimal totalFixed,
     BigDecimal totalExtras,
     BigDecimal cashBalance,
     BigDecimal savingsBalance,
