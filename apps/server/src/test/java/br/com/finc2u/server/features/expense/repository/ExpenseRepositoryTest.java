@@ -323,6 +323,23 @@ class ExpenseRepositoryTest {
         });
     }
 
+    @Test
+    void detachFromRecurringExpense_shouldKeepTheExpensesOfTheModelWithoutTheLink_andLeaveTheOthersAlone() {
+        var model = persistRecurringExpense("Spotify");
+        var otherModel = persistRecurringExpense("Netflix");
+        var october = persistInstance(model, LocalDate.of(2026, 10, 5));
+        var november = persistInstance(model, LocalDate.of(2026, 11, 5));
+        var other = persistInstance(otherModel, LocalDate.of(2026, 10, 6));
+        resetPersistenceContext();
+
+        expenseRepository.detachFromRecurringExpense(model.getId());
+        resetPersistenceContext();
+
+        assertNull(expenseRepository.findById(october.getId()).orElseThrow().getRecurringExpense());
+        assertNull(expenseRepository.findById(november.getId()).orElseThrow().getRecurringExpense());
+        assertEquals(otherModel.getId(), expenseRepository.findById(other.getId()).orElseThrow().getRecurringExpense().getId());
+    }
+
     private void resetPersistenceContext() {
         testEntityManager.flush();
         testEntityManager.clear();
@@ -408,8 +425,8 @@ class ExpenseRepositoryTest {
             .build();
     }
 
-    private void persistInstance(RecurringExpense model, LocalDate dueDate) {
-        testEntityManager.persistAndFlush(newInstance(model, dueDate));
+    private Expense persistInstance(RecurringExpense model, LocalDate dueDate) {
+        return testEntityManager.persistAndFlush(newInstance(model, dueDate));
     }
 
     private Expense persistExpense(String description, CardAccount cardAccount, Category category) {
