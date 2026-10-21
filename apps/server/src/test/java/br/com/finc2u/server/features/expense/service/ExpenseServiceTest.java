@@ -209,6 +209,57 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void updateStatus_shouldMarkPaidWithToday_whenPaidAtIsNotInformed() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.updateStatus(expenseId, PaymentStatus.PAID, null);
+
+        assertEquals(PaymentStatus.PAID, response.getPaymentStatus());
+        assertEquals(TODAY, response.getPaidAt());
+    }
+
+    @Test
+    void updateStatus_shouldKeepInformedPaidAt() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.updateStatus(expenseId, PaymentStatus.PAID, TODAY.minusDays(2));
+
+        assertEquals(TODAY.minusDays(2), response.getPaidAt());
+    }
+
+    @Test
+    void updateStatus_shouldClearPaidAt_whenBackToPending() {
+        expense.setPaymentStatus(PaymentStatus.PAID);
+        expense.setPaidAt(TODAY.minusDays(1));
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.updateStatus(expenseId, PaymentStatus.PENDING, null);
+
+        assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
+        assertNull(response.getPaidAt());
+    }
+
+    @Test
+    void updateStatus_shouldThrowBusinessExceptionAndNotSave_whenPaidAtIsInTheFuture() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.updateStatus(expenseId, PaymentStatus.PAID, TODAY.plusDays(1)));
+
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
     void update_shouldApplyCommandThroughMapperAndSave() {
         var updates = Expense.builder()
             .description("Mercado do mês")

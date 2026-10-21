@@ -113,6 +113,138 @@ public class ExpenseTest {
         assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }
 
+    // ---- paidAt (prepareForPersistence) ----
+
+    @Test
+    void prepareForPersistence_shouldKeepPaidAtNull_whenPaidWithoutDate() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PAID)
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        expense.prepareForPersistence(TODAY, TODAY);
+
+        assertNull(expense.getPaidAt());
+    }
+
+    @Test
+    void prepareForPersistence_shouldAcceptPaidAtUpToToday_whenPaid() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PAID)
+            .paidAt(TODAY)
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        assertDoesNotThrow(() -> expense.prepareForPersistence(TODAY, TODAY));
+    }
+
+    @Test
+    void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInTheFuture() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PAID)
+            .paidAt(TODAY.plusDays(1))
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        var exception = assertThrows(BusinessException.class, () -> expense.prepareForPersistence(TODAY, TODAY));
+
+        assertEquals("A data do pagamento não pode ser posterior a hoje.", exception.getMessage());
+    }
+
+    @Test
+    void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInformedForPendingExpense() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.plusDays(3))
+            .paymentStatus(PaymentStatus.PENDING)
+            .paidAt(TODAY)
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        var exception = assertThrows(BusinessException.class, () -> expense.prepareForPersistence(TODAY, TODAY));
+
+        assertEquals("A data do pagamento só pode ser informada para despesa paga.", exception.getMessage());
+    }
+
+    @Test
+    void prepareForPersistence_shouldThrowBusinessException_whenPaidAtIsInformedAndStatusDefaultsToPending() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.plusDays(3))
+            .paidAt(TODAY)
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        assertThrows(BusinessException.class, () -> expense.prepareForPersistence(TODAY, TODAY));
+    }
+
+    // ---- changePaymentStatus ----
+
+    @Test
+    void changePaymentStatus_shouldDefaultPaidAtToReferenceDate_whenMarkedPaidWithoutDate() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        expense.changePaymentStatus(PaymentStatus.PAID, null, TODAY);
+
+        assertEquals(PaymentStatus.PAID, expense.getPaymentStatus());
+        assertEquals(TODAY, expense.getPaidAt());
+    }
+
+    @Test
+    void changePaymentStatus_shouldKeepInformedPaidAt_whenMarkedPaid() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        expense.changePaymentStatus(PaymentStatus.PAID, TODAY.minusDays(2), TODAY);
+
+        assertEquals(TODAY.minusDays(2), expense.getPaidAt());
+    }
+
+    @Test
+    void changePaymentStatus_shouldClearPaidAt_whenBackToPending() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PAID)
+            .paidAt(TODAY.minusDays(2))
+            .build();
+
+        expense.changePaymentStatus(PaymentStatus.PENDING, null, TODAY);
+
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
+        assertNull(expense.getPaidAt());
+    }
+
+    @Test
+    void changePaymentStatus_shouldThrowAndKeepState_whenPaidAtIsInTheFuture() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+
+        assertThrows(BusinessException.class,
+            () -> expense.changePaymentStatus(PaymentStatus.PAID, TODAY.plusDays(1), TODAY));
+
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
+        assertNull(expense.getPaidAt());
+    }
+
+    @Test
+    void changePaymentStatus_shouldThrow_whenPaidAtIsInformedForPending() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY.minusDays(3))
+            .paymentStatus(PaymentStatus.PAID)
+            .build();
+
+        assertThrows(BusinessException.class,
+            () -> expense.changePaymentStatus(PaymentStatus.PENDING, TODAY, TODAY));
+    }
+
     // ---- isOverdue ----
 
     @Test

@@ -185,6 +185,7 @@ public class ExpenseMapperTest {
             .dueDate(LocalDate.of(2026, 8, 1))
             .expenseType(ExpenseType.PARCELED)
             .paymentStatus(PaymentStatus.PAID)
+            .paidAt(LocalDate.of(2026, 7, 30))
             .currentInstallment(2)
             .totalInstallment(5)
             .cardAccount(CardAccount.builder().build())
@@ -197,6 +198,7 @@ public class ExpenseMapperTest {
         assertEquals(LocalDate.of(2026, 8, 1), target.getDueDate());
         assertEquals(ExpenseType.PARCELED, target.getExpenseType());
         assertEquals(PaymentStatus.PAID, target.getPaymentStatus());
+        assertEquals(LocalDate.of(2026, 7, 30), target.getPaidAt());
         assertEquals(2, target.getCurrentInstallment());
         assertEquals(5, target.getTotalInstallment());
         assertSame(card, target.getCardAccount());
