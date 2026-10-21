@@ -5,9 +5,8 @@ import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -41,6 +40,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
 
     // Idempotência da recorrência: a despesa de um modelo num vencimento existe uma vez só (unique no banco).
     boolean existsByRecurringExpenseIdAndDueDate(UUID recurringExpenseId, LocalDate dueDate);
+
+    // Apagar o modelo recorrente não apaga as despesas que ele gerou: elas ficam sem modelo.
+    @Modifying
+    @Query("update Expense e set e.recurringExpense = null where e.recurringExpense.id = :recurringExpenseId")
+    void detachFromRecurringExpense(@Param("recurringExpenseId") UUID recurringExpenseId);
 
     // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
