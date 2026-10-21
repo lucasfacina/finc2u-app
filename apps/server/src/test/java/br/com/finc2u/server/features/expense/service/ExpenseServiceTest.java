@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.expense.service;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.entity.Expense;
@@ -179,22 +180,21 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void create_shouldDefaultStatusToPaid_whenNullAndDueDateNotInFuture() {
+    void create_shouldThrowInvalidRequest_whenStatusIsNullAndDueDateInThePast() {
         expense.setPaymentStatus(null);
         expense.setDueDate(TODAY.minusDays(1));
 
         when(userService.getById(userId))
             .thenReturn(user);
-        when(expenseRepository.save(any(Expense.class)))
-            .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
+        assertThrows(InvalidRequestException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, null)));
 
-        assertEquals(PaymentStatus.PAID, response.getPaymentStatus());
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     @Test
-    void create_shouldDefaultStatusToPending_whenNullAndDueDateInFuture() {
+    void create_shouldDefaultStatusToPending_whenNullAndDueDateIsNotInThePast() {
         expense.setPaymentStatus(null);
         expense.setDueDate(TODAY.plusDays(5));
 
@@ -363,13 +363,13 @@ class ExpenseServiceTest {
 
         ExpenseFilter filter =
             new ExpenseFilter(expense.getDueDate().getMonthValue(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
+                null, // year
+                null, // status
+                null, // type
+                null, // cardAccountId
+                null, //categoryId
+                null, // minPrice
+                null // maxPrice
             );
         List<Expense> response = expenseService.getWithFilters(userId, filter);
 

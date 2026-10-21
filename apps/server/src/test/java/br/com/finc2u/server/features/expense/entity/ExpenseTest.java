@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.expense.entity;
 
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -67,14 +68,26 @@ public class ExpenseTest {
     // ---- resolveDefaultPaymentStatus ----
 
     @Test
-    void resolveDefaultPaymentStatus_shouldBePaid_whenNullAndDueDateNotInFuture() {
+    void resolveDefaultPaymentStatus_shouldThrowInvalidRequest_whenNullAndDueDateInThePast() {
         Expense expense = Expense.builder()
             .dueDate(TODAY.minusDays(1))
             .build();
 
+        var exception = assertThrows(InvalidRequestException.class, () -> expense.resolveDefaultPaymentStatus(TODAY));
+
+        assertEquals("Vencimento anterior a hoje: informe se a despesa já foi paga (paymentStatus).", exception.getMessage());
+        assertNull(expense.getPaymentStatus());
+    }
+
+    @Test
+    void resolveDefaultPaymentStatus_shouldBePending_whenNullAndDueDateIsToday() {
+        Expense expense = Expense.builder()
+            .dueDate(TODAY)
+            .build();
+
         expense.resolveDefaultPaymentStatus(TODAY);
 
-        assertEquals(PaymentStatus.PAID, expense.getPaymentStatus());
+        assertEquals(PaymentStatus.PENDING, expense.getPaymentStatus());
     }
 
     @Test
@@ -261,21 +274,31 @@ public class ExpenseTest {
     }
 
     @Test
-    void prepareForPersistence_shouldDefaultStatusFromResolvedDueDate() {
+    void prepareForPersistence_shouldDefaultStatusToPending_whenResolvedDueDateIsNotInThePast() {
         Expense future = Expense.builder()
             .dueDate(TODAY.plusDays(5))
             .expenseType(ExpenseType.VARIABLE)
             .build();
-        Expense past = Expense.builder()
-            .dueDate(TODAY.minusDays(5))
+
+        future.prepareForPersistence(TODAY, TODAY);
+
+        assertEquals(PaymentStatus.PENDING, future.getPaymentStatus());
+    }
+
+    @Test
+    void prepareForPersistence_shouldThrowInvalidRequest_whenStatusIsMissingAndResolvedDueDateIsInThePast() {
+        CardAccount card = CardAccount.builder()
+            .closingDate(30)
+            .dueDate(15)
+            .build();
+        Expense expense = Expense.builder()
+            .cardAccount(card)
             .expenseType(ExpenseType.VARIABLE)
             .build();
 
-        future.prepareForPersistence(TODAY, TODAY);
-        past.prepareForPersistence(TODAY, TODAY);
-
-        assertEquals(PaymentStatus.PENDING, future.getPaymentStatus());
-        assertEquals(PaymentStatus.PAID, past.getPaymentStatus());
+        // compra de 20/mai → fatura vence em 15/jun, que é anterior à data de referência (16/jun)
+        assertThrows(InvalidRequestException.class,
+            () -> expense.prepareForPersistence(LocalDate.of(2026, 5, 20), TODAY.plusDays(1)));
     }
 
     @Test

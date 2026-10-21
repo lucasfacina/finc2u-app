@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.expense.controller;
 
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.dto.ExpenseRequest;
@@ -111,6 +112,20 @@ class ExpenseControllerTest {
             .andExpect(jsonPath("$.description").value("Mercado"))
             .andExpect(jsonPath("$.category.id").value(categoryId.toString()))
             .andExpect(jsonPath("$.category.name").value("Alimentação"));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenStatusIsMissingAndDueDateIsInThePast() throws Exception {
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenThrow(new InvalidRequestException("Vencimento anterior a hoje: informe se a despesa já foi paga."));
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("Vencimento anterior a hoje: informe se a despesa já foi paga."));
     }
 
     @Test

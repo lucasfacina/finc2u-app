@@ -17,13 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.Clock;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,9 +45,6 @@ class MonthlySummaryServiceTest {
     private UserService userService;
     @Mock
     private SalaryHistoryService salaryHistoryService;
-
-    @Spy
-    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private MonthlySummaryService monthlySummaryService;
@@ -159,7 +153,7 @@ class MonthlySummaryServiceTest {
     }
 
     @Test
-    void calculateOrRecalculate_shouldMarkOverduePendingAsPaid_beforeAggregating() {
+    void calculateOrRecalculate_shouldNotChangeExpenses_whenPendingIsOverdue() {
         Expense overdue = expenseOf(
             BigDecimal.valueOf(400),
             PaymentStatus.PENDING,
@@ -175,8 +169,9 @@ class MonthlySummaryServiceTest {
 
         MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR);
 
-        assertEquals(0, BigDecimal.valueOf(400).compareTo(result.getTotalPaid()));
-        assertEquals(0, BigDecimal.ZERO.compareTo(result.getTotalPending()));
+        assertEquals(PaymentStatus.PENDING, overdue.getPaymentStatus());
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getTotalPaid()));
+        assertEquals(0, BigDecimal.valueOf(400).compareTo(result.getTotalPending()));
     }
 
     @Test
