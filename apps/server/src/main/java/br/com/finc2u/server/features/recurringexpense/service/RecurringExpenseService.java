@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +49,12 @@ public class RecurringExpenseService {
     public List<RecurringExpense> getByUser(UUID userId) {
         userService.getById(userId);
         return recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(userId);
+    }
+
+    // Modelos que ainda geram despesa a partir do mês (sem término, ou com término neste mês ou depois), de todos os usuários.
+    @Transactional(readOnly = true)
+    public List<RecurringExpense> getActiveIn(YearMonth month) {
+        return recurringExpenseRepository.findByEndMonthIsNullOrEndMonthGreaterThanEqual(month.atDay(1));
     }
 
     @Transactional
