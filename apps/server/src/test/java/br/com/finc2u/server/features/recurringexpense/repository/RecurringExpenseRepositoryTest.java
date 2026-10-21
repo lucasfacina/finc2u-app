@@ -104,6 +104,44 @@ class RecurringExpenseRepositoryTest {
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
+    // O job do sistema vê os modelos de todos os usuários; os que terminaram antes do mês não entram.
+    @Test
+    void findByEndMonthIsNullOrEndMonthGreaterThanEqual_shouldReturnTheModelsOfAllUsersThatHaveNotEnded() {
+        var anaCategory = persistCategory("Assinaturas", ana);
+        var betoCategory = persistCategory("Moradia", beto);
+        persistModel("Sem término", ana, anaCategory, null, null);
+        persistModel("Termina neste mês", ana, anaCategory, null, YearMonth.of(2026, 10));
+        persistModel("Termina depois", beto, betoCategory, null, YearMonth.of(2027, 3));
+        persistModel("Já terminou", ana, anaCategory, null, YearMonth.of(2026, 9));
+
+        var models = recurringExpenseRepository.findByEndMonthIsNullOrEndMonthGreaterThanEqual(LocalDate.of(2026, 10, 1));
+
+        assertEquals(List.of("Sem término", "Termina depois", "Termina neste mês"),
+            models.stream().map(RecurringExpense::getDescription).sorted().toList());
+    }
+
+    @Test
+    void findByEndMonthIsNullOrEndMonthGreaterThanEqual_shouldNotGrowWithTheNumberOfCardsAndCategories() {
+        for (int i = 1; i <= MODELS; i++) {
+            persistModel("Modelo " + i, ana, persistCategory("Categoria " + i, ana), persistCard("Cartão " + i, ana), null);
+        }
+        var statistics = entityManager.getEntityManagerFactory()
+            .unwrap(SessionFactory.class)
+            .getStatistics();
+        entityManager.flush();
+        entityManager.clear();
+        statistics.clear();
+
+        var models = recurringExpenseRepository.findByEndMonthIsNullOrEndMonthGreaterThanEqual(LocalDate.of(2026, 10, 1));
+        models.forEach(model -> {
+            assertNotNull(model.getCategory().getName());
+            assertNotNull(model.getCardAccount().getCardName());
+        });
+
+        assertEquals(MODELS, models.size());
+        assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
+    }
+
     @Test
     void save_shouldKeepTheMonthsAsTheFirstDay_andAcceptNoEndMonthAndNoCard() {
         var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 31, YearMonth.of(2026, 10), null);
@@ -146,7 +184,12 @@ class RecurringExpenseRepositoryTest {
     }
 
     private RecurringExpense persistModel(String description, User user, Category category, CardAccount card) {
-        var model = RecurringExpense.of(description, BigDecimal.TEN, 5, YearMonth.of(2026, 10), YearMonth.of(2027, 3));
+        return persistModel(description, user, category, card, YearMonth.of(2027, 3));
+    }
+
+    private RecurringExpense persistModel(String description, User user, Category category, CardAccount card,
+                                          YearMonth endMonth) {
+        var model = RecurringExpense.of(description, BigDecimal.TEN, 5, YearMonth.of(2026, 1), endMonth);
         model.setUser(user);
         model.setCategory(category);
         model.setCardAccount(card);
