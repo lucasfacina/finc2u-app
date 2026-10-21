@@ -16,9 +16,7 @@ import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -50,6 +48,9 @@ class ExpenseServiceTest {
 
     @Spy
     private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+
+    @Captor
+    private ArgumentCaptor<List<Expense>> installmentsCaptor;
 
     @InjectMocks
     private ExpenseService expenseService;
@@ -129,12 +130,79 @@ class ExpenseServiceTest {
 
         when(userService.getById(userId))
             .thenReturn(user);
-        when(expenseRepository.save(any(Expense.class)))
-            .thenReturn(expense);
+        when(expenseRepository.saveAll(any()))
+            .thenAnswer(inv -> inv.getArgument(0));
 
         Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
+    }
+
+    @Test
+    void create_shouldSaveEveryInstallmentFromTheInformedOne_whenParceled() {
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(4);
+        expense.setTotalInstallment(10);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.saveAll(any()))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
+
+        verify(expenseRepository).saveAll(installmentsCaptor.capture());
+        var saved = installmentsCaptor.getValue();
+        assertEquals(7, saved.size());
+        assertSame(expense, response);
+        assertSame(expense, saved.getFirst());
+        assertEquals(10, saved.getLast().getCurrentInstallment());
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void create_shouldLinkTheInstallmentsOfOnePurchaseToANewGroup() {
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(1);
+        expense.setTotalInstallment(3);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.saveAll(any()))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
+
+        assertNotNull(response.getInstallmentGroupId());
+        verify(expenseRepository).saveAll(installmentsCaptor.capture());
+        assertTrue(installmentsCaptor.getValue().stream()
+            .allMatch(installment -> response.getInstallmentGroupId().equals(installment.getInstallmentGroupId())));
+    }
+
+    @Test
+    void create_shouldNotGenerateInstallmentsNorGroup_whenNotParceled() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
+
+        assertNull(response.getInstallmentGroupId());
+        verify(expenseRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void create_shouldNotSaveAnything_whenTheInformedInstallmentIsInvalid() {
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(5);
+        expense.setTotalInstallment(3);
+        when(userService.getById(userId))
+            .thenReturn(user);
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, null)));
+
+        verify(expenseRepository, never()).saveAll(any());
+        verify(expenseRepository, never()).save(any(Expense.class));
     }
 
     @Test
