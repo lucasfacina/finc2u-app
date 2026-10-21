@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.extraincome.service;
 
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
@@ -31,7 +32,7 @@ public class ExtraIncomeService {
     @Transactional(readOnly = true)
     public ExtraIncome getById(UUID id) {
         return extraIncomeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ganho extra não encontrado com o ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Ganho extra não encontrado com o ID: " + id));
     }
 
     @Transactional(readOnly = true)
@@ -42,6 +43,9 @@ public class ExtraIncomeService {
 
     @Transactional(readOnly = true)
     public List<ExtraIncome> getByUserAndPeriod(UUID userId, LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            throw new InvalidRequestException("A data inicial não pode ser posterior à data final.");
+        }
         userService.getById(userId);
         return extraIncomeRepository.findByUserIdAndDateBetween(userId, start, end);
     }
