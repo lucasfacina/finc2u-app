@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.expense.controller;
 
 import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
@@ -108,6 +109,7 @@ class ExpenseControllerTest {
             TODAY,
             null,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             categoryId,
@@ -208,6 +210,7 @@ class ExpenseControllerTest {
             TODAY,
             null,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             null,
@@ -234,6 +237,7 @@ class ExpenseControllerTest {
             TODAY,
             null,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             categoryId,
@@ -260,6 +264,7 @@ class ExpenseControllerTest {
             TODAY,
             null,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             categoryId,
@@ -290,6 +295,7 @@ class ExpenseControllerTest {
             TODAY,
             null,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             null,
@@ -368,6 +374,7 @@ class ExpenseControllerTest {
             null,
             purchaseDate,
             PaymentStatus.PENDING,
+            null, // paidAt
             null,
             null,
             categoryId,
@@ -515,13 +522,62 @@ class ExpenseControllerTest {
     }
 
     @Test
-    void updateStatus_shouldReturnOk() throws Exception {
-        when(expenseService.updateStatus(expenseId, PaymentStatus.PAID))
+    void updateStatus_shouldReturnOk_andLetTheServiceDefaultPaidAt() throws Exception {
+        expense.setPaymentStatus(PaymentStatus.PAID);
+        expense.setPaidAt(TODAY);
+        when(expenseService.updateStatus(expenseId, PaymentStatus.PAID, null))
             .thenReturn(expense);
 
         mockMvc.perform(patch("/expenses/{id}/status", expenseId)
                 .param("status", "PAID"))
-            .andExpect(status().isOk());
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paymentStatus").value("PAID"))
+            .andExpect(jsonPath("$.paidAt").value("2026-06-15"));
+    }
+
+    @Test
+    void updateStatus_shouldPassInformedPaidAtToTheService() throws Exception {
+        expense.setPaymentStatus(PaymentStatus.PAID);
+        expense.setPaidAt(LocalDate.of(2026, 6, 10));
+        when(expenseService.updateStatus(expenseId, PaymentStatus.PAID, LocalDate.of(2026, 6, 10)))
+            .thenReturn(expense);
+
+        mockMvc.perform(patch("/expenses/{id}/status", expenseId)
+                .param("status", "PAID")
+                .param("paidAt", "2026-06-10"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paidAt").value("2026-06-10"));
+    }
+
+    @Test
+    void updateStatus_shouldReturnUnprocessableContent_whenPaidAtIsRejected() throws Exception {
+        when(expenseService.updateStatus(eq(expenseId), eq(PaymentStatus.PENDING), any()))
+            .thenThrow(new BusinessException("A data do pagamento só pode ser informada para despesa paga."));
+
+        mockMvc.perform(patch("/expenses/{id}/status", expenseId)
+                .param("status", "PENDING")
+                .param("paidAt", "2026-06-10"))
+            .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
+    void create_shouldPassPaidAtFromTheRequestToTheService() throws Exception {
+        var paidRequest = new ExpenseRequest(
+            "Mercado", BigDecimal.valueOf(150.0), ExpenseType.VARIABLE, TODAY.minusDays(2), null,
+            PaymentStatus.PAID, LocalDate.of(2026, 6, 14), null, null, categoryId, cardAccountId, null
+        );
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(paidRequest)))
+            .andExpect(status().isCreated());
+
+        var captor = ArgumentCaptor.forClass(ExpenseCommand.class);
+        verify(expenseService).create(eq(userId), captor.capture());
+        assertEquals(LocalDate.of(2026, 6, 14), captor.getValue().expense().getPaidAt());
     }
 
     @Test
@@ -536,7 +592,7 @@ class ExpenseControllerTest {
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, TODAY, null,
-            PaymentStatus.PENDING, currentInstallment, totalInstallment, categoryId, cardAccountId, null
+            PaymentStatus.PENDING, null, currentInstallment, totalInstallment, categoryId, cardAccountId, null
         );
     }
 
