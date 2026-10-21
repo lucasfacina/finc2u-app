@@ -13,6 +13,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -53,7 +54,7 @@ class MonthlySummaryRepositoryTest {
     @Test
     void findByUserId_shouldServeTheHistoryInASingleStatement_evenReadingTheResponse() {
         var responses = monthlySummaryRepository.findByUserId(ana.getId()).stream()
-            .map(MonthlySummaryResponse::from)
+            .map(summary -> MonthlySummaryResponse.from(summary, List.of()))
             .toList();
 
         assertEquals(3, responses.size());
@@ -65,7 +66,7 @@ class MonthlySummaryRepositoryTest {
     void findByUserIdAndMonthAndYear_shouldServeThePeriodInASingleStatement_evenReadingTheResponse() {
         var summary = monthlySummaryRepository.findByUserIdAndMonthAndYear(ana.getId(), 2, 2026).orElseThrow();
 
-        assertEquals(ana.getId(), MonthlySummaryResponse.from(summary).userId());
+        assertEquals(ana.getId(), MonthlySummaryResponse.from(summary, List.of()).userId());
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
