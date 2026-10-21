@@ -144,6 +144,12 @@ public class ExpenseService {
             .build()));
     }
 
+    // Solta do modelo as despesas que ele gerou (o histórico fica); chamado antes de apagar o modelo recorrente.
+    @Transactional
+    public void detachFromRecurringExpense(UUID recurringExpenseId) {
+        expenseRepository.detachFromRecurringExpense(recurringExpenseId);
+    }
+
     // Compra parcelada vira uma linha por mês (k..N) ligadas por um grupo novo; tudo na transação do create. Devolve a
     // parcela informada.
     private Expense saveInstallments(Expense first) {
