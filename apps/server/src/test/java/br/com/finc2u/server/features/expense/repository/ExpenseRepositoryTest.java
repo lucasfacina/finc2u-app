@@ -40,6 +40,7 @@ class ExpenseRepositoryTest {
     private static final int CARDS = 3;
     private static final int EXPENSES_PER_CARD = 2;
     private static final int LIST_STATEMENTS = 2;
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
 
     @Autowired
     private ExpenseRepository expenseRepository;
@@ -70,7 +71,7 @@ class ExpenseRepositoryTest {
         var expenses = expenseRepository.findByUserId(user.getId());
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(ExpenseResponse::from);
+        expenses.forEach(expense -> ExpenseResponse.from(expense, TODAY));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
@@ -84,13 +85,14 @@ class ExpenseRepositoryTest {
             null, // cardAccountId
             null, // categoryId
             null, // minPrice
-            null // maxPrice
+            null, // maxPrice
+            null // overdue
         );
 
-        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter));
+        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter, TODAY));
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(ExpenseResponse::from);
+        expenses.forEach(expense -> ExpenseResponse.from(expense, TODAY));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
@@ -99,7 +101,7 @@ class ExpenseRepositoryTest {
         var expenses = expenseRepository.findByExpenseTypeAndUserId(ExpenseType.VARIABLE, user.getId());
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(ExpenseResponse::from);
+        expenses.forEach(expense -> ExpenseResponse.from(expense, TODAY));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
@@ -115,13 +117,53 @@ class ExpenseRepositoryTest {
             null, // cardAccountId
             categoryId,
             null, // minPrice
-            null // maxPrice
+            null, // maxPrice
+            null // overdue
         );
 
-        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter));
+        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter, TODAY));
 
         assertEquals(EXPENSES_PER_CARD, expenses.size());
         assertTrue(expenses.stream().allMatch(expense -> expense.getCategory().getId().equals(categoryId)));
+    }
+
+    @Test
+    void findAllBySpecification_shouldReturnOnlyPendingExpensesDueBeforeTheReferenceDate_whenOverdue() {
+        var cardAccount = persistCard("Cartão atraso");
+        var category = persistCategory("Categoria atraso");
+        var overdue = persistExpense("Atrasada", cardAccount, category, PaymentStatus.PENDING, TODAY.minusDays(1));
+        persistExpense("Vence hoje", cardAccount, category, PaymentStatus.PENDING, TODAY);
+        persistExpense("Paga vencida", cardAccount, category, PaymentStatus.PAID, TODAY.minusDays(10));
+        resetPersistenceContext();
+        var filter = new ExpenseFilter(
+            null, // month
+            null, // year
+            null, // status
+            null, // type
+            null, // cardAccountId
+            null, // categoryId
+            null, // minPrice
+            null, // maxPrice
+            true // overdue
+        );
+
+        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter, TODAY));
+
+        assertEquals(1, expenses.size());
+        assertEquals(overdue.getId(), expenses.getFirst().getId());
+    }
+
+    @Test
+    void findAllBySpecification_shouldNotRestrictByOverdue_whenFalseOrNotInformed() {
+        var cardAccount = persistCard("Cartão atraso");
+        var category = persistCategory("Categoria atraso");
+        persistExpense("Atrasada", cardAccount, category, PaymentStatus.PENDING, TODAY.minusDays(1));
+        resetPersistenceContext();
+        var filter = new ExpenseFilter(null, null, null, null, null, null, null, null, false);
+
+        var expenses = expenseRepository.findAll(ExpenseSpecification.ofFilter(user.getId(), filter, TODAY));
+
+        assertEquals(CARDS * EXPENSES_PER_CARD + 1, expenses.size());
     }
 
     @Test
@@ -138,18 +180,18 @@ class ExpenseRepositoryTest {
     void findById_shouldLoadCardAndCategoryInASingleQuery() {
         var expense = expenseRepository.findById(anyExpenseId).orElseThrow();
 
-        ExpenseResponse.from(expense);
+        ExpenseResponse.from(expense, TODAY);
         assertEquals(1, statistics.getPrepareStatementCount());
     }
 
     @Test
     void shouldNotGrowWithTheNumberOfCards() {
-        expenseRepository.findByUserId(user.getId()).forEach(ExpenseResponse::from);
+        expenseRepository.findByUserId(user.getId()).forEach(expense -> ExpenseResponse.from(expense, TODAY));
         var statementsWithFewCards = statistics.getPrepareStatementCount();
 
         persistCardsWithExpenses(CARDS * 3, CARDS + 1);
         resetPersistenceContext();
-        expenseRepository.findByUserId(user.getId()).forEach(ExpenseResponse::from);
+        expenseRepository.findByUserId(user.getId()).forEach(expense -> ExpenseResponse.from(expense, TODAY));
 
         assertEquals(statementsWithFewCards, statistics.getPrepareStatementCount(),
             "Mais cartões não podem gerar mais statements (N+1)");
@@ -198,12 +240,17 @@ class ExpenseRepositoryTest {
     }
 
     private Expense persistExpense(String description, CardAccount cardAccount, Category category) {
+        return persistExpense(description, cardAccount, category, PaymentStatus.PENDING, LocalDate.of(2026, 6, 17));
+    }
+
+    private Expense persistExpense(String description, CardAccount cardAccount, Category category,
+                                   PaymentStatus paymentStatus, LocalDate dueDate) {
         return testEntityManager.persist(Expense.builder()
             .description(description)
             .value(BigDecimal.valueOf(50))
-            .dueDate(LocalDate.of(2026, 6, 17))
+            .dueDate(dueDate)
             .expenseType(ExpenseType.VARIABLE)
-            .paymentStatus(PaymentStatus.PENDING)
+            .paymentStatus(paymentStatus)
             .user(user)
             .cardAccount(cardAccount)
             .category(category)

@@ -17,7 +17,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -25,8 +27,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -40,6 +46,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = {ExpenseController.class, GlobalExceptionHandler.class})
 class ExpenseControllerTest {
+
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
+    @TestConfiguration
+    static class FixedClockConfig {
+
+        @Bean
+        Clock clock() {
+            return Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
+        }
+
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -75,7 +93,7 @@ class ExpenseControllerTest {
         expense = Expense.builder()
             .description("Mercado")
             .value(BigDecimal.valueOf(150.0))
-            .dueDate(LocalDate.now())
+            .dueDate(TODAY)
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .cardAccount(cardAccount)
@@ -87,7 +105,7 @@ class ExpenseControllerTest {
             "Mercado",
             BigDecimal.valueOf(150.0),
             ExpenseType.VARIABLE,
-            LocalDate.now(),
+            TODAY,
             null,
             PaymentStatus.PENDING,
             null,
@@ -115,6 +133,59 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void getById_shouldFlagOverdue_whenPendingAndPastDue() throws Exception {
+        expense.setDueDate(TODAY.minusDays(1));
+        when(expenseService.getById(expenseId)).thenReturn(expense);
+
+        mockMvc.perform(get("/expenses/{id}", expenseId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.overdue").value(true));
+    }
+
+    @Test
+    void getById_shouldNotFlagOverdue_whenDueTodayOrPaid() throws Exception {
+        when(expenseService.getById(expenseId)).thenReturn(expense);
+
+        mockMvc.perform(get("/expenses/{id}", expenseId))
+            .andExpect(jsonPath("$.overdue").value(false));
+
+        expense.setDueDate(TODAY.minusMonths(1));
+        expense.setPaymentStatus(PaymentStatus.PAID);
+
+        mockMvc.perform(get("/expenses/{id}", expenseId))
+            .andExpect(jsonPath("$.overdue").value(false));
+    }
+
+    @Test
+    void getAllByUserId_shouldFlagOverdueOfEachExpense() throws Exception {
+        var paid = Expense.builder()
+            .description("Luz")
+            .value(BigDecimal.valueOf(90))
+            .dueDate(TODAY.minusDays(10))
+            .expenseType(ExpenseType.FIXED)
+            .paymentStatus(PaymentStatus.PAID)
+            .category(expense.getCategory())
+            .build();
+        expense.setDueDate(TODAY.minusDays(1));
+        when(expenseService.getByUser(userId)).thenReturn(List.of(expense, paid));
+
+        mockMvc.perform(get("/expenses").param("userId", userId.toString()))
+            .andExpect(jsonPath("$[0].overdue").value(true))
+            .andExpect(jsonPath("$[1].overdue").value(false));
+    }
+
+    @Test
+    void getProjections_shouldFlagOverdueRelativeToTheClock() throws Exception {
+        expense.setDueDate(TODAY.minusDays(1));
+        when(futureInstallmentProjection.getProjectionsByUser(userId))
+            .thenReturn(Map.of(YearMonth.of(2026, 6), List.of(expense)));
+
+        mockMvc.perform(get("/expenses/projections").param("userId", userId.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$['2026-06'][0].overdue").value(true));
+    }
+
+    @Test
     void create_shouldReturnBadRequest_whenStatusIsMissingAndDueDateIsInThePast() throws Exception {
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
             .thenThrow(new InvalidRequestException("Vencimento anterior a hoje: informe se a despesa já foi paga."));
@@ -134,7 +205,7 @@ class ExpenseControllerTest {
             "Mercado",
             BigDecimal.valueOf(150.0),
             ExpenseType.VARIABLE,
-            LocalDate.now(),
+            TODAY,
             null,
             PaymentStatus.PENDING,
             null,
@@ -160,7 +231,7 @@ class ExpenseControllerTest {
             "Mercado",
             BigDecimal.valueOf(150.0),
             ExpenseType.VARIABLE,
-            LocalDate.now(),
+            TODAY,
             null,
             PaymentStatus.PENDING,
             null,
@@ -186,7 +257,7 @@ class ExpenseControllerTest {
             "Mercado",
             BigDecimal.valueOf(150.0),
             ExpenseType.VARIABLE,
-            LocalDate.now(),
+            TODAY,
             null,
             PaymentStatus.PENDING,
             null,
@@ -216,7 +287,7 @@ class ExpenseControllerTest {
             "Mercado",
             BigDecimal.valueOf(150.0),
             ExpenseType.VARIABLE,
-            LocalDate.now(),
+            TODAY,
             null,
             PaymentStatus.PENDING,
             null,
@@ -347,7 +418,8 @@ class ExpenseControllerTest {
                 .param("cardAccountId", cardAccountId.toString())
                 .param("categoryId", categoryId.toString())
                 .param("minPrice", "100")
-                .param("maxPrice", "500"))
+                .param("maxPrice", "500")
+                .param("overdue", "true"))
             .andExpect(status().isOk());
 
         ArgumentCaptor<ExpenseFilter> captor = ArgumentCaptor.forClass(ExpenseFilter.class);
@@ -362,6 +434,7 @@ class ExpenseControllerTest {
         assertEquals(categoryId, filter.categoryId());
         assertEquals(0, new BigDecimal("100").compareTo(filter.minPrice()));
         assertEquals(0, new BigDecimal("500").compareTo(filter.maxPrice()));
+        assertEquals(Boolean.TRUE, filter.overdue());
     }
 
     @Test
@@ -462,7 +535,7 @@ class ExpenseControllerTest {
     // As parcelas entram por parâmetro: com literais no construtor o IDE avisa que a chamada "sempre falha" na validação.
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
-            "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, LocalDate.now(), null,
+            "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, TODAY, null,
             PaymentStatus.PENDING, currentInstallment, totalInstallment, categoryId, cardAccountId, null
         );
     }

@@ -369,7 +369,8 @@ class ExpenseServiceTest {
                 null, // cardAccountId
                 null, //categoryId
                 null, // minPrice
-                null // maxPrice
+                null, // maxPrice
+                null // overdue
             );
         List<Expense> response = expenseService.getWithFilters(userId, filter);
 
