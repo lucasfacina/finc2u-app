@@ -3,10 +3,7 @@ package br.com.finc2u.server.features.card.entity;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -32,7 +29,8 @@ public class CardAccount extends BaseModel {
     // Último dia do mês de validade do cartão; nulo quando a validade não é informada.
     private LocalDate expirationDate;
 
-    @ManyToOne(optional = false)
+    // LAZY: só o CardAccountResponse lê o nome do dono; as consultas que o montam trazem o usuário por @EntityGraph.
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User user;
 
     // A validade informada por mês/ano vira o último dia desse mês; o CardAccountService associa o usuário.
