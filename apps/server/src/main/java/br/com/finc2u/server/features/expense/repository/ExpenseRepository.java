@@ -39,6 +39,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByInstallmentGroupIdOrderByCurrentInstallment(UUID installmentGroupId);
 
+    // Idempotência da recorrência: a despesa de um modelo num vencimento existe uma vez só (unique no banco).
+    boolean existsByRecurringExpenseIdAndDueDate(UUID recurringExpenseId, LocalDate dueDate);
+
     // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
