@@ -10,6 +10,7 @@ import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpe
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.repository.MonthlySummaryRepository;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryTotals;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -39,10 +40,10 @@ public class MonthlySummaryService {
      * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
      * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features,
      * agrega os totais (MonthlySummaryTotals), recupera ou cria o resumo + o restante do mês anterior, e delega o
-     * cálculo à própria entidade. Não altera nenhuma despesa.
+     * cálculo à própria entidade. Não altera nenhuma despesa. Devolve também se o resumo foi criado agora ou recalculado.
      */
     @Transactional
-    public MonthlySummary calculateOrRecalculate(UUID userId, Integer month, Integer year) {
+    public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
         User user = userService.getById(userId);
         MonthlyPeriod period = MonthlyPeriod.of(month, year);
 
@@ -53,8 +54,8 @@ public class MonthlySummaryService {
 
         MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, extraIncomes);
 
-        MonthlySummary summary = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
-            .orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
+        Optional<MonthlySummary> existing = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year);
+        MonthlySummary summary = existing.orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
 
         BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
 
@@ -66,7 +67,7 @@ public class MonthlySummaryService {
             baseSalary
         );
 
-        return monthlySummaryRepository.save(summary);
+        return new MonthlySummaryResult(monthlySummaryRepository.save(summary), existing.isEmpty());
     }
 
     @Transactional(readOnly = true)
@@ -78,11 +79,6 @@ public class MonthlySummaryService {
     public MonthlySummary getByUserAndPeriod(UUID userId, Integer month, Integer year) {
         return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year)
             .orElseThrow(() -> new ResourceNotFoundException("Resumo mensal não encontrado para o período informado."));
-    }
-
-    @Transactional(readOnly = true)
-    public boolean existsByUserAndPeriod(UUID userId, Integer month, Integer year) {
-        return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year).isPresent();
     }
 
     @Transactional

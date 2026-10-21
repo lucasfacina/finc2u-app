@@ -22,20 +22,15 @@ public class MonthlySummaryController {
 
     @PostMapping
     public ResponseEntity<MonthlySummaryResponse> createOrUpdate(@Valid @RequestBody MonthlySummaryRequest monthlySummaryRequest) {
-        boolean isNew = !monthlySummaryService.existsByUserAndPeriod(
-                monthlySummaryRequest.userId(),
-                monthlySummaryRequest.month(),
-                monthlySummaryRequest.year()
+        var result = monthlySummaryService.calculateOrRecalculate(
+            monthlySummaryRequest.userId(),
+            monthlySummaryRequest.month(),
+            monthlySummaryRequest.year()
         );
-        MonthlySummary monthlySummary = monthlySummaryService.calculateOrRecalculate(
-                monthlySummaryRequest.userId(),
-                monthlySummaryRequest.month(),
-                monthlySummaryRequest.year()
-        );
-        return new ResponseEntity<>(MonthlySummaryResponse.from(monthlySummary),
-                isNew
-                        ? HttpStatus.CREATED
-                        : HttpStatus.OK
+        return new ResponseEntity<>(MonthlySummaryResponse.from(result.summary()),
+            result.created()
+                ? HttpStatus.CREATED
+                : HttpStatus.OK
         );
     }
 
@@ -43,8 +38,8 @@ public class MonthlySummaryController {
     public ResponseEntity<List<MonthlySummaryResponse>> getHistoryByUserId(@RequestParam UUID userId) {
         List<MonthlySummary> monthHistory = monthlySummaryService.getByUser(userId);
         List<MonthlySummaryResponse> monthlySummaryResponse = monthHistory.stream()
-                .map(MonthlySummaryResponse::from)
-                .toList();
+            .map(MonthlySummaryResponse::from)
+            .toList();
         return ResponseEntity.ok(monthlySummaryResponse);
     }
 
