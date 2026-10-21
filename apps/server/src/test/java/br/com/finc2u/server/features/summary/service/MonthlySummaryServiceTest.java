@@ -265,6 +265,17 @@ class MonthlySummaryServiceTest {
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(result.getSavingsBalance()));
     }
 
+    // O usuário sem poupança informada (nula) conta como zero no snapshot: é o User quem garante, o calculador recebe o número.
+    @Test
+    void calculateOrRecalculate_shouldSnapshotZeroSavings_whenTheUserHasNoSavingsBalance() {
+        user.setSavingsBalance(null);
+        stubRepositories(List.of(), List.of(), null, null);
+
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getSavingsBalance()));
+    }
+
     @Test
     void calculateOrUpdate_shouldRecalculateExistingSummary_whenAlreadyExists() {
         MonthlySummary existing = MonthlySummary.builder()
