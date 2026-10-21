@@ -1,6 +1,5 @@
 package br.com.finc2u.server.features.expense.projection;
 
-import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -15,14 +14,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FutureInstallmentProjectionTest {
+
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
 
     @Mock
     private ExpenseRepository expenseRepository;
@@ -37,74 +38,45 @@ class FutureInstallmentProjectionTest {
     }
 
     @Test
-    void getProjectionsByUser_shouldProjectPendingInstallmentsGroupedByMonth() {
-        Category category = Category.of("Lazer");
-        Expense parceled = Expense.builder()
-            .description("Notebook")
+    void getProjectionsByUser_shouldQueryPendingParceledExpensesAfterTheReferenceDate() {
+        when(expenseRepository.findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+            userId, ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY)).thenReturn(List.of());
+
+        assertTrue(projection.getProjectionsByUser(userId, TODAY).isEmpty());
+
+        verify(expenseRepository).findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+            userId, ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY);
+    }
+
+    @Test
+    void getProjectionsByUser_shouldGroupTheRealInstallmentsByDueMonth_keepingTheirData() {
+        var july = installment("Notebook", 2, LocalDate.of(2026, 7, 10));
+        var august = installment("Notebook", 3, LocalDate.of(2026, 8, 10));
+        var otherJuly = installment("TV", 1, LocalDate.of(2026, 7, 25));
+        when(expenseRepository.findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+            userId, ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY)).thenReturn(List.of(july, otherJuly, august));
+
+        var result = projection.getProjectionsByUser(userId, TODAY);
+
+        assertEquals(2, result.size());
+        assertEquals(List.of(july, otherJuly), result.get(YearMonth.of(2026, 7)));
+        assertEquals(List.of(august), result.get(YearMonth.of(2026, 8)));
+        assertSame(july, result.get(YearMonth.of(2026, 7)).getFirst());
+        assertEquals("Notebook", result.get(YearMonth.of(2026, 8)).getFirst().getDescription());
+    }
+
+    private Expense installment(String description, int number, LocalDate dueDate) {
+        var expense = Expense.builder()
+            .description(description)
             .value(BigDecimal.valueOf(500))
-            .dueDate(LocalDate.of(2026, 5, 10))
+            .dueDate(dueDate)
             .expenseType(ExpenseType.PARCELED)
-            .currentInstallment(1)
-            .totalInstallment(3)
             .paymentStatus(PaymentStatus.PENDING)
-            .category(category)
-            .build();
-
-        when(expenseRepository.findByExpenseTypeAndUserId(ExpenseType.PARCELED, userId))
-            .thenReturn(List.of(parceled));
-
-        Map<YearMonth, List<Expense>> result = projection.getProjectionsByUser(userId);
-
-        assertEquals(2, result.size()); // junho e julho de 2026
-        assertTrue(result.containsKey(YearMonth.of(2026, 6)));
-        assertTrue(result.containsKey(YearMonth.of(2026, 7)));
-
-        Expense june = result.get(YearMonth.of(2026, 6)).getFirst();
-
-        assertEquals("Notebook (2/3)", june.getDescription());
-        assertEquals(LocalDate.of(2026, 6, 10), june.getDueDate());
-        assertEquals(0, BigDecimal.valueOf(500).compareTo(june.getValue()));
-        assertEquals(PaymentStatus.PENDING, june.getPaymentStatus());
-        assertSame(category, june.getCategory());
-        assertEquals("Notebook (3/3)", result.get(YearMonth.of(2026, 7)).getFirst().getDescription());
-    }
-
-    @Test
-    void getProjectionsByUser_shouldBeEmpty_whenOnLastInstallment() {
-        Expense last = Expense.builder()
-            .description("TV")
-            .value(BigDecimal.valueOf(200))
-            .dueDate(LocalDate.of(2026, 5, 10))
-            .expenseType(ExpenseType.PARCELED)
-            .currentInstallment(3)
+            .currentInstallment(number)
             .totalInstallment(3)
-            .paymentStatus(PaymentStatus.PENDING)
             .build();
-
-        when(expenseRepository.findByExpenseTypeAndUserId(ExpenseType.PARCELED, userId))
-            .thenReturn(List.of(last));
-
-        assertTrue(projection.getProjectionsByUser(userId).isEmpty());
-    }
-
-    @Test
-    void getProjectionsByUser_shouldIgnorePaidExpenses() {
-        Expense paid = Expense.builder()
-            .description("Geladeira")
-            .value(BigDecimal.valueOf(300))
-            .dueDate(LocalDate.of(2026, 5, 10))
-            .expenseType(ExpenseType.PARCELED)
-            .currentInstallment(1)
-            .totalInstallment(3)
-            .paymentStatus(PaymentStatus.PAID)
-            .build();
-
-        when(expenseRepository.findByExpenseTypeAndUserId(ExpenseType.PARCELED, userId))
-            .thenReturn(List.of(paid));
-
-        Map<YearMonth, List<Expense>> result = projection.getProjectionsByUser(userId);
-
-        assertTrue(result.isEmpty());
+        expense.setId(UUID.randomUUID());
+        return expense;
     }
 
 }

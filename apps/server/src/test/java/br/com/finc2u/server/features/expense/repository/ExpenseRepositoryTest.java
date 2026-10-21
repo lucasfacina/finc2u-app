@@ -97,12 +97,33 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findByExpenseTypeAndUserId_shouldLoadCardInTheMainQuery() {
-        var expenses = expenseRepository.findByExpenseTypeAndUserId(ExpenseType.VARIABLE, user.getId());
+    void findFutureInstallments_shouldReturnOnlyTheUsersPendingParceledAfterTheReferenceDate_inOneQuery() {
+        for (var number = 1; number <= 3; number++) {
+            var cardAccount = persistCard("Parcelado " + number);
+            var category = persistCategory("Parcelas " + number);
+            persistParceled("Compra " + number + " 3/3", cardAccount, category, PaymentStatus.PENDING, TODAY.plusMonths(2), user);
+            persistParceled("Compra " + number + " 2/3", cardAccount, category, PaymentStatus.PENDING, TODAY.plusMonths(1), user);
+            persistParceled("Compra " + number + " paga", cardAccount, category, PaymentStatus.PAID, TODAY.plusMonths(1), user);
+            persistParceled("Compra " + number + " vence hoje", cardAccount, category, PaymentStatus.PENDING, TODAY, user);
+        }
+        var other = testEntityManager.persist(User.builder().name("Bia").email("bia@email.com")
+            .savingsBalance(BigDecimal.ZERO).build());
+        var otherCategory = testEntityManager.persist(Category.builder().name("Outra").user(other).build());
+        persistParceled("De outro usuário", null, otherCategory, PaymentStatus.PENDING, TODAY.plusMonths(1), other);
+        resetPersistenceContext();
 
-        assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(expense -> ExpenseResponse.from(expense, TODAY));
+        var found = expenseRepository.findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+            user.getId(), ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY);
+
+        found.forEach(expense -> ExpenseResponse.from(expense, TODAY));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
+        assertEquals(6, found.size());
+        assertTrue(found.stream().allMatch(expense -> expense.getExpenseType() == ExpenseType.PARCELED
+            && expense.getPaymentStatus() == PaymentStatus.PENDING
+            && expense.getDueDate().isAfter(TODAY)
+            && expense.getUser().getId().equals(user.getId())));
+        assertEquals(found.stream().map(Expense::getDueDate).sorted().toList(),
+            found.stream().map(Expense::getDueDate).toList());
     }
 
     @Test
@@ -265,6 +286,23 @@ class ExpenseRepositoryTest {
             .closingDate(10)
             .dueDate(17)
             .user(user)
+            .build());
+    }
+
+    private Expense persistParceled(String description, CardAccount cardAccount, Category category,
+                                    PaymentStatus paymentStatus, LocalDate dueDate, User owner) {
+        return testEntityManager.persist(Expense.builder()
+            .description(description)
+            .value(BigDecimal.valueOf(50))
+            .dueDate(dueDate)
+            .expenseType(ExpenseType.PARCELED)
+            .paymentStatus(paymentStatus)
+            .currentInstallment(2)
+            .totalInstallment(3)
+            .installmentGroupId(UUID.randomUUID())
+            .user(owner)
+            .cardAccount(cardAccount)
+            .category(category)
             .build());
     }
 
