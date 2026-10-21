@@ -4,6 +4,7 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -22,6 +23,7 @@ public class RecurringExpenseService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final CardAccountService cardAccountService;
+    private final RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     @Transactional
     public RecurringExpense create(RecurringExpenseCommand command, UUID userId) {
@@ -29,7 +31,9 @@ public class RecurringExpenseService {
         recurringExpense.setUser(userService.getById(userId));
         applyReferences(recurringExpense, command);
 
-        return recurringExpenseRepository.save(recurringExpense);
+        var saved = recurringExpenseRepository.save(recurringExpense);
+        recurringExpenseMaterializer.materializeUpcoming(saved);
+        return saved;
     }
 
     @Transactional(readOnly = true)
