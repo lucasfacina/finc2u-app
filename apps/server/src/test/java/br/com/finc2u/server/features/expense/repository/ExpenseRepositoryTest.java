@@ -24,6 +24,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -255,6 +256,28 @@ class ExpenseRepositoryTest {
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
         expenses.forEach(expense -> assertNotNull(expense.getCardAccount().getCardName()));
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
+    }
+
+    // O resumo soma as despesas do mês: o primeiro e o último dia contam, os vizinhos e as de outro usuário não.
+    @Test
+    void findByUserIdAndDueDateBetween_shouldIncludeTheFirstAndTheLastDay_andExcludeTheNeighboringDays() {
+        var cardAccount = persistCard("Cartão do período");
+        var category = persistCategory("Categoria do período");
+        persistExpense("Dia anterior", cardAccount, category, PaymentStatus.PENDING, LocalDate.of(2026, 6, 30));
+        persistExpense("Primeiro dia", cardAccount, category, PaymentStatus.PENDING, LocalDate.of(2026, 7, 1));
+        persistExpense("Último dia", cardAccount, category, PaymentStatus.PENDING, LocalDate.of(2026, 7, 31));
+        persistExpense("Dia seguinte", cardAccount, category, PaymentStatus.PENDING, LocalDate.of(2026, 8, 1));
+        var other = testEntityManager.persist(User.builder().name("Bia").email("bia.periodo@email.com")
+            .savingsBalance(BigDecimal.ZERO).build());
+        var otherCategory = testEntityManager.persist(Category.builder().name("Outra").user(other).build());
+        persistParceled("Do outro usuário", null, otherCategory, PaymentStatus.PENDING, LocalDate.of(2026, 7, 15), other);
+        resetPersistenceContext();
+
+        var found = expenseRepository.findByUserIdAndDueDateBetween(
+            user.getId(), LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 31));
+
+        assertEquals(List.of("Primeiro dia", "Último dia"),
+            found.stream().sorted(Comparator.comparing(Expense::getDueDate)).map(Expense::getDescription).toList());
     }
 
     @Test
