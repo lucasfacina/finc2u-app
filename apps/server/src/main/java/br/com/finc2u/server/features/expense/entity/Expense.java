@@ -81,7 +81,7 @@ public class Expense extends BaseModel {
 
     /*
      * Define o status de pagamento por padrão quando não informado: PENDING. Se o vencimento já passou (anterior à data
-     * de referência, que é hoje), o sistema não adivinha: o cliente precisa dizer se a despesa já foi paga (D13).
+     * de referência, que é hoje), o sistema não adivinha: o cliente precisa dizer se a despesa já foi paga.
      */
     public void resolveDefaultPaymentStatus(LocalDate referenceDate) {
         if (paymentStatus != null) {
