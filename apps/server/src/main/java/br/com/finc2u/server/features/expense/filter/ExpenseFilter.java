@@ -28,6 +28,13 @@ public record ExpenseFilter(
     Boolean overdue
 ) {
 
+    // O mês só faz sentido dentro de um ano; sem o ano o período seria ignorado em silêncio.
+    @AssertTrue(message = "Informe o ano junto com o mês.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isYearInformedWithMonth() {
+        return month == null || year != null;
+    }
+
     // Faixa de preço coerente; com apenas um dos limites informados não há o que comparar.
     @AssertTrue(message = "O preço mínimo não pode ser maior que o preço máximo.")
     @SuppressWarnings("unused") // chamado pelo Bean Validation
