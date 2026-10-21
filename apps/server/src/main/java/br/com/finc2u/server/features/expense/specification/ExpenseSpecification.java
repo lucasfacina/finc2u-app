@@ -12,7 +12,8 @@ import java.util.UUID;
 
 /*
  * Fornece métodos para criar Specifications do JPA para filtrar entidades Expense. Ela permite a filtragem com base no
- * ID do usuário, período de datas, status de pagamento, tipo de despesa, ID da conta do cartão, ID da categoria e faixa de preço.
+ * ID do usuário, período de datas, status de pagamento, tipo de despesa, ID da conta do cartão, ID da categoria, faixa de
+ * preço e atraso (pendente com vencimento anterior à data de referência).
  * Critério não informado vira Specification.unrestricted() (sem restrição) — o Spring Data JPA 4 não aceita null.
  */
 public class ExpenseSpecification {
@@ -20,7 +21,8 @@ public class ExpenseSpecification {
     private ExpenseSpecification() {
     }
 
-    public static Specification<Expense> ofFilter(UUID userId, ExpenseFilter filter) {
+    // referenceDate é "hoje" (vem do Clock do service): a especificação não lê o relógio.
+    public static Specification<Expense> ofFilter(UUID userId, ExpenseFilter filter, LocalDate referenceDate) {
         return Specification
             .where(hasUser(userId))
             .and(inPeriod(filter.month(), filter.year()))
@@ -29,7 +31,8 @@ public class ExpenseSpecification {
             .and(hasCard(filter.cardAccountId()))
             .and(hasCategory(filter.categoryId()))
             .and(minPrice(filter.minPrice()))
-            .and(maxPrice(filter.maxPrice()));
+            .and(maxPrice(filter.maxPrice()))
+            .and(isOverdue(filter.overdue(), referenceDate));
     }
 
     private static Specification<Expense> hasUser(UUID userId) {
@@ -79,6 +82,13 @@ public class ExpenseSpecification {
         if (min == null) return Specification.unrestricted();
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.greaterThanOrEqualTo(root.get("value"), min);
+    }
+
+    private static Specification<Expense> isOverdue(Boolean overdue, LocalDate referenceDate) {
+        if (!Boolean.TRUE.equals(overdue)) return Specification.unrestricted();
+        return (root, query, criteriaBuilder) -> criteriaBuilder.and(
+            criteriaBuilder.equal(root.get("paymentStatus"), PaymentStatus.PENDING),
+            criteriaBuilder.lessThan(root.get("dueDate"), referenceDate));
     }
 
     private static Specification<Expense> maxPrice(BigDecimal max) {

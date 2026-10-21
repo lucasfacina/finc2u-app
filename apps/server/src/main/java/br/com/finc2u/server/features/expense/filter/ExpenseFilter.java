@@ -22,7 +22,10 @@ public record ExpenseFilter(
     UUID cardAccountId,
     UUID categoryId,
     BigDecimal minPrice,
-    BigDecimal maxPrice
+    BigDecimal maxPrice,
+
+    // true: só as pendentes já vencidas (atraso derivado); false ou ausente: sem restrição.
+    Boolean overdue
 ) {
 
     // Faixa de preço coerente; com apenas um dos limites informados não há o que comparar.

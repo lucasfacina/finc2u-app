@@ -61,7 +61,7 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public List<Expense> getWithFilters(UUID userId, ExpenseFilter filter) {
         userService.getById(userId);
-        return expenseRepository.findAll(ExpenseSpecification.ofFilter(userId, filter));
+        return expenseRepository.findAll(ExpenseSpecification.ofFilter(userId, filter, LocalDate.now(clock)));
     }
 
     @Transactional
