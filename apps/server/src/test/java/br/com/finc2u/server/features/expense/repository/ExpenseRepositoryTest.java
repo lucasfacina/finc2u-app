@@ -248,12 +248,15 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void findByUserIdAndDueDateBetween_shouldLoadCardInTheMainQuery() {
+    void findByUserIdAndDueDateBetween_shouldLoadCardAndCategoryInTheMainQuery() {
         var expenses = expenseRepository.findByUserIdAndDueDateBetween(
             user.getId(), LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31));
 
         assertEquals(CARDS * EXPENSES_PER_CARD, expenses.size());
-        expenses.forEach(expense -> assertNotNull(expense.getCardAccount().getCardName()));
+        expenses.forEach(expense -> {
+            assertNotNull(expense.getCardAccount().getCardName());
+            assertNotNull(expense.getCategory().getName());
+        });
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
     }
 
