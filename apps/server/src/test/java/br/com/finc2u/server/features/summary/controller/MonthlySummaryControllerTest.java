@@ -55,6 +55,8 @@ class MonthlySummaryControllerTest {
             .totalExpenses(BigDecimal.valueOf(800))
             .totalPaid(BigDecimal.valueOf(500))
             .totalPending(BigDecimal.valueOf(300))
+            .totalOverdue(BigDecimal.valueOf(120))
+            .totalFixed(BigDecimal.valueOf(60))
             .totalExtras(BigDecimal.valueOf(200))
             .cashBalance(BigDecimal.valueOf(100))
             .savingsBalance(BigDecimal.valueOf(1000))
@@ -74,7 +76,9 @@ class MonthlySummaryControllerTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.month").value(MONTH))
             .andExpect(jsonPath("$.year").value(YEAR))
-            .andExpect(jsonPath("$.totalExpenses").value(800));
+            .andExpect(jsonPath("$.totalExpenses").value(800))
+            .andExpect(jsonPath("$.totalOverdue").value(120))
+            .andExpect(jsonPath("$.totalFixed").value(60));
     }
 
     @Test
