@@ -48,7 +48,7 @@ class RecurringExpenseJobTest {
         rent = modelOf("Aluguel");
     }
 
-    // O job roda sem esperar o cron: o teste chama o método direto, e o mês vem do Clock.
+    // O job roda sem esperar o cron: o teste chama o metodo direto, e o mês vem do Clock.
     @Test
     void materializeActiveRecurringExpenses_shouldMaterializeEachActiveModelOfTheCurrentMonth() {
         when(recurringExpenseService.getActiveIn(YearMonth.of(2026, 11)))
