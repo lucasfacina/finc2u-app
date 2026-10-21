@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.category.service.CategoryService;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
@@ -14,6 +15,7 @@ import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -43,6 +45,9 @@ class RecurringExpenseServiceTest {
 
     @Mock
     private CardAccountService cardAccountService;
+
+    @Mock
+    private ExpenseService expenseService;
 
     @Mock
     private RecurringExpenseMaterializer recurringExpenseMaterializer;
@@ -241,14 +246,17 @@ class RecurringExpenseServiceTest {
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
     }
 
+    // As despesas geradas ficam (sem modelo): o vínculo é zerado antes de apagar, senão o banco recusa (FK).
     @Test
-    void delete_shouldRemoveTheModel() {
+    void delete_shouldDetachTheGeneratedExpensesBeforeRemovingTheModel() {
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.of(saved));
 
         recurringExpenseService.delete(recurringExpenseId);
 
-        verify(recurringExpenseRepository).delete(saved);
+        InOrder inOrder = inOrder(expenseService, recurringExpenseRepository);
+        inOrder.verify(expenseService).detachFromRecurringExpense(recurringExpenseId);
+        inOrder.verify(recurringExpenseRepository).delete(saved);
     }
 
     @Test
@@ -258,6 +266,7 @@ class RecurringExpenseServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.delete(recurringExpenseId));
         verify(recurringExpenseRepository, never()).delete(any(RecurringExpense.class));
+        verifyNoInteractions(expenseService);
     }
 
     private RecurringExpense newModel(String description) {
