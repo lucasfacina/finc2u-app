@@ -18,13 +18,15 @@ public record ExpenseResponse(
     LocalDateTime createdAt,
     ExpenseType expenseType,
     PaymentStatus paymentStatus,
+    boolean overdue,
     Integer currentInstallment,
     Integer totalInstallment,
     String cardName,
     CategoryResponse category
 ) {
 
-    public static ExpenseResponse from(Expense expense) {
+    // referenceDate é "hoje" (vem do Clock do controller): o atraso é derivado dela, não lido do relógio aqui.
+    public static ExpenseResponse from(Expense expense, LocalDate referenceDate) {
         return new ExpenseResponse(
             expense.getId(),
             expense.getDescription(),
@@ -33,6 +35,7 @@ public record ExpenseResponse(
             expense.getCreatedAt(),
             expense.getExpenseType(),
             expense.getPaymentStatus(),
+            expense.isOverdue(referenceDate),
             expense.getCurrentInstallment(),
             expense.getTotalInstallment(),
             expense.getCardAccount() != null

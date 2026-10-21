@@ -13,6 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
@@ -26,42 +28,46 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
     private final FutureInstallmentProjection futureInstallmentProjection;
+    private final Clock clock;
 
     @PostMapping
     public ResponseEntity<ExpenseResponse> create(@RequestParam UUID userId, @Valid @RequestBody ExpenseRequest expenseRequest) {
         Expense savedExpense = expenseService.create(userId, expenseRequest.toCommand());
-        return new ResponseEntity<>(ExpenseResponse.from(savedExpense), HttpStatus.CREATED);
+        return new ResponseEntity<>(toResponse(savedExpense), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<ExpenseResponse>> getAllByUserId(@RequestParam UUID userId) {
+        var today = LocalDate.now(clock);
         List<ExpenseResponse> expenseResponse = expenseService.getByUser(userId)
             .stream()
-            .map(ExpenseResponse::from)
+            .map(expense -> ExpenseResponse.from(expense, today))
             .toList();
         return ResponseEntity.ok(expenseResponse);
     }
 
     @GetMapping("/filters")
     public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid ExpenseFilter filter) {
+        var today = LocalDate.now(clock);
         List<Expense> expenses = expenseService.getWithFilters(userId, filter);
-        return ResponseEntity.ok(expenses.stream().map(ExpenseResponse::from).toList());
+        return ResponseEntity.ok(expenses.stream().map(expense -> ExpenseResponse.from(expense, today)).toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ExpenseResponse> getById(@PathVariable UUID id) {
         Expense expense = expenseService.getById(id);
-        return ResponseEntity.ok(ExpenseResponse.from(expense));
+        return ResponseEntity.ok(toResponse(expense));
     }
 
     @GetMapping("/projections")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
+        var today = LocalDate.now(clock);
         Map<YearMonth, List<ExpenseResponse>> expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId)
             .entrySet().stream()
             .collect(Collectors.toMap(
                 Map.Entry::getKey, entry -> entry.getValue()
                     .stream()
-                    .map(ExpenseResponse::from)
+                    .map(expense -> ExpenseResponse.from(expense, today))
                     .toList()
             ));
         return ResponseEntity.ok(expenseResponse);
@@ -70,19 +76,23 @@ public class ExpenseController {
     @PutMapping("/{id}")
     public ResponseEntity<ExpenseResponse> update(@PathVariable UUID id, @Valid @RequestBody ExpenseRequest expenseRequest) {
         Expense updatedExpense = expenseService.update(id, expenseRequest.toCommand());
-        return ResponseEntity.ok(ExpenseResponse.from(updatedExpense));
+        return ResponseEntity.ok(toResponse(updatedExpense));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ExpenseResponse> updateStatus(@PathVariable UUID id, @RequestParam PaymentStatus status) {
         Expense updatedExpenseStatus = expenseService.updateStatus(id, status);
-        return ResponseEntity.ok(ExpenseResponse.from(updatedExpenseStatus));
+        return ResponseEntity.ok(toResponse(updatedExpenseStatus));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         expenseService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private ExpenseResponse toResponse(Expense expense) {
+        return ExpenseResponse.from(expense, LocalDate.now(clock));
     }
 
 }
