@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.expense.service;
 
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
@@ -63,6 +64,16 @@ public class ExpenseService {
     public List<Expense> getByUser(UUID userId) {
         userService.getById(userId);
         return expenseRepository.findByUserId(userId);
+    }
+
+    // Despesas com vencimento entre as duas datas (inclusive): é a leitura que o resumo mensal usa, no lugar do repositório.
+    @Transactional(readOnly = true)
+    public List<Expense> getByUserAndPeriod(UUID userId, LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            throw new InvalidRequestException("A data inicial não pode ser posterior à data final.");
+        }
+        userService.getById(userId);
+        return expenseRepository.findByUserIdAndDueDateBetween(userId, start, end);
     }
 
     @Transactional(readOnly = true)
