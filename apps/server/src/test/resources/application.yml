@@ -25,3 +25,5 @@ spring:
 app:
   seeders:
     enabled: false
+  scheduling:
+    enabled: false
