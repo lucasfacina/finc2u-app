@@ -72,6 +72,9 @@ class DatabaseSeederIntegrationTest {
 
         assertTrue(summary.getTotalExpenses().signum() > 0);
         assertTrue(summary.getTotalExtras().signum() > 0);
+        // O seed traz despesas vencidas e pendentes e despesas fixas: os dois totais novos têm que aparecer no resumo de hoje.
+        assertTrue(summary.getTotalOverdue().signum() > 0);
+        assertTrue(summary.getTotalFixed().signum() > 0);
     }
 
     @Test
