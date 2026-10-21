@@ -36,6 +36,9 @@ springdoc:
 app:
   seeders:
     enabled: true
+  # Job mensal das despesas recorrentes (RecurringExpenseJob): ligado em dev; desligado nos testes e no devTest.
+  scheduling:
+    enabled: true
 
 # ---
 # ==========================================
@@ -73,3 +76,5 @@ app:
 # app:
 #   seeders:
 #     enabled: false
+#   scheduling:
+#     enabled: true
