@@ -282,6 +282,42 @@ class MonthlySummaryServiceTest {
     }
 
     @Test
+    void calculateOrRecalculate_shouldFlagThePreviousMonthAsMissing_whenThereIsNoPreviousSummary() {
+        stubRepositories(
+            List.of(),
+            List.of(),
+            null,
+            null
+        );
+
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertTrue(result.getPreviousMonthMissing());
+        assertEquals(0, BigDecimal.ZERO.compareTo(result.getCashBalance()));
+    }
+
+    @Test
+    void calculateOrRecalculate_shouldNotFlagThePreviousMonthAsMissing_whenThePreviousSummaryExists() {
+        MonthlySummary previousSummary = MonthlySummary.builder()
+            .month(5)
+            .year(YEAR)
+            .user(user)
+            .remainingAmount(BigDecimal.valueOf(350))
+            .build();
+
+        stubRepositories(
+            List.of(),
+            List.of(),
+            null,
+            previousSummary
+        );
+
+        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertFalse(result.getPreviousMonthMissing());
+    }
+
+    @Test
     void calculateOrRecalculate_shouldUsePreviousMonthRemaining_asCashBalance() {
         MonthlySummary previousSummary = MonthlySummary.builder()
             .month(5)
