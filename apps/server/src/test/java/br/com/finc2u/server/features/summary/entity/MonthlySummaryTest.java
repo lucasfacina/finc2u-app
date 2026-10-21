@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +47,8 @@ class MonthlySummaryTest {
             BigDecimal.valueOf(200),
             BigDecimal.valueOf(1500),
             BigDecimal.valueOf(300),
-            BigDecimal.valueOf(2700)
+            BigDecimal.valueOf(2700),
+            List.of()
         ));
 
         assertEquals(0, BigDecimal.valueOf(3000).compareTo(summary.getBaseSalary()));
