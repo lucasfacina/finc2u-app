@@ -1,8 +1,12 @@
 package br.com.finc2u.server.features.summary.vo;
 
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /*
  * O cálculo do resumo mensal, puro: só números entram e saem (sem Spring, banco ou relógio), então o mesmo MonthlySummaryInput
@@ -15,6 +19,7 @@ import java.math.BigDecimal;
  * -> remainingAmount = totalIncome − totalExpenses (quanto sobra ao fim do mês, descontando pago + pendente)
  * -> savingsYield    = savingsBalance atual − savingsBalance do mês anterior; zero se não houver anterior
  * -> savingsBalance  = saldo da poupança do usuário no momento do cálculo (snapshot)
+ * -> categoryTotals  = quanto foi gasto em cada categoria (pago + pendente), ordenado pelo nome da categoria
  */
 public final class MonthlySummaryCalculator {
 
@@ -39,6 +44,14 @@ public final class MonthlySummaryCalculator {
 
         var totalIncome = input.baseSalary().add(totals.totalExtras()).add(cashBalance);
 
+        // Por categoria, na ordem do nome: a mesma entrada sempre dá a mesma lista.
+        var totalByCategory = new LinkedHashMap<Category, BigDecimal>();
+        input.expenses().forEach(expense -> totalByCategory.merge(expense.getCategory(), expense.getValue(), BigDecimal::add));
+        List<CategoryTotal> categoryTotals = totalByCategory.entrySet().stream()
+            .map(entry -> new CategoryTotal(entry.getKey(), entry.getValue()))
+            .sorted(Comparator.comparing((CategoryTotal total) -> total.category().getName()))
+            .toList();
+
         return new MonthlySummaryFigures(
             input.baseSalary(),
             totalIncome,
@@ -51,7 +64,8 @@ public final class MonthlySummaryCalculator {
             cashBalance,
             input.savingsBalance(),
             savingsYield,
-            totalIncome.subtract(totals.totalExpenses())
+            totalIncome.subtract(totals.totalExpenses()),
+            categoryTotals
         );
     }
 

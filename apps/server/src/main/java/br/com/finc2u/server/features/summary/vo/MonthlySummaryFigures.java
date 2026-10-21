@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.summary.vo;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 // Os números de um resumo mensal, prontos para a entidade gravar. É o resultado do MonthlySummaryCalculator.
 public record MonthlySummaryFigures(
@@ -15,6 +16,7 @@ public record MonthlySummaryFigures(
     BigDecimal cashBalance,
     BigDecimal savingsBalance,
     BigDecimal savingsYield,
-    BigDecimal remainingAmount
+    BigDecimal remainingAmount,
+    List<CategoryTotal> categoryTotals
 ) {
 }
