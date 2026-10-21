@@ -24,15 +24,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * A listagem alimenta o Response (categoria e cartão). O cenário tem vários cartões e categorias: com um só o N+1
  * passaria despercebido. A contagem usa getPrepareStatementCount() (SQL preparado, inclusive carregamentos preguiçosos).
  *
- * O total esperado é 2: a consulta dos modelos (com cartão e categoria no @EntityGraph) mais um custo FIXO do dono dos
- * cartões — o CardAccount.user é EAGER e toda consulta é escopada por um único usuário, então o custo não cresce com os
- * dados. O que o teste protege é o crescimento: o total é o mesmo com 3 cartões e categorias.
+ * O total esperado é 1: a consulta dos modelos, com cartão e categoria no @EntityGraph. O dono do modelo e o dono do
+ * cartão (CardAccount.user) são LAZY e nenhum Response os lê. Antes do LAZY o total era 2 (um custo fixo do dono do
+ * cartão, EAGER). O que o teste protege é o crescimento: o total é o mesmo com 3 cartões e categorias.
  */
 @DataJpaTest
 class RecurringExpenseRepositoryTest {
 
     private static final int MODELS = 3;
-    private static final int LIST_STATEMENTS = 2;
+    private static final int LIST_STATEMENTS = 1;
 
     @Autowired
     private RecurringExpenseRepository recurringExpenseRepository;
