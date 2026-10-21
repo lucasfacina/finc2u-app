@@ -17,11 +17,15 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -179,7 +183,7 @@ class SalaryHistoryServiceTest {
     void getCurrentBaseSalaries_shouldSkipTheQuery_whenThereAreNoUsers() {
         assertTrue(salaryHistoryService.getCurrentBaseSalaries(List.of()).isEmpty());
 
-        verify(salaryHistoryRepository, never()).findCurrentSalaries(any(Collection.class), any(LocalDate.class));
+        verify(salaryHistoryRepository, never()).findCurrentSalaries(anyCollection(), any(LocalDate.class));
     }
 
     @Test
