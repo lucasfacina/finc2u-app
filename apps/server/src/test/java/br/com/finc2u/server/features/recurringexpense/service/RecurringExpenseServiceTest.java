@@ -112,7 +112,7 @@ class RecurringExpenseServiceTest {
         when(recurringExpenseRepository.save(model))
             .thenReturn(saved);
 
-        var response = recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, cardId), userId);
+        var response = recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null, cardId), userId);
 
         assertSame(saved, response);
         assertSame(user, model.getUser());
@@ -131,11 +131,42 @@ class RecurringExpenseServiceTest {
         when(recurringExpenseRepository.save(model))
             .thenReturn(saved);
 
-        recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null), userId);
+        recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null, null), userId);
 
         var inOrder = inOrder(recurringExpenseRepository, recurringExpenseMaterializer);
         inOrder.verify(recurringExpenseRepository).save(model);
         inOrder.verify(recurringExpenseMaterializer).materializeUpcoming(saved);
+    }
+
+    // A categoria por nome é resolvida (e criada, se faltar) entre as do dono; o id nem é consultado.
+    @Test
+    void create_shouldResolveOrCreateTheCategoryByName_whenOnlyTheNameIsInformed() {
+        var model = newModel("Ração");
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(categoryService.getOrCreateByName(userId, "Pets"))
+            .thenReturn(category);
+        when(recurringExpenseRepository.save(model))
+            .thenReturn(saved);
+
+        recurringExpenseService.create(new RecurringExpenseCommand(model, null, "Pets", null), userId);
+
+        assertSame(category, model.getCategory());
+        verify(categoryService, never()).getByIdAndUser(any(), any());
+    }
+
+    @Test
+    void update_shouldResolveOrCreateTheCategoryByName_whenOnlyTheNameIsInformed() {
+        when(recurringExpenseRepository.findById(recurringExpenseId))
+            .thenReturn(Optional.of(saved));
+        when(categoryService.getOrCreateByName(userId, "Pets"))
+            .thenReturn(category);
+        when(recurringExpenseRepository.save(saved))
+            .thenReturn(saved);
+
+        recurringExpenseService.update(recurringExpenseId, new RecurringExpenseCommand(newModel("Spotify"), null, "Pets", null));
+
+        assertSame(category, saved.getCategory());
     }
 
     @Test
@@ -148,7 +179,7 @@ class RecurringExpenseServiceTest {
         when(recurringExpenseRepository.save(model))
             .thenReturn(model);
 
-        recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null), userId);
+        recurringExpenseService.create(new RecurringExpenseCommand(model, categoryId, null, null), userId);
 
         assertNull(model.getCardAccount());
         verifyNoInteractions(cardAccountService);
@@ -161,7 +192,7 @@ class RecurringExpenseServiceTest {
             .thenReturn(user);
         when(categoryService.getByIdAndUser(categoryId, userId))
             .thenThrow(new ResourceNotFoundException("Categoria não encontrada"));
-        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, null);
+        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, null, null);
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.create(command, userId));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
@@ -176,7 +207,7 @@ class RecurringExpenseServiceTest {
             .thenReturn(category);
         when(cardAccountService.getByIdAndUser(cardId, userId))
             .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado"));
-        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, cardId);
+        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, null, cardId);
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.create(command, userId));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
@@ -239,7 +270,7 @@ class RecurringExpenseServiceTest {
         when(recurringExpenseRepository.save(saved))
             .thenReturn(saved);
 
-        var response = recurringExpenseService.update(recurringExpenseId, new RecurringExpenseCommand(updates, newCategoryId, null));
+        var response = recurringExpenseService.update(recurringExpenseId, new RecurringExpenseCommand(updates, newCategoryId, null, null));
 
         assertSame(saved, response);
         assertEquals("Spotify Família", saved.getDescription());
@@ -256,7 +287,7 @@ class RecurringExpenseServiceTest {
     void update_shouldThrowResourceNotFoundException_whenMissing() {
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.empty());
-        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, null);
+        var command = new RecurringExpenseCommand(newModel("Spotify"), categoryId, null, null);
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.update(recurringExpenseId, command));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
