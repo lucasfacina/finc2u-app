@@ -7,8 +7,10 @@ import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpenseSkip;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -36,6 +38,9 @@ class RecurringExpenseServiceTest {
 
     @Mock
     private RecurringExpenseRepository recurringExpenseRepository;
+
+    @Mock
+    private RecurringExpenseSkipRepository recurringExpenseSkipRepository;
 
     @Mock
     private UserService userService;
@@ -257,16 +262,17 @@ class RecurringExpenseServiceTest {
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
     }
 
-    // As despesas geradas ficam (sem modelo): o vínculo é zerado antes de apagar, senão o banco recusa (FK).
+    // As despesas geradas ficam (sem modelo) e os pulos do modelo saem junto: os dois antes de apagar o modelo (FK).
     @Test
-    void delete_shouldDetachTheGeneratedExpensesBeforeRemovingTheModel() {
+    void delete_shouldDetachTheGeneratedExpensesAndRemoveTheSkipsBeforeRemovingTheModel() {
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.of(saved));
 
         recurringExpenseService.delete(recurringExpenseId);
 
-        InOrder inOrder = inOrder(expenseService, recurringExpenseRepository);
+        InOrder inOrder = inOrder(expenseService, recurringExpenseSkipRepository, recurringExpenseRepository);
         inOrder.verify(expenseService).detachFromRecurringExpense(recurringExpenseId);
+        inOrder.verify(recurringExpenseSkipRepository).deleteByRecurringExpenseId(recurringExpenseId);
         inOrder.verify(recurringExpenseRepository).delete(saved);
     }
 
@@ -277,7 +283,50 @@ class RecurringExpenseServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.delete(recurringExpenseId));
         verify(recurringExpenseRepository, never()).delete(any(RecurringExpense.class));
-        verifyNoInteractions(expenseService);
+        verifyNoInteractions(expenseService, recurringExpenseSkipRepository);
+    }
+
+    // ---- mês pulado: o usuário apagou a despesa que o modelo gerou nesse vencimento ----
+
+    @Test
+    void skipMonth_shouldRecordTheDueDateOfTheModel() {
+        var dueDate = LocalDate.of(2026, 10, 25);
+        when(recurringExpenseRepository.findById(recurringExpenseId))
+            .thenReturn(Optional.of(saved));
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpenseId, dueDate))
+            .thenReturn(false);
+
+        recurringExpenseService.skipMonth(recurringExpenseId, dueDate);
+
+        var captor = org.mockito.ArgumentCaptor.forClass(RecurringExpenseSkip.class);
+        verify(recurringExpenseSkipRepository).save(captor.capture());
+        assertSame(saved, captor.getValue().getRecurringExpense());
+        assertEquals(dueDate, captor.getValue().getDueDate());
+    }
+
+    // Pular de novo o mesmo vencimento (a despesa voltou e foi apagada outra vez) não duplica o pulo.
+    @Test
+    void skipMonth_shouldNotRecordTwice_whenTheDueDateIsAlreadySkipped() {
+        var dueDate = LocalDate.of(2026, 10, 25);
+        when(recurringExpenseRepository.findById(recurringExpenseId))
+            .thenReturn(Optional.of(saved));
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpenseId, dueDate))
+            .thenReturn(true);
+
+        recurringExpenseService.skipMonth(recurringExpenseId, dueDate);
+
+        verify(recurringExpenseSkipRepository, never()).save(any(RecurringExpenseSkip.class));
+    }
+
+    // Modelo que já não existe não tem o que pular, e isso não pode impedir o usuário de apagar a despesa.
+    @Test
+    void skipMonth_shouldDoNothing_whenTheModelNoLongerExists() {
+        when(recurringExpenseRepository.findById(recurringExpenseId))
+            .thenReturn(Optional.empty());
+
+        assertDoesNotThrow(() -> recurringExpenseService.skipMonth(recurringExpenseId, LocalDate.of(2026, 10, 25)));
+
+        verifyNoInteractions(recurringExpenseSkipRepository);
     }
 
     private RecurringExpense newModel(String description) {
