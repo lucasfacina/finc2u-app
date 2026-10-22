@@ -48,16 +48,16 @@ class ExpenseSeederTest {
             .build();
         user.setId(UUID.randomUUID());
         context = new SeedContext();
-        context.setUser(user);
-        context.putCard(CardAccount.builder().cardName("Nubank").build());
-        context.putCard(CardAccount.builder().cardName("Mercado Pago").build());
+        context.put(User.class, user);
+        context.put(CardAccount.class, "Nubank", CardAccount.builder().cardName("Nubank").build());
+        context.put(CardAccount.class, "Mercado Pago", CardAccount.builder().cardName("Mercado Pago").build());
         List.of("Assinaturas", "Alimentação", "Lazer", "Saúde", "Transporte", "Moradia")
-            .forEach(name -> context.putCategory(Category.of(name)));
+            .forEach(name -> context.put(Category.class, name, Category.of(name)));
     }
 
     @Test
     void seed_shouldNotSaveAnything_whenTheUserAlreadyHasExpenses() {
-        when(expenseRepository.existsByUserId(context.getUser().getId()))
+        when(expenseRepository.existsByUserId(context.get(User.class).getId()))
             .thenReturn(true);
 
         seederAt(TODAY).seed(context);
