@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -40,6 +42,9 @@ class RecurringExpenseMaterializerTest {
 
     @Mock
     private RecurringExpenseRepository recurringExpenseRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Spy
     @SuppressWarnings("unused") // injetado no materializer pelo @InjectMocks
@@ -197,6 +202,82 @@ class RecurringExpenseMaterializerTest {
         materializer.materializeForUser(user.getId(), YearMonth.of(2026, 9));
 
         verify(expenseService, never()).createFromRecurrence(any(), any());
+    }
+
+    // ---- aviso ao resumo mensal (PeriodDataChangedEvent): só quando alguma despesa foi criada ----
+
+    @Test
+    void materializeUpcoming_shouldPublishFromTheCurrentMonth_whenBothMonthsWereCreated() {
+        createdOn(LocalDate.of(2026, 10, 25));
+        createdOn(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(eventPublisher, times(1)).publishEvent(any(PeriodDataChangedEvent.class));
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(user.getId(), CURRENT_MONTH));
+    }
+
+    // O mês corrente já tinha a despesa (idempotência): só o seguinte foi criado, e o aviso parte dele.
+    @Test
+    void materializeUpcoming_shouldPublishFromTheNextMonth_whenOnlyTheNextOneWasCreated() {
+        when(expenseService.createFromRecurrence(recurringExpense, LocalDate.of(2026, 10, 25)))
+            .thenReturn(Optional.empty());
+        createdOn(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(user.getId(), YearMonth.of(2026, 11)));
+    }
+
+    // Com cartão a despesa do mês corrente vence pela fatura, já no mês seguinte: o resumo afetado é o do vencimento real.
+    @Test
+    void materializeUpcoming_shouldPublishTheMonthOfTheRealDueDate_whenTheInvoiceFallsInTheNextMonth() {
+        recurringExpense.setCardAccount(CardAccount.builder()
+            .cardName("Nubank")
+            .closingDate(3)
+            .dueDate(10)
+            .build());
+        createdOn(LocalDate.of(2026, 11, 10));
+        createdOn(LocalDate.of(2026, 12, 10));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(user.getId(), YearMonth.of(2026, 11)));
+    }
+
+    // Rodar de novo (ou o job repetido) não cria nada e, portanto, não manda recalcular resumo nenhum.
+    @Test
+    void materializeUpcoming_shouldNotPublish_whenNothingWasCreated() {
+        materializer.materializeUpcoming(recurringExpense);
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void materialize_shouldNotPublish_evenWhenItCreatesTheExpense() {
+        createdOn(LocalDate.of(2026, 10, 25));
+
+        materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    // Quem chama é o próprio cálculo do resumo: avisar de lá seria recursão.
+    @Test
+    void materializeForUser_shouldNotPublish_evenWhenItCreatesExpenses() {
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+            .thenReturn(List.of(recurringExpense));
+        createdOn(LocalDate.of(2026, 10, 25));
+        createdOn(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeForUser(user.getId(), YearMonth.of(2026, 11));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    private void createdOn(LocalDate dueDate) {
+        when(expenseService.createFromRecurrence(recurringExpense, dueDate))
+            .thenReturn(Optional.of(Expense.builder().dueDate(dueDate).build()));
     }
 
 }
