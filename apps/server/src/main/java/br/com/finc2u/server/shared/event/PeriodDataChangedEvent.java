@@ -1,6 +1,10 @@
 package br.com.finc2u.server.shared.event;
 
+import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 /*
@@ -12,5 +16,14 @@ public record PeriodDataChangedEvent(
     UUID userId,
     YearMonth from
 ) {
+
+    // Uma alteração que mexe em mais de uma data (ex.: um vencimento que muda de mês) afeta a partir da mais antiga delas.
+    public static PeriodDataChangedEvent earliestOf(UUID userId, LocalDate... dates) {
+        return earliestOf(userId, Arrays.asList(dates));
+    }
+
+    public static PeriodDataChangedEvent earliestOf(UUID userId, Collection<LocalDate> dates) {
+        return new PeriodDataChangedEvent(userId, YearMonth.from(Collections.min(dates)));
+    }
 
 }
