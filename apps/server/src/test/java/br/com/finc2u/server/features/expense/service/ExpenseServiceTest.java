@@ -8,6 +8,7 @@ import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import br.com.finc2u.server.features.expense.event.GeneratedExpenseDeletedEvent;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
@@ -748,6 +749,31 @@ class ExpenseServiceTest {
 
         verify(expenseRepository).delete(expense);
         verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    // Apagar a despesa que um modelo recorrente gerou avisa qual vencimento do modelo foi apagado (o modelo registra o pulo).
+    @Test
+    void delete_shouldPublishTheDeletedGeneratedExpense_whenItCameFromARecurringModel() {
+        var modelId = UUID.randomUUID();
+        expense.setDueDate(LocalDate.of(2026, 7, 25));
+        expense.setRecurringExpenseId(modelId);
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        expenseService.delete(expenseId);
+
+        verify(eventPublisher).publishEvent(new GeneratedExpenseDeletedEvent(modelId, LocalDate.of(2026, 7, 25)));
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void delete_shouldNotPublishTheDeletedGeneratedExpense_whenTheExpenseWasLaunchedByTheUser() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        expenseService.delete(expenseId);
+
+        verify(eventPublisher, never()).publishEvent(any(GeneratedExpenseDeletedEvent.class));
     }
 
     @Test
