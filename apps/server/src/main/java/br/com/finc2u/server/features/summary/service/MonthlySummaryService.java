@@ -51,7 +51,7 @@ public class MonthlySummaryService {
      * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features, recupera ou
      * cria o resumo e o mês anterior, delega o cálculo ao MonthlySummaryCalculator (puro) e grava o resultado. Não altera
      * nenhuma despesa. Grava também os totais por categoria (no recálculo, os antigos saem). Devolve se o resumo foi criado
-     * agora ou recalculado.
+     * agora ou recalculado. Calcula só o mês pedido: o carryover para os meses seguintes é do recalculateFrom.
      */
     @Transactional
     public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
@@ -91,6 +91,19 @@ public class MonthlySummaryService {
         return new MonthlySummaryResult(saved, categoryTotals, existing.isEmpty());
     }
 
+    /*
+     * Calcula o mês pedido (criando o resumo se ele não existir) e, em ordem crescente, os resumos que já existem nos meses
+     * seguintes: o remainingAmount de um mês é o cashBalance do próximo, então cada um lê o anterior já atualizado. Não cria
+     * resumo de mês que não existe; se há uma lacuna entre dois meses, o seguinte a ela fica com previousMonthMissing.
+     * Devolve o resultado do mês pedido.
+     */
+    @Transactional
+    public MonthlySummaryResult recalculateFrom(UUID userId, YearMonth from) {
+        var result = calculateOrRecalculate(userId, from.getMonthValue(), from.getYear());
+        recalculateExistingFrom(userId, from.plusMonths(1));
+        return result;
+    }
+
     // O histórico lê os totais por categoria de todos os resumos numa consulta só (sem uma por resumo).
     @Transactional(readOnly = true)
     public List<MonthlySummaryDetail> getByUser(UUID userId) {
@@ -107,12 +120,19 @@ public class MonthlySummaryService {
         return new MonthlySummaryDetail(summary, categoryTotalsOf(List.of(summary)).getOrDefault(summary.getId(), List.of()));
     }
 
-    // Os totais por categoria saem antes do resumo (FK).
+    // Os totais por categoria saem antes do resumo (FK); os resumos existentes dos meses seguintes perdem o carryover dele.
     @Transactional
     public void delete(UUID userId, Integer month, Integer year) {
         MonthlySummary summary = findByPeriod(userId, month, year);
         categoryTotalRepository.deleteBySummaryId(summary.getId());
         monthlySummaryRepository.delete(summary);
+        recalculateExistingFrom(userId, YearMonth.of(year, month).plusMonths(1));
+    }
+
+    // Só recalcula o que já existe, na ordem dos meses; a consulta antes de cada cálculo grava o que o mês anterior mudou.
+    private void recalculateExistingFrom(UUID userId, YearMonth first) {
+        monthlySummaryRepository.findFromPeriod(userId, first.getYear(), first.getMonthValue())
+            .forEach(summary -> calculateOrRecalculate(userId, summary.getMonth(), summary.getYear()));
     }
 
     private MonthlySummary findByPeriod(UUID userId, Integer month, Integer year) {
