@@ -21,8 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +54,7 @@ public class ExpenseService {
         var saved = expense.getExpenseType() == ExpenseType.PARCELED
             ? saveInstallments(expense)
             : expenseRepository.save(expense);
-        publishPeriodChanged(userId, List.of(expense.getDueDate()));
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(userId, expense.getDueDate()));
         return saved;
     }
 
@@ -105,7 +106,7 @@ public class ExpenseService {
         );
 
         var saved = expenseRepository.save(expense);
-        publishPeriodChanged(expense.getUser().getId(), List.of(previousDueDate, expense.getDueDate()));
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), previousDueDate, expense.getDueDate()));
         return saved;
     }
 
@@ -115,7 +116,7 @@ public class ExpenseService {
         expense.changePaymentStatus(status, paidAt, LocalDate.now(clock));
 
         var saved = expenseRepository.save(expense);
-        publishPeriodChanged(expense.getUser().getId(), List.of(expense.getDueDate()));
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
         return saved;
     }
 
@@ -123,7 +124,7 @@ public class ExpenseService {
     public void delete(UUID id) {
         Expense expense = getById(id);
         expenseRepository.delete(expense);
-        publishPeriodChanged(expense.getUser().getId(), List.of(expense.getDueDate()));
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
     }
 
     @Transactional(readOnly = true)
@@ -140,12 +141,14 @@ public class ExpenseService {
     public void deleteInstallmentGroup(UUID groupId) {
         var installments = getByInstallmentGroup(groupId);
         expenseRepository.deleteAll(installments);
-        publishPeriodChanged(installments.getFirst().getUser().getId(), installments.stream().map(Expense::getDueDate).toList());
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(installments.getFirst().getUser().getId(),
+            installments.stream().map(Expense::getDueDate).toList()));
     }
 
     /*
      * Cria a despesa do modelo recorrente no vencimento: FIXED e PENDING, com os dados do modelo. Idempotente: se o modelo
-     * já tem despesa nesse vencimento, não cria nada. O cartão não é revalidado (a validade vale na data da compra).
+     * já tem despesa nesse vencimento, não cria nada. O cartão não é revalidado (a validade vale na data da compra). Não avisa o
+     * resumo mensal (PeriodDataChangedEvent): é chamado de dentro do cálculo dele, e avisar de lá seria recursão.
      */
     @Transactional
     public Optional<Expense> createFromRecurrence(RecurringExpense recurringExpense, LocalDate dueDate) {
@@ -178,12 +181,6 @@ public class ExpenseService {
         first.setInstallmentGroupId(UUID.randomUUID());
         expenseRepository.saveAll(InstallmentSchedule.from(first).installments());
         return first;
-    }
-
-    // Avisa o resumo mensal: os resumos existentes do mês mais antigo afetado em diante precisam ser recalculados. Fica de
-    // fora o createFromRecurrence, chamado de dentro do próprio cálculo do resumo (avisar de lá seria recursão).
-    private void publishPeriodChanged(UUID userId, Collection<LocalDate> dueDates) {
-        eventPublisher.publishEvent(new PeriodDataChangedEvent(userId, YearMonth.from(Collections.min(dueDates))));
     }
 
     private void assertCardUsable(Expense expense, LocalDate purchaseDate) {
