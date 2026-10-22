@@ -24,6 +24,7 @@
     <h2.version>2.5.252</h2.version>
     <lombok.version>1.18.48</lombok.version>
     <asm.version>9.11.1</asm.version>
+    <poi.version>6.0.0</poi.version>
   </properties>
 
   <!--
@@ -52,6 +53,16 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <!--
+        Usada só pelo importador de dev que carrega a planilha pessoal do autor).
+        Só lê; o POI traz limites contra zip bomb (ZipSecureFile) e a leitura de fórmulas usa o valor já calculado,
+        nunca executa nada.
+    -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springdoc</groupId>
