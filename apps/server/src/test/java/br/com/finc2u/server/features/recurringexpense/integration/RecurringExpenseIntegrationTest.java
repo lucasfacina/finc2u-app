@@ -112,6 +112,21 @@ class RecurringExpenseIntegrationTest {
         assertEquals(2, instancesOf(userId).size());
     }
 
+    // Os resumos que já existiam nos meses das despesas geradas são recalculados, sem ninguém chamar o POST do resumo.
+    @Test
+    void create_shouldRecalculateTheExistingSummariesOfTheMonthsItGenerates() {
+        var userId = registerUser("recorrente.recalcula@email.com");
+        monthlySummaryService.calculateOrRecalculate(userId, 10, 2026);
+        monthlySummaryService.calculateOrRecalculate(userId, 11, 2026);
+
+        recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+
+        assertEquals(0, BigDecimal.valueOf(21.90)
+            .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 10, 2026).summary().getTotalExpenses()));
+        assertEquals(0, BigDecimal.valueOf(21.90)
+            .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 11, 2026).summary().getTotalExpenses()));
+    }
+
     @Test
     void delete_shouldKeepTheGeneratedExpensesWithoutTheModel() {
         var userId = registerUser("recorrente.apagar@email.com");
