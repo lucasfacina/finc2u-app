@@ -115,6 +115,7 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
+            null,
             cardAccountId,
             null
         );
@@ -227,6 +228,7 @@ class ExpenseControllerTest {
             null,
             null,
             null,
+            null,
             cardAccountId,
             null
         );
@@ -254,8 +256,47 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
+            null,
             cardAccountId,
             "Nubank"
+        );
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithBoth)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void create_shouldPassTheCategoryNameToServiceAsCommand_whenOnlyTheNameIsInformed() throws Exception {
+        var requestWithCategoryName = new ExpenseRequest(
+            "Ração", BigDecimal.valueOf(80.0), ExpenseType.VARIABLE, TODAY, null,
+            PaymentStatus.PENDING, null, null, null, null, "Pets", cardAccountId, null
+        );
+        when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithCategoryName)))
+            .andExpect(status().isCreated());
+
+        var captor = ArgumentCaptor.forClass(ExpenseCommand.class);
+        verify(expenseService).create(eq(userId), captor.capture());
+        assertEquals("Pets", captor.getValue().categoryName());
+        assertNull(captor.getValue().categoryId());
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCategoryComesByIdAndByName() throws Exception {
+        var requestWithBoth = new ExpenseRequest(
+            "Ração", BigDecimal.valueOf(80.0), ExpenseType.VARIABLE, TODAY, null,
+            PaymentStatus.PENDING, null, null, null, categoryId, "Pets", cardAccountId, null
         );
 
         mockMvc.perform(post("/expenses")
@@ -281,6 +322,7 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
+            null,
             null,
             "Nubank"
         );
@@ -309,6 +351,7 @@ class ExpenseControllerTest {
             null,
             PaymentStatus.PENDING,
             null, // paidAt
+            null,
             null,
             null,
             null,
@@ -371,7 +414,7 @@ class ExpenseControllerTest {
     void create_shouldReturnBadRequest_whenInstallmentsAreInformedForNonParceledType() throws Exception {
         var variableWithInstallments = new ExpenseRequest(
             "Mercado", BigDecimal.valueOf(150.0), ExpenseType.VARIABLE, TODAY, null,
-            PaymentStatus.PENDING, null, 1, 3, categoryId, cardAccountId, null
+            PaymentStatus.PENDING, null, 1, 3, categoryId, null, cardAccountId, null
         );
 
         mockMvc.perform(post("/expenses")
@@ -427,6 +470,7 @@ class ExpenseControllerTest {
             null,
             null,
             categoryId,
+            null,
             cardAccountId,
             null
         );
@@ -636,7 +680,7 @@ class ExpenseControllerTest {
     void create_shouldPassPaidAtFromTheRequestToTheService() throws Exception {
         var paidRequest = new ExpenseRequest(
             "Mercado", BigDecimal.valueOf(150.0), ExpenseType.VARIABLE, TODAY.minusDays(2), null,
-            PaymentStatus.PAID, LocalDate.of(2026, 6, 14), null, null, categoryId, cardAccountId, null
+            PaymentStatus.PAID, LocalDate.of(2026, 6, 14), null, null, categoryId, null, cardAccountId, null
         );
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
             .thenReturn(expense);
@@ -723,7 +767,7 @@ class ExpenseControllerTest {
     private ExpenseRequest parceledRequest(Integer currentInstallment, Integer totalInstallment) {
         return new ExpenseRequest(
             "Compra parcelada", BigDecimal.valueOf(100.0), ExpenseType.PARCELED, TODAY, null,
-            PaymentStatus.PENDING, null, currentInstallment, totalInstallment, categoryId, cardAccountId, null
+            PaymentStatus.PENDING, null, currentInstallment, totalInstallment, categoryId, null, cardAccountId, null
         );
     }
 
