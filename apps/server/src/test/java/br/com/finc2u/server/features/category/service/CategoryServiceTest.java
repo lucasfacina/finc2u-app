@@ -285,4 +285,41 @@ class CategoryServiceTest {
         return captor.getValue();
     }
 
+    // ---- getOrCreateByName: a categoria pelo nome, criada na hora se ainda não existe ----
+
+    @Test
+    void getOrCreateByName_shouldReturnTheExistingCategory_ignoringCaseAndSurroundingSpaces() {
+        when(categoryRepository.findByUserIdAndNameIgnoreCase(userId, "alimentação"))
+            .thenReturn(Optional.of(category));
+
+        var result = categoryService.getOrCreateByName(userId, "  alimentação ");
+
+        assertSame(category, result);
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
+    @Test
+    void getOrCreateByName_shouldCreateTheCategoryOfTheUser_whenItDoesNotExistYet() {
+        when(categoryRepository.findByUserIdAndNameIgnoreCase(userId, "Pets"))
+            .thenReturn(Optional.empty());
+        when(userService.getById(userId)).thenReturn(user);
+        when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = categoryService.getOrCreateByName(userId, " Pets ");
+
+        assertEquals("Pets", result.getName());
+        assertSame(user, result.getUser());
+        verify(categoryRepository).save(result);
+    }
+
+    @Test
+    void getOrCreateByName_shouldThrowResourceNotFound_whenTheUserDoesNotExist() {
+        when(categoryRepository.findByUserIdAndNameIgnoreCase(userId, "Pets"))
+            .thenReturn(Optional.empty());
+        when(userService.getById(userId)).thenThrow(new ResourceNotFoundException("Usuário não encontrado"));
+
+        assertThrows(ResourceNotFoundException.class, () -> categoryService.getOrCreateByName(userId, "Pets"));
+        verify(categoryRepository, never()).save(any(Category.class));
+    }
+
 }
