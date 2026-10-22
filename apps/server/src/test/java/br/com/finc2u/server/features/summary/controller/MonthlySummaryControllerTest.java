@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,7 +79,7 @@ class MonthlySummaryControllerTest {
     @Test
     void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
+        when(monthlySummaryService.recalculateFrom(eq(userId), eq(YearMonth.of(YEAR, MONTH))))
             .thenReturn(new MonthlySummaryResult(summary, List.of(groceriesTotal), true));
 
         mockMvc.perform(post("/monthly-summary")
@@ -97,7 +98,7 @@ class MonthlySummaryControllerTest {
     @Test
     void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
         MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
-        when(monthlySummaryService.calculateOrRecalculate(eq(userId), eq(MONTH), eq(YEAR)))
+        when(monthlySummaryService.recalculateFrom(eq(userId), eq(YearMonth.of(YEAR, MONTH))))
             .thenReturn(new MonthlySummaryResult(summary, List.of(), false));
 
         mockMvc.perform(post("/monthly-summary")
