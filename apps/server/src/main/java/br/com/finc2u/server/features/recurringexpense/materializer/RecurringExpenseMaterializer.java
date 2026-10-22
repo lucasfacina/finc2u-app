@@ -23,7 +23,8 @@ import java.util.UUID;
  * Transforma o modelo recorrente em despesas reais, uma por mês (FIXED, PENDING). É idempotente: chamar de novo para o
  * mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco). Só gera de "este mês" em diante: os
  * meses passados não são recriados, senão apareceriam como despesas atrasadas que ninguém lançou. Um vencimento que o usuário
- * apagou de propósito (mês pulado) também não volta, nem no resumo nem pelo job.
+ * apagou de propósito (mês pulado) também não volta, nem no resumo nem pelo job. E o que já venceu não nasce atrasado: a
+ * assinatura vale a partir do próximo vencimento.
  */
 @Component
 @RequiredArgsConstructor
@@ -35,7 +36,8 @@ public class RecurringExpenseMaterializer {
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
-    // Devolve a despesa criada, ou vazio quando não havia o que criar (fora da vigência, mês passado, mês pulado ou já existente).
+    // Devolve a despesa criada, ou vazio quando não havia o que criar (fora da vigência, mês passado, vencimento já passado, mês pulado
+    // ou já existente).
     @Transactional
     public Optional<Expense> materialize(RecurringExpense recurringExpense, YearMonth month) {
         if (!recurringExpense.isActiveIn(month) || month.isBefore(YearMonth.now(clock))) {
@@ -43,6 +45,9 @@ public class RecurringExpenseMaterializer {
         }
 
         var dueDate = recurringExpense.dueDateIn(month);
+        if (dueDate.isBefore(LocalDate.now(clock))) {
+            return Optional.empty();
+        }
         if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
             return Optional.empty();
         }
