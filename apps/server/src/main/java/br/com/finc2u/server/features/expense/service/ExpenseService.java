@@ -5,6 +5,7 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import br.com.finc2u.server.features.expense.event.GeneratedExpenseDeletedEvent;
 import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
@@ -125,6 +126,9 @@ public class ExpenseService {
         Expense expense = getById(id);
         expenseRepository.delete(expense);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
+        if (expense.getRecurringExpenseId() != null) {
+            eventPublisher.publishEvent(new GeneratedExpenseDeletedEvent(expense.getRecurringExpenseId(), expense.getDueDate()));
+        }
     }
 
     @Transactional(readOnly = true)
