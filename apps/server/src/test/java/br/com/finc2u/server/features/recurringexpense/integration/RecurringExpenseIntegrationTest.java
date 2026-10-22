@@ -69,6 +69,18 @@ class RecurringExpenseIntegrationTest {
     @Autowired
     private RecurringExpenseSkipRepository skipRepository;
 
+    // Hoje é 21/10 e a assinatura vence no dia 5 de cada mês: a de outubro já venceu e não nasce atrasada; só a de novembro é criada.
+    @Test
+    void create_shouldNotGenerateTheCurrentMonth_whenItsDueDateAlreadyPassed() {
+        var userId = registerUser("recorrente.vencida@email.com");
+
+        recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null, 5), userId);
+
+        var instances = instancesOf(userId);
+        assertEquals(List.of(LocalDate.of(2026, 11, 5)), instances.stream().map(Expense::getDueDate).toList());
+        assertTrue(instances.stream().noneMatch(expense -> expense.isOverdue(TODAY)));
+    }
+
     @Test
     void create_shouldMaterializeTheCurrentAndTheNextMonth() {
         var userId = registerUser("recorrente.criar@email.com");
@@ -220,7 +232,11 @@ class RecurringExpenseIntegrationTest {
     }
 
     private RecurringExpenseCommand subscription(UUID userId, YearMonth startMonth, YearMonth endMonth) {
-        var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 25, startMonth, endMonth);
+        return subscription(userId, startMonth, endMonth, 25);
+    }
+
+    private RecurringExpenseCommand subscription(UUID userId, YearMonth startMonth, YearMonth endMonth, int dayOfMonth) {
+        var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), dayOfMonth, startMonth, endMonth);
         var categoryId = categoryService.getByUser(userId).getFirst().getId();
         return new RecurringExpenseCommand(model, categoryId, null);
     }
