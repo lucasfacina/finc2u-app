@@ -1,9 +1,9 @@
 package br.com.finc2u.server.features.expense.controller;
 
+import br.com.finc2u.server.features.expense.dto.ExpenseFilterRequest;
 import br.com.finc2u.server.features.expense.dto.ExpenseRequest;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.form.ExpenseResponse;
 import br.com.finc2u.server.features.expense.projection.FutureInstallmentProjection;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
@@ -47,9 +47,9 @@ public class ExpenseController {
     }
 
     @GetMapping("/filters")
-    public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid ExpenseFilter filter) {
+    public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid ExpenseFilterRequest filter) {
         var today = LocalDate.now(clock);
-        List<Expense> expenses = expenseService.getWithFilters(userId, filter);
+        List<Expense> expenses = expenseService.getWithFilters(userId, filter.toFilter());
         return ResponseEntity.ok(expenses.stream().map(expense -> ExpenseResponse.from(expense, today)).toList());
     }
 
