@@ -6,15 +6,18 @@ import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +34,9 @@ class ExtraIncomeServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ExtraIncomeService extraIncomeService;
@@ -176,6 +182,88 @@ class ExtraIncomeServiceTest {
             .thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.delete(extraIncomeId));
+    }
+
+    // ---- aviso ao resumo mensal (PeriodDataChangedEvent): o mês mais antigo afetado ----
+
+    @Test
+    void create_shouldPublishThePeriodOfTheDate() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(extraIncomeRepository.save(any(ExtraIncome.class)))
+            .thenReturn(extraIncome);
+
+        extraIncomeService.create(extraIncome, userId);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 5)));
+    }
+
+    @Test
+    void create_shouldNotPublish_whenTheUserDoesNotExist() {
+        when(userService.getById(userId))
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado"));
+
+        assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.create(extraIncome, userId));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void update_shouldPublishTheOlderMonth_whenTheDateMovesToAnEarlierMonth() {
+        updateMovingTheDate(LocalDate.of(2026, 3, 20));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 3)));
+    }
+
+    @Test
+    void update_shouldPublishTheOlderMonth_whenTheDateMovesToALaterMonth() {
+        updateMovingTheDate(LocalDate.of(2026, 8, 1));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 5)));
+    }
+
+    @Test
+    void update_shouldNotPublish_whenTheIncomeDoesNotExist() {
+        when(extraIncomeRepository.findById(extraIncomeId))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.update(extraIncomeId, extraIncome));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void delete_shouldPublishThePeriodOfTheDate() {
+        when(extraIncomeRepository.findById(extraIncomeId))
+            .thenReturn(Optional.of(extraIncome));
+
+        extraIncomeService.delete(extraIncomeId);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 5)));
+    }
+
+    @Test
+    void delete_shouldNotPublish_whenTheIncomeDoesNotExist() {
+        when(extraIncomeRepository.findById(extraIncomeId))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> extraIncomeService.delete(extraIncomeId));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    private void updateMovingTheDate(LocalDate newDate) {
+        var updates = ExtraIncome.builder()
+            .description("Freela site")
+            .value(BigDecimal.valueOf(800))
+            .date(newDate)
+            .build();
+        when(extraIncomeRepository.findById(extraIncomeId))
+            .thenReturn(Optional.of(extraIncome));
+        when(extraIncomeRepository.save(any(ExtraIncome.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        extraIncomeService.update(extraIncomeId, updates);
     }
 
 }
