@@ -140,6 +140,36 @@ class RecurringExpenseControllerTest {
     }
 
     @Test
+    void create_shouldPassTheCategoryNameToTheServiceAsACommand_whenOnlyTheNameIsInformed() throws Exception {
+        when(recurringExpenseService.create(any(RecurringExpenseCommand.class), eq(userId)))
+            .thenReturn(recurringExpense);
+
+        mockMvc.perform(post("/recurring-expenses")
+                .param("userId", userId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestWithCategoryName(null, "Pets"))))
+            .andExpect(status().isCreated());
+
+        verify(recurringExpenseService).create(argThat(command ->
+            command.categoryId() == null && "Pets".equals(command.categoryName())), eq(userId));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCategoryComesByIdAndByName() throws Exception {
+        assertCreateIsRejected(requestWithCategoryName(categoryId, "Pets"));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCategoryNameIsBlankAndThereIsNoId() throws Exception {
+        assertCreateIsRejected(requestWithCategoryName(null, "   "));
+    }
+
+    @Test
+    void create_shouldReturnBadRequest_whenCategoryNameIsLongerThan60Characters() throws Exception {
+        assertCreateIsRejected(requestWithCategoryName(null, "x".repeat(61)));
+    }
+
+    @Test
     void create_shouldReturnBadRequest_whenCategoryIsMissing() throws Exception {
         assertCreateIsRejected(request("Spotify", BigDecimal.TEN, 5, YearMonth.of(2026, 10), null, null, null));
     }
@@ -264,9 +294,13 @@ class RecurringExpenseControllerTest {
         return request("Spotify", BigDecimal.valueOf(21.90), 5, YearMonth.of(2026, 10), YearMonth.of(2027, 3), categoryId, null);
     }
 
+    private RecurringExpenseRequest requestWithCategoryName(UUID categoryId, String categoryName) {
+        return new RecurringExpenseRequest("Ração", BigDecimal.TEN, 5, YearMonth.of(2026, 10), null, categoryId, categoryName, null);
+    }
+
     private RecurringExpenseRequest request(String description, BigDecimal value, Integer dayOfMonth, YearMonth startMonth,
                                             YearMonth endMonth, UUID categoryId, UUID cardAccountId) {
-        return new RecurringExpenseRequest(description, value, dayOfMonth, startMonth, endMonth, categoryId, cardAccountId);
+        return new RecurringExpenseRequest(description, value, dayOfMonth, startMonth, endMonth, categoryId, null, cardAccountId);
     }
 
 }
