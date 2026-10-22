@@ -7,7 +7,9 @@ import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepos
 import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class SalaryHistoryService {
 
     private final SalaryHistoryRepository salaryHistoryRepository;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     @Transactional
@@ -34,7 +37,9 @@ public class SalaryHistoryService {
         }
         history.setUser(user);
 
-        return salaryHistoryRepository.save(history);
+        var saved = salaryHistoryRepository.save(history);
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(userId, history.getEffectiveFrom()));
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -87,6 +92,7 @@ public class SalaryHistoryService {
     @Transactional
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
         SalaryHistory salaryHistory = getById(id);
+        var previousEffectiveFrom = salaryHistory.getEffectiveFrom();
         salaryHistoryRepository
             .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
             .filter(conflict -> !conflict.getId().equals(id))
@@ -97,13 +103,17 @@ public class SalaryHistoryService {
         salaryHistory.setBaseSalary(historyData.getBaseSalary());
         salaryHistory.setEffectiveFrom(historyData.getEffectiveFrom());
 
-        return salaryHistoryRepository.save(salaryHistory);
+        var saved = salaryHistoryRepository.save(salaryHistory);
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(
+            salaryHistory.getUser().getId(), previousEffectiveFrom, salaryHistory.getEffectiveFrom()));
+        return saved;
     }
 
     @Transactional
     public void delete(UUID id) {
         SalaryHistory history = getById(id);
         salaryHistoryRepository.delete(history);
+        eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(history.getUser().getId(), history.getEffectiveFrom()));
     }
 
 }
