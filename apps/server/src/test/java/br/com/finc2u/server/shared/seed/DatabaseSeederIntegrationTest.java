@@ -24,8 +24,7 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 // Sobe o seed completo (o CommandLineRunner roda na subida do contexto) e o repete: é a "subida 2 vezes" do checklist.
 @SpringBootTest(properties = "app.seeders.enabled=true")
@@ -93,15 +92,26 @@ class DatabaseSeederIntegrationTest {
         assertTrue(expenses.stream().anyMatch(expense -> expense.isOverdue(TODAY)));
     }
 
+    // Hoje é 21/10: a Netflix vence no dia 15 de cada mês, então a de outubro já venceu e não nasce atrasada; vale a partir do próximo vencimento.
     @Test
-    void seed_shouldMaterializeTheRecurringExpensesOfTheCurrentAndTheNextMonth() {
+    void seed_shouldMaterializeTheRecurringExpensesFromTheNextDueDateOn() {
         var netflix = expenseRepository.findByUserId(user.getId()).stream()
             .filter(expense -> "Netflix".equals(expense.getDescription()))
             .map(Expense::getDueDate)
             .sorted()
             .toList();
 
-        assertEquals(List.of(LocalDate.of(2026, 10, 15), LocalDate.of(2026, 11, 15)), netflix);
+        assertEquals(List.of(LocalDate.of(2026, 11, 15)), netflix);
+    }
+
+    @Test
+    void seed_shouldNotGenerateAnyRecurringExpenseAlreadyOverdue() {
+        var generated = expenseRepository.findByUserId(user.getId()).stream()
+            .filter(expense -> expense.getRecurringExpenseId() != null)
+            .toList();
+
+        assertFalse(generated.isEmpty());
+        assertTrue(generated.stream().noneMatch(expense -> expense.isOverdue(TODAY)));
     }
 
     @Test
