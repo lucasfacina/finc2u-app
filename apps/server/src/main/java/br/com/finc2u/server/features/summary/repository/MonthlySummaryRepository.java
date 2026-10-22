@@ -2,6 +2,8 @@ package br.com.finc2u.server.features.summary.repository;
 
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,5 +16,14 @@ public interface MonthlySummaryRepository extends JpaRepository<MonthlySummary, 
     List<MonthlySummary> findByUserId(UUID userId);
 
     Optional<MonthlySummary> findByUserIdAndMonthAndYear(UUID userId, Integer month, Integer year);
+
+    // Os resumos que já existem do mês informado em diante, do mais antigo ao mais novo: a ordem da cascata do carryover.
+    @Query("""
+        select s from MonthlySummary s
+        where s.user.id = :userId
+          and (s.year > :year or (s.year = :year and s.month >= :month))
+        order by s.year asc, s.month asc
+        """)
+    List<MonthlySummary> findFromPeriod(@Param("userId") UUID userId, @Param("year") Integer year, @Param("month") Integer month);
 
 }
