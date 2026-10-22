@@ -134,7 +134,7 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
             .map(Category::getId)
             .findFirst()
             .orElseThrow();
-        return expenseService.create(userId, new ExpenseCommand(expense, null, null, category, null));
+        return expenseService.create(userId, new ExpenseCommand(expense, null, null, category, null, null));
     }
 
     private UUID registerUser(String email) {
