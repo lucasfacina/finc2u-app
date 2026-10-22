@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,10 +22,9 @@ public class MonthlySummaryController {
 
     @PostMapping
     public ResponseEntity<MonthlySummaryResponse> createOrUpdate(@Valid @RequestBody MonthlySummaryRequest monthlySummaryRequest) {
-        var result = monthlySummaryService.calculateOrRecalculate(
+        var result = monthlySummaryService.recalculateFrom(
             monthlySummaryRequest.userId(),
-            monthlySummaryRequest.month(),
-            monthlySummaryRequest.year()
+            YearMonth.of(monthlySummaryRequest.year(), monthlySummaryRequest.month())
         );
         return new ResponseEntity<>(MonthlySummaryResponse.from(result.summary(), result.categoryTotals()),
             result.created()
