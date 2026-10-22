@@ -42,7 +42,7 @@ public class ExpenseService {
         expense.setUser(userService.getById(userId));
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
-        expenseMapper.applyCategory(expense, command.categoryId());
+        expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
 
         var today = LocalDate.now(clock);
         var purchaseDate = command.purchaseDate() != null
@@ -93,7 +93,7 @@ public class ExpenseService {
         var previousDueDate = expense.getDueDate();
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
-        expenseMapper.applyCategory(expense, command.categoryId());
+        expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
         expenseMapper.applyEditableFields(expense, command.expense());
 
         if (command.purchaseDate() != null) {

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 /*
  * Dados de entrada de criação/edição de despesa, já desmembrados do request HTTP: a despesa transitória com os campos
- * editáveis e as referências (cartão por id ou nome, categoria por id). O service os recebe sem conhecer o DTO, e a assinatura não
+ * editáveis e as referências (cartão por id ou nome, categoria por id ou nome). O service os recebe sem conhecer o DTO, e a assinatura não
  * cresce a cada campo novo.
  */
 public record ExpenseCommand(
@@ -15,6 +15,7 @@ public record ExpenseCommand(
     UUID cardAccountId,
     String cardName,
     UUID categoryId,
+    String categoryName,
     LocalDate purchaseDate
 ) {
 }

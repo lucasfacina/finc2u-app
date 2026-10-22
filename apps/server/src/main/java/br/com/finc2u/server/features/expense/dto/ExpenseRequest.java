@@ -46,8 +46,13 @@ public record ExpenseRequest(
     @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Total de parcelas deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
     Integer totalInstallment,
 
-    @NotNull(message = "Categoria é obrigatória!")
+    // A categoria vem por id OU por nome (exatamente um dos dois).
     UUID categoryId,
+
+    // Alternativa ao categoryId; resolvido entre as categorias do próprio usuário (sem diferenciar maiúsculas de minúsculas) e criada na
+    // hora se ainda não existir
+    @Size(max = 60, message = "O nome da categoria deve conter no máximo 60 caracteres.")
+    String categoryName,
 
     // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
     UUID cardAccountId,
@@ -55,6 +60,22 @@ public record ExpenseRequest(
     // Opcional: alternativa ao cardAccountId; resolvido entre os cartões do próprio usuário (sem diferenciar maiúsculas de minúsculas)
     String cardName
 ) {
+
+    // A categoria é obrigatória: por id ou por nome.
+    @JsonIgnore
+    @AssertTrue(message = "Categoria é obrigatória: informe o categoryId ou o categoryName.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isCategoryInformed() {
+        return categoryId != null || (categoryName != null && !categoryName.isBlank());
+    }
+
+    // ...mas não pelos dois (consistência do próprio request).
+    @JsonIgnore
+    @AssertTrue(message = "Informe a categoria por id ou por nome, não pelos dois.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isCategoryReferenceValid() {
+        return categoryId == null || categoryName == null || categoryName.isBlank();
+    }
 
     // O cartão é informado por id ou por nome, nunca pelos dois (consistência do próprio request).
     @JsonIgnore
@@ -95,7 +116,7 @@ public record ExpenseRequest(
     }
 
     public ExpenseCommand toCommand() {
-        return new ExpenseCommand(toEntity(), cardAccountId(), cardName(), categoryId(), purchaseDate());
+        return new ExpenseCommand(toEntity(), cardAccountId(), cardName(), categoryId(), categoryName(), purchaseDate());
     }
 
 }

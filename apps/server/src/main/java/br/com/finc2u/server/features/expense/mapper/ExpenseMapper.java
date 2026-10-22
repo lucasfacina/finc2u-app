@@ -33,9 +33,13 @@ public class ExpenseMapper {
         }
     }
 
-    // Resolve e vincula a categoria do dono da despesa (obrigatória; categoria de outro usuário é tratada como inexistente).
-    public void applyCategory(Expense expense, UUID categoryId) {
-        expense.setCategory(categoryService.getByIdAndUser(categoryId, expense.getUser().getId()));
+    // Resolve e vincula a categoria do dono da despesa (obrigatória), por id ou por nome. Por id, categoria de outro usuário é tratada
+    // como inexistente; por nome, a categoria do usuário é criada na hora se ainda não existir.
+    public void applyCategory(Expense expense, UUID categoryId, String categoryName) {
+        var ownerId = expense.getUser().getId();
+        expense.setCategory(categoryId != null
+            ? categoryService.getByIdAndUser(categoryId, ownerId)
+            : categoryService.getOrCreateByName(ownerId, categoryName));
     }
 
     public void applyEditableFields(Expense target, Expense source) {
