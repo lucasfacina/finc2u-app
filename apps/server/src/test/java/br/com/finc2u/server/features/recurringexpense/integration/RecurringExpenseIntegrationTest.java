@@ -238,7 +238,7 @@ class RecurringExpenseIntegrationTest {
             .paymentStatus(PaymentStatus.PENDING)
             .build();
         var saved = expenseService.create(userId, new ExpenseCommand(launched, null, null,
-            categoryService.getByUser(userId).getFirst().getId(), null));
+            categoryService.getByUser(userId).getFirst().getId(), null, null));
 
         expenseService.delete(saved.getId());
 
@@ -307,7 +307,7 @@ class RecurringExpenseIntegrationTest {
     private RecurringExpenseCommand subscription(UUID userId, YearMonth startMonth, YearMonth endMonth, int dayOfMonth) {
         var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), dayOfMonth, startMonth, endMonth);
         var categoryId = categoryService.getByUser(userId).getFirst().getId();
-        return new RecurringExpenseCommand(model, categoryId, null);
+        return new RecurringExpenseCommand(model, categoryId, null, null);
     }
 
     private List<Expense> instancesOf(UUID userId) {
