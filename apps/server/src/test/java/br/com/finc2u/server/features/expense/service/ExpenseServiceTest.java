@@ -15,11 +15,13 @@ import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -48,6 +50,9 @@ class ExpenseServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Spy
     @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
@@ -303,7 +308,7 @@ class ExpenseServiceTest {
     @Test
     void deleteInstallmentGroup_shouldDeleteEveryInstallmentOfThePurchase() {
         var groupId = UUID.randomUUID();
-        var other = Expense.builder().description("Mercado 2/2").build();
+        var other = Expense.builder().description("Mercado 2/2").dueDate(TODAY.plusMonths(1)).user(user).build();
         when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
             .thenReturn(List.of(expense, other));
 
@@ -640,6 +645,168 @@ class ExpenseServiceTest {
 
         assertNotNull(response);
         assertEquals(1, response.size());
+    }
+
+    // ---- aviso ao resumo mensal (PeriodDataChangedEvent): sempre o mês mais antigo afetado ----
+
+    @Test
+    void create_shouldPublishThePeriodOfTheDueDate() {
+        expense.setDueDate(LocalDate.of(2026, 8, 20));
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenReturn(expense);
+
+        expenseService.create(userId, command(expense, cardAccountId, null));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 8)));
+    }
+
+    // A compra parcelada avisa uma vez só, a partir da parcela informada (as seguintes caem em meses posteriores).
+    @Test
+    void create_shouldPublishOnceFromTheInformedInstallment_whenParceled() {
+        expense.setDueDate(LocalDate.of(2026, 9, 5));
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(4);
+        expense.setTotalInstallment(10);
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.saveAll(any()))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.create(userId, command(expense, cardAccountId, null));
+
+        verify(eventPublisher, times(1)).publishEvent(any(PeriodDataChangedEvent.class));
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 9)));
+    }
+
+    @Test
+    void create_shouldNotPublish_whenTheCreationFails() {
+        cardAccount.setExpirationDate(LocalDate.of(2026, 5, 31));
+        when(userService.getById(userId))
+            .thenReturn(user);
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.create(userId, command(expense, cardAccountId, LocalDate.of(2026, 6, 1))));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void update_shouldPublishTheOlderMonth_whenTheDueDateMovesToAnEarlierMonth() {
+        updateMovingTheDueDate(LocalDate.of(2026, 8, 10), LocalDate.of(2026, 7, 10));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void update_shouldPublishTheOlderMonth_whenTheDueDateMovesToALaterMonth() {
+        updateMovingTheDueDate(LocalDate.of(2026, 7, 10), LocalDate.of(2026, 8, 10));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void update_shouldPublishTheSameMonth_whenTheDueDateStaysInTheMonth() {
+        updateMovingTheDueDate(LocalDate.of(2026, 7, 10), LocalDate.of(2026, 7, 25));
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void updateStatus_shouldPublishThePeriodOfTheDueDate() {
+        expense.setDueDate(LocalDate.of(2026, 7, 10));
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.updateStatus(expenseId, PaymentStatus.PAID, null);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void updateStatus_shouldNotPublish_whenThePaymentDateIsInTheFuture() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        assertThrows(BusinessException.class,
+            () -> expenseService.updateStatus(expenseId, PaymentStatus.PAID, TODAY.plusDays(1)));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void delete_shouldRemoveTheExpenseAndPublishItsPeriod() {
+        expense.setDueDate(LocalDate.of(2026, 7, 10));
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        expenseService.delete(expenseId);
+
+        verify(expenseRepository).delete(expense);
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+    }
+
+    @Test
+    void delete_shouldNotPublish_whenTheExpenseDoesNotExist() {
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> expenseService.delete(expenseId));
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    // Mesmo que a lista venha fora de ordem, o aviso parte da parcela mais antiga.
+    @Test
+    void deleteInstallmentGroup_shouldPublishFromTheEarliestInstallment() {
+        var groupId = UUID.randomUUID();
+        expense.setDueDate(LocalDate.of(2026, 10, 5));
+        var earlier = Expense.builder().description("Mercado 1/2").dueDate(LocalDate.of(2026, 8, 5)).user(user).build();
+        when(expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId))
+            .thenReturn(List.of(expense, earlier));
+
+        expenseService.deleteInstallmentGroup(groupId);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 8)));
+    }
+
+    // Quem chama é o próprio cálculo do resumo: avisar de lá seria recursão.
+    @Test
+    void createFromRecurrence_shouldNotPublish_toAvoidRecursionWithTheSummaryCalculation() {
+        var recurringExpense = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 25, YearMonth.of(2026, 8), null);
+        recurringExpense.setId(UUID.randomUUID());
+        recurringExpense.setUser(user);
+        recurringExpense.setCategory(Category.builder().name("Assinaturas").build());
+        var dueDate = LocalDate.of(2026, 10, 25);
+        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+            .thenReturn(false);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        expenseService.createFromRecurrence(recurringExpense, dueDate);
+
+        verifyNoInteractions(eventPublisher);
+    }
+
+    // O mapper (mock aqui) é quem troca o vencimento no update: o doAnswer faz o papel dele.
+    private void updateMovingTheDueDate(LocalDate previousDueDate, LocalDate newDueDate) {
+        expense.setDueDate(previousDueDate);
+        var updates = Expense.builder()
+            .dueDate(newDueDate)
+            .build();
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        doAnswer(invocation -> {
+            expense.setDueDate(newDueDate);
+            return null;
+        }).when(expenseMapper).applyEditableFields(expense, updates);
+
+        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, categoryId, null));
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
