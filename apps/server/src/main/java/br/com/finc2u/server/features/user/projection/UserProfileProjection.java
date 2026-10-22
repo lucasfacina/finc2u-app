@@ -1,8 +1,8 @@
 package br.com.finc2u.server.features.user.projection;
 
-import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.form.UserResponse;
+import br.com.finc2u.server.features.user.port.CurrentSalaryPort;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.springframework.stereotype.Component;
 
@@ -12,14 +12,15 @@ import java.util.Map;
 import java.util.UUID;
 
 /*
- * Monta o UserResponse com o salário vigente, que vive no SalaryHistory (não no User). Na listagem, busca o salário de
- * todos os usuários de uma vez, para não gerar uma consulta por usuário (N+1).
+ * Monta o UserResponse com o salário vigente, que vive no SalaryHistory (não no User) e chega pela porta CurrentSalaryPort,
+ * sem que o user conheça a feature do salário. Na listagem, busca o salário de todos os usuários de uma vez, para não gerar
+ * uma consulta por usuário (N+1).
  */
 @Component
-public record UserProfileProjection(UserService userService, SalaryHistoryService salaryHistoryService) {
+public record UserProfileProjection(UserService userService, CurrentSalaryPort currentSalaryPort) {
 
     public UserResponse toProfile(User user) {
-        var currentSalary = salaryHistoryService.getCurrentBaseSalary(user.getId())
+        var currentSalary = currentSalaryPort.getCurrentBaseSalary(user.getId())
             .orElse(null);
         return UserResponse.from(user, currentSalary);
     }
@@ -30,7 +31,7 @@ public record UserProfileProjection(UserService userService, SalaryHistoryServic
 
     public List<UserResponse> getProfiles() {
         var users = userService.getAll();
-        Map<UUID, BigDecimal> salaries = salaryHistoryService.getCurrentBaseSalaries(
+        Map<UUID, BigDecimal> salaries = currentSalaryPort.getCurrentBaseSalaries(
             users.stream()
                 .map(User::getId)
                 .toList());
