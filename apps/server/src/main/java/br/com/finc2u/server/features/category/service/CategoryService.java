@@ -51,6 +51,17 @@ public class CategoryService {
             .orElseThrow(() -> new ResourceNotFoundException("Categoria não encontrada com o ID: " + id));
     }
 
+    /*
+     * A categoria do usuário pelo nome (sem diferenciar maiúsculas de minúsculas); se ainda não existe, é criada na hora. Serve ao
+     * lançamento que informa a categoria por nome: cada pessoa tem as suas, e a que falta nasce no mesmo gesto.
+     */
+    @Transactional
+    public Category getOrCreateByName(UUID userId, String name) {
+        var trimmed = name.trim();
+        return categoryRepository.findByUserIdAndNameIgnoreCase(userId, trimmed)
+            .orElseGet(() -> create(Category.of(trimmed), userId));
+    }
+
     @Transactional(readOnly = true)
     public List<Category> getByUser(UUID userId) {
         userService.getById(userId);
