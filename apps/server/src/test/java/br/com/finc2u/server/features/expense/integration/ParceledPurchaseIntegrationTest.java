@@ -142,7 +142,7 @@ class ParceledPurchaseIntegrationTest {
             .totalInstallment(total)
             .build();
         var categoryId = categoryService.getByUser(userId).getFirst().getId();
-        return new ExpenseCommand(expense, null, null, categoryId, null);
+        return new ExpenseCommand(expense, null, null, categoryId, null, null);
     }
 
     private List<Expense> installmentsOf(UUID userId) {
