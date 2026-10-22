@@ -1,38 +1,42 @@
 package br.com.finc2u.server.shared.seed;
 
-import br.com.finc2u.server.features.card.entity.CardAccount;
-import br.com.finc2u.server.features.category.entity.Category;
-import br.com.finc2u.server.features.user.entity.User;
-import lombok.Getter;
-import lombok.Setter;
-
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@Getter
-@Setter
+/*
+ * A memória entre os seeders: o que um deixa persistido, os seguintes usam (os ids são UUID gerados no persist, não há ids
+ * fixos para referenciar). Genérico de propósito: guarda instâncias por tipo e chave sem conhecer nenhuma feature, então o
+ * shared não depende das features. Duas formas: uma instância por tipo (ex.: o usuário do seed) ou várias do mesmo tipo,
+ * cada uma com a sua chave natural (ex.: categorias e cartões pelo nome).
+ */
 public class SeedContext {
 
-    private User user;
+    // Chave da instância única de um tipo; quem guarda várias do mesmo tipo usa a chave natural de cada uma.
+    private static final String SINGLE = "#único";
 
-    private final Map<String, Category> categoriesByName = new LinkedHashMap<>();
+    private final Map<Class<?>, Map<String, Object>> instances = new HashMap<>();
 
-    public void putCategory(Category category) {
-        categoriesByName.put(category.getName(), category);
+    public <T> void put(Class<T> type, T instance) {
+        put(type, SINGLE, instance);
     }
 
-    public Category category(String name) {
-        return categoriesByName.get(name);
+    public <T> void put(Class<T> type, String key, T instance) {
+        instances.computeIfAbsent(type, ignored -> new LinkedHashMap<>()).put(key, instance);
     }
 
-    private final Map<String, CardAccount> cardsByName = new LinkedHashMap<>();
-
-    public void putCard(CardAccount card) {
-        cardsByName.put(card.getCardName(), card);
+    public <T> T get(Class<T> type) {
+        return get(type, SINGLE);
     }
 
-    public CardAccount card(String name) {
-        return cardsByName.get(name);
+    // Falha na hora, com mensagem clara, se o seeder anterior não guardou o que este precisa (em vez de devolver null).
+    public <T> T get(Class<T> type, String key) {
+        var instance = instances.getOrDefault(type, Map.of()).get(key);
+        if (instance == null) {
+            throw new IllegalStateException("O seed ainda não guardou " + type.getSimpleName()
+                + (SINGLE.equals(key) ? "" : " \"" + key + "\"") + ": confira a ordem dos seeders.");
+        }
+        return type.cast(instance);
     }
 
 }

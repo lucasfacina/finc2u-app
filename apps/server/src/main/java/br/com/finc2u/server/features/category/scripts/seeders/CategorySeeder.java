@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.category.scripts.seeders;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.category.enums.DefaultCategory;
 import br.com.finc2u.server.features.category.repository.CategoryRepository;
+import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +24,10 @@ public class CategorySeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        var user = context.getUser();
+        var user = context.get(User.class);
 
         var existingCategories = categoryRepository.findByUserIdOrderByNameAsc(user.getId());
-        existingCategories.forEach(context::putCategory);
+        existingCategories.forEach(category -> remember(context, category));
 
         var existingNames = existingCategories.stream().map(Category::getName).toList();
         var missingCategories = Arrays.stream(DefaultCategory.values())
@@ -39,7 +40,11 @@ public class CategorySeeder implements Seeder {
             })
             .toList();
 
-        categoryRepository.saveAll(missingCategories).forEach(context::putCategory);
+        categoryRepository.saveAll(missingCategories).forEach(category -> remember(context, category));
+    }
+
+    private void remember(SeedContext context, Category category) {
+        context.put(Category.class, category.getName(), category);
     }
 
 }

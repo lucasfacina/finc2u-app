@@ -27,7 +27,7 @@ public class UserSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        context.setUser(userRepository.findByEmail(SEED_EMAIL)
+        context.put(User.class, userRepository.findByEmail(SEED_EMAIL)
             .orElseGet(this::registerSeedUser));
     }
 

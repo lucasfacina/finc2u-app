@@ -1,10 +1,13 @@
 package br.com.finc2u.server.features.expense.scripts.seeders;
 
+import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.vo.InstallmentSchedule;
+import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +40,7 @@ public class ExpenseSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        if (expenseRepository.existsByUserId(context.getUser().getId())) {
+        if (expenseRepository.existsByUserId(context.get(User.class).getId())) {
             return;
         }
 
@@ -55,9 +58,9 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(nubankDue)
             .expenseType(ExpenseType.FIXED)
             .paymentStatus(PaymentStatus.PAID)
-            .user(context.getUser())
-            .cardAccount(context.card("Nubank"))
-            .category(context.category("Assinaturas"))
+            .user(context.get(User.class))
+            .cardAccount(context.get(CardAccount.class, "Nubank"))
+            .category(context.get(Category.class, "Assinaturas"))
             .build());
 
         // VARIABLE / PAID — em cartão, alimentação
@@ -67,9 +70,9 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(nubankDue)
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PAID)
-            .user(context.getUser())
-            .cardAccount(context.card("Nubank"))
-            .category(context.category("Alimentação"))
+            .user(context.get(User.class))
+            .cardAccount(context.get(CardAccount.class, "Nubank"))
+            .category(context.get(Category.class, "Alimentação"))
             .build());
 
         // PARCELED / PAID — parcela final (5/5) de uma compra que já terminou, lazer
@@ -81,9 +84,9 @@ public class ExpenseSeeder implements Seeder {
             .paymentStatus(PaymentStatus.PAID)
             .currentInstallment(5)
             .totalInstallment(5)
-            .user(context.getUser())
-            .cardAccount(context.card("Nubank"))
-            .category(context.category("Lazer"))
+            .user(context.get(User.class))
+            .cardAccount(context.get(CardAccount.class, "Nubank"))
+            .category(context.get(Category.class, "Lazer"))
             .build()));
 
         // PARCELED / PENDING — compra em curso (4/10): as parcelas 4..10 existem, uma por mês, no mesmo grupo
@@ -95,9 +98,9 @@ public class ExpenseSeeder implements Seeder {
             .paymentStatus(PaymentStatus.PENDING)
             .currentInstallment(4)
             .totalInstallment(10)
-            .user(context.getUser())
-            .cardAccount(context.card("Mercado Pago"))
-            .category(context.category("Lazer"))
+            .user(context.get(User.class))
+            .cardAccount(context.get(CardAccount.class, "Mercado Pago"))
+            .category(context.get(Category.class, "Lazer"))
             .build()));
 
         // VARIABLE / PAID — saúde, paga ontem (com a data real do pagamento)
@@ -108,9 +111,9 @@ public class ExpenseSeeder implements Seeder {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PAID)
             .paidAt(today.minusDays(1))
-            .user(context.getUser())
-            .cardAccount(context.card("Mercado Pago"))
-            .category(context.category("Saúde"))
+            .user(context.get(User.class))
+            .cardAccount(context.get(CardAccount.class, "Mercado Pago"))
+            .category(context.get(Category.class, "Saúde"))
             .build());
 
         // FIXED / PENDING — avulsa (sem cartão), transporte
@@ -120,8 +123,8 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(month.atDay(25))
             .expenseType(ExpenseType.FIXED)
             .paymentStatus(PaymentStatus.PENDING)
-            .user(context.getUser())
-            .category(context.category("Transporte"))
+            .user(context.get(User.class))
+            .category(context.get(Category.class, "Transporte"))
             .build());
 
         // VARIABLE / PENDING vencida — avulsa, moradia: sempre em atraso (venceu há 3 dias e ninguém marcou como paga)
@@ -131,8 +134,8 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(today.minusDays(3))
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
-            .user(context.getUser())
-            .category(context.category("Moradia"))
+            .user(context.get(User.class))
+            .category(context.get(Category.class, "Moradia"))
             .build());
 
         expenseRepository.saveAll(expenses);

@@ -1,8 +1,11 @@
 package br.com.finc2u.server.features.recurringexpense.scripts.seeders;
 
+import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +37,7 @@ public class RecurringExpenseSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        var existing = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.getUser().getId());
+        var existing = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId());
         var existingDescriptions = existing.stream()
             .map(RecurringExpense::getDescription)
             .toList();
@@ -53,19 +56,19 @@ public class RecurringExpenseSeeder implements Seeder {
 
         // Cobrada dia 5, antes do fechamento do cartão (dia 9): cai na fatura que vence no próprio mês (dia 15).
         var netflix = RecurringExpense.of("Netflix", new BigDecimal("20.90"), 5, currentMonth, null);
-        netflix.setCategory(context.category("Assinaturas"));
-        netflix.setCardAccount(context.card("Nubank"));
+        netflix.setCategory(context.get(Category.class, "Assinaturas"));
+        netflix.setCardAccount(context.get(CardAccount.class, "Nubank"));
 
         var vivo = RecurringExpense.of("Vivo", new BigDecimal("39.00"), 17, currentMonth, null);
-        vivo.setCategory(context.category("Assinaturas"));
+        vivo.setCategory(context.get(Category.class, "Assinaturas"));
 
         // Com mês de término: gera até lá e para.
         var gympass = RecurringExpense.of("Gympass", new BigDecimal("99.90"), 5, currentMonth, currentMonth.plusMonths(5));
-        gympass.setCategory(context.category("Saúde"));
-        gympass.setCardAccount(context.card("Mercado Pago"));
+        gympass.setCategory(context.get(Category.class, "Saúde"));
+        gympass.setCardAccount(context.get(CardAccount.class, "Mercado Pago"));
 
         var models = List.of(netflix, vivo, gympass);
-        models.forEach(model -> model.setUser(context.getUser()));
+        models.forEach(model -> model.setUser(context.get(User.class)));
         return models;
     }
 

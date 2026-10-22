@@ -24,18 +24,22 @@ public class CardSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        var user = context.getUser();
+        var user = context.get(User.class);
 
-        // Encontrar ou criar por item: cartão ausente é criado mesmo que os demais já existam (context.card nunca devolve null).
+        // Encontrar ou criar por item: cartão ausente é criado mesmo que os demais já existam (o contexto sempre fica com todos os cartões).
         var existingCards = cardAccountRepository.findByUserId(user.getId());
-        existingCards.forEach(context::putCard);
+        existingCards.forEach(card -> remember(context, card));
 
         var existingNames = existingCards.stream().map(CardAccount::getCardName).toList();
         var missingCards = seedCards(user).stream()
             .filter(card -> !existingNames.contains(card.getCardName()))
             .toList();
 
-        cardAccountRepository.saveAll(missingCards).forEach(context::putCard);
+        cardAccountRepository.saveAll(missingCards).forEach(card -> remember(context, card));
+    }
+
+    private void remember(SeedContext context, CardAccount card) {
+        context.put(CardAccount.class, card.getCardName(), card);
     }
 
     private List<CardAccount> seedCards(User user) {
