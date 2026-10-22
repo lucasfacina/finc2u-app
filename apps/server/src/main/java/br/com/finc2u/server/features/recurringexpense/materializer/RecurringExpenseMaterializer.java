@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.recurringexpense.materializer;
 
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
+import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Optional;
@@ -37,7 +39,7 @@ public class RecurringExpenseMaterializer {
             return Optional.empty();
         }
 
-        return expenseService.createFromRecurrence(recurringExpense, recurringExpense.dueDateIn(month));
+        return expenseService.createFromRecurrence(commandFor(recurringExpense, recurringExpense.dueDateIn(month)));
     }
 
     /*
@@ -69,6 +71,19 @@ public class RecurringExpenseMaterializer {
             materialize(recurringExpense, month.minusMonths(1));
             materialize(recurringExpense, month);
         });
+    }
+
+    // A feature expense não conhece o modelo: o VO leva só o que a despesa gerada precisa.
+    private RecurrenceExpenseCommand commandFor(RecurringExpense recurringExpense, LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(
+            recurringExpense.getId(),
+            recurringExpense.getDescription(),
+            recurringExpense.getValue(),
+            dueDate,
+            recurringExpense.getUser(),
+            recurringExpense.getCategory(),
+            recurringExpense.getCardAccount()
+        );
     }
 
 }

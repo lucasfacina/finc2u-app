@@ -44,7 +44,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
 
     // Apagar o modelo recorrente não apaga as despesas que ele gerou: elas ficam sem modelo.
     @Modifying
-    @Query("update Expense e set e.recurringExpense = null where e.recurringExpense.id = :recurringExpenseId")
+    @Query("update Expense e set e.recurringExpenseId = null where e.recurringExpenseId = :recurringExpenseId")
     void detachFromRecurringExpense(@Param("recurringExpenseId") UUID recurringExpenseId);
 
     // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.

@@ -11,7 +11,7 @@ import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.specification.ExpenseSpecification;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.expense.vo.InstallmentSchedule;
-import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -151,21 +151,21 @@ public class ExpenseService {
      * resumo mensal (PeriodDataChangedEvent): é chamado de dentro do cálculo dele, e avisar de lá seria recursão.
      */
     @Transactional
-    public Optional<Expense> createFromRecurrence(RecurringExpense recurringExpense, LocalDate dueDate) {
-        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
+    public Optional<Expense> createFromRecurrence(RecurrenceExpenseCommand command) {
+        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(command.recurringExpenseId(), command.dueDate())) {
             return Optional.empty();
         }
 
         return Optional.of(expenseRepository.save(Expense.builder()
-            .description(recurringExpense.getDescription())
-            .value(recurringExpense.getValue())
-            .dueDate(dueDate)
+            .description(command.description())
+            .value(command.value())
+            .dueDate(command.dueDate())
             .expenseType(ExpenseType.FIXED)
             .paymentStatus(PaymentStatus.PENDING)
-            .user(recurringExpense.getUser())
-            .cardAccount(recurringExpense.getCardAccount())
-            .category(recurringExpense.getCategory())
-            .recurringExpense(recurringExpense)
+            .user(command.user())
+            .cardAccount(command.cardAccount())
+            .category(command.category())
+            .recurringExpenseId(command.recurringExpenseId())
             .build()));
     }
 

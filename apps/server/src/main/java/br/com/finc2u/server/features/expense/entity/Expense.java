@@ -7,7 +7,6 @@ import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
-import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -61,8 +60,9 @@ public class Expense extends BaseModel {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private RecurringExpense recurringExpense;
+    // Id do modelo recorrente que gerou a despesa (nulo nas demais). Só o id, sem associação: a feature recurringexpense depende
+    // de expense, e o contrário fecharia um ciclo. O JPA não cria a FK; ela entra à mão na V1 do Flyway (Fase 14).
+    private UUID recurringExpenseId;
 
     /*
      * Resolve a data de vencimento da despesa:
