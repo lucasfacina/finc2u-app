@@ -1,9 +1,11 @@
 package br.com.finc2u.server.shared.seed;
 
+import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.repository.UserRepository;
@@ -15,6 +17,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -58,6 +61,12 @@ class DatabaseSeederIntegrationTest {
 
     @Autowired
     private MonthlySummaryService monthlySummaryService;
+
+    @Autowired
+    private SalaryHistoryService salaryHistoryService;
+
+    @Autowired
+    private CategoryService categoryService;
 
     private User user;
 
@@ -105,6 +114,17 @@ class DatabaseSeederIntegrationTest {
         assertTrue(installments.stream().anyMatch(expense -> YearMonth.from(expense.getDueDate()).equals(YearMonth.of(2026, 11))));
     }
 
+    // O usuário do seed é cadastrado pelo caminho de um cadastro real: o primeiro salário e as categorias padrão vêm dos listeners.
+    @Test
+    void seed_shouldRegisterTheUserLikeARealSignUp_withTheFirstSalaryAndTheDefaultCategories() {
+        var salaries = salaryHistoryService.getByUser(user.getId());
+
+        assertEquals(1, salaries.size());
+        assertEquals(0, new BigDecimal("3000.00").compareTo(salaries.getFirst().getBaseSalary()));
+        assertEquals(LocalDate.of(2026, 1, 1), salaries.getFirst().getEffectiveFrom());
+        assertEquals(8, categoryService.getByUser(user.getId()).size());
+    }
+
     @Test
     void seed_shouldBeIdempotent_whenItRunsAgainOnAPopulatedDatabase() {
         var expensesBefore = expenseRepository.findByUserId(user.getId()).size();
@@ -116,6 +136,8 @@ class DatabaseSeederIntegrationTest {
         assertEquals(expensesBefore, expenseRepository.findByUserId(user.getId()).size());
         assertEquals(extraIncomesBefore, extraIncomeRepository.findByUserId(user.getId()).size());
         assertEquals(modelsBefore, recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()).size());
+        assertEquals(1, salaryHistoryService.getByUser(user.getId()).size());
+        assertEquals(8, categoryService.getByUser(user.getId()).size());
     }
 
 }
