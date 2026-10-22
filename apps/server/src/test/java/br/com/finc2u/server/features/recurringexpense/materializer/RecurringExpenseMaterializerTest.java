@@ -372,6 +372,31 @@ class RecurringExpenseMaterializerTest {
         verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 5)));
     }
 
+    // ---- geração concorrente: o lock na linha do modelo vem antes de conferir o pulo e de criar ----
+
+    @Test
+    void materialize_shouldLockTheModelBeforeCheckingTheSkipAndCreating() {
+        materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        var inOrder = inOrder(recurringExpenseRepository, recurringExpenseSkipRepository, expenseService);
+        inOrder.verify(recurringExpenseRepository).findByIdForUpdate(recurringExpense.getId());
+        inOrder.verify(recurringExpenseSkipRepository).existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), LocalDate.of(2026, 10, 25));
+        inOrder.verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25)));
+    }
+
+    // Sem nada para criar não há por que travar a linha do modelo.
+    @Test
+    void materialize_shouldNotLockTheModel_whenThereIsNothingToCreate() {
+        recurringExpense.setStartMonth(LocalDate.of(2026, 11, 1));
+        materializer.materialize(recurringExpense, CURRENT_MONTH);
+        materializer.materialize(recurringExpense, YearMonth.of(2026, 9));
+        recurringExpense.setStartMonth(LocalDate.of(2026, 8, 1));
+        recurringExpense.setDayOfMonth(5);
+        materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        verifyNoInteractions(recurringExpenseRepository);
+    }
+
     // ---- mês pulado: o usuário apagou a despesa deste vencimento de propósito, e ela não volta ----
 
     @Test
