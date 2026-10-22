@@ -8,6 +8,7 @@ import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.features.recurringexpense.service.RecurringExpenseService;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
@@ -20,6 +21,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -29,6 +32,10 @@ import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -65,6 +72,12 @@ class RecurringExpenseIntegrationTest {
 
     @Autowired
     private ExpenseService expenseService;
+
+    @Autowired
+    private RecurringExpenseMaterializer materializer;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @Autowired
     private RecurringExpenseSkipRepository skipRepository;
@@ -130,6 +143,43 @@ class RecurringExpenseIntegrationTest {
 
         assertEquals(0, BigDecimal.ZERO.compareTo(december.getTotalExpenses()));
         assertEquals(2, instancesOf(userId).size());
+    }
+
+    /*
+     * Duas transações geram o mesmo mês do mesmo modelo ao mesmo tempo (o resumo e o job, por exemplo). A primeira cria a despesa e segura a
+     * transação aberta; a segunda tenta gerar enquanto isso. Sem o lock na linha do modelo, a segunda não vê a despesa ainda não gravada,
+     * tenta criar outra e estoura a unique (modelo + vencimento) quando a primeira confirma. Com o lock, ela espera, vê a despesa pronta
+     * e não cria nada: uma despesa só e nenhuma exceção.
+     */
+    @Test
+    void generateTheSameMonthConcurrently_shouldCreateOneExpenseAndFailNowhere() throws Exception {
+        var userId = registerUser("recorrente.concorrente@email.com");
+        var december = YearMonth.of(2026, 12);
+        var created = recurringExpenseService.create(subscription(userId, december, null), userId);
+        var model = recurringExpenseService.getById(created.getId());
+        var firstCreated = new CountDownLatch(1);
+        var secondStarted = new CountDownLatch(1);
+        var transactions = new TransactionTemplate(transactionManager);
+
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            Future<Boolean> first = pool.submit(() -> transactions.execute(status -> {
+                var createdByFirst = materializer.materialize(model, december).isPresent();
+                firstCreated.countDown();
+                await(secondStarted);
+                holdTheTransactionWhileTheSecondTries();
+                return createdByFirst;
+            }));
+            Future<Boolean> second = pool.submit(() -> {
+                firstCreated.await();
+                secondStarted.countDown();
+                return transactions.execute(status -> materializer.materialize(model, december).isPresent());
+            });
+
+            assertTrue(first.get(20, TimeUnit.SECONDS));
+            assertFalse(second.get(20, TimeUnit.SECONDS));
+        }
+
+        assertEquals(List.of(LocalDate.of(2026, 12, 25)), instancesOf(userId).stream().map(Expense::getDueDate).toList());
     }
 
     // Os resumos que já existiam nos meses das despesas geradas são recalculados, sem ninguém chamar o POST do resumo.
@@ -220,6 +270,25 @@ class RecurringExpenseIntegrationTest {
         assertEquals(2, instances.size());
         assertTrue(instances.stream().allMatch(expense -> expense.getRecurringExpenseId() == null));
         assertTrue(recurringExpenseService.getByUser(userId).isEmpty());
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    // Tempo para a segunda transação chegar ao ponto de gerar o mesmo mês enquanto a primeira ainda não confirmou.
+    private static void holdTheTransactionWhileTheSecondTries() {
+        try {
+            Thread.sleep(400);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(exception);
+        }
     }
 
     private UUID registerUser(String email) {
