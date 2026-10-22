@@ -146,7 +146,7 @@ public class ExpenseMapperTest {
         var expense = Expense.builder()
             .user(owner)
             .build();
-        expenseMapper.applyCategory(expense, categoryId);
+        expenseMapper.applyCategory(expense, categoryId, null);
 
         assertSame(category, expense.getCategory());
     }
@@ -164,8 +164,46 @@ public class ExpenseMapperTest {
             .user(owner)
             .build();
 
-        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCategory(expense, categoryId));
+        assertThrows(ResourceNotFoundException.class, () -> expenseMapper.applyCategory(expense, categoryId, null));
         assertNull(expense.getCategory());
+    }
+
+    // Por nome, a categoria do dono é resolvida (e criada na hora, se faltar) pelo CategoryService.
+    @Test
+    void applyCategory_shouldResolveOrCreateTheCategoryByName_whenOnlyTheNameIsInformed() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        var category = Category.of("Pets");
+        when(categoryService.getOrCreateByName(owner.getId(), "Pets"))
+            .thenReturn(category);
+
+        var expense = Expense.builder()
+            .user(owner)
+            .build();
+        expenseMapper.applyCategory(expense, null, "Pets");
+
+        assertSame(category, expense.getCategory());
+        verify(categoryService, never()).getByIdAndUser(any(), any());
+    }
+
+    @Test
+    void applyCategory_shouldUseTheId_whenBothComeAndNeverCreateAnything() {
+        var owner = User.builder()
+            .build();
+        owner.setId(UUID.randomUUID());
+        var categoryId = UUID.randomUUID();
+        var category = Category.of("Alimentação");
+        when(categoryService.getByIdAndUser(categoryId, owner.getId()))
+            .thenReturn(category);
+
+        var expense = Expense.builder()
+            .user(owner)
+            .build();
+        expenseMapper.applyCategory(expense, categoryId, "Pets");
+
+        assertSame(category, expense.getCategory());
+        verify(categoryService, never()).getOrCreateByName(any(), any());
     }
 
     @Test
