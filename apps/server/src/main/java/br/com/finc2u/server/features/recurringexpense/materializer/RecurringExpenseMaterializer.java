@@ -24,7 +24,8 @@ import java.util.UUID;
  * mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco). Só gera de "este mês" em diante: os
  * meses passados não são recriados, senão apareceriam como despesas atrasadas que ninguém lançou. Um vencimento que o usuário
  * apagou de propósito (mês pulado) também não volta, nem no resumo nem pelo job. E o que já venceu não nasce atrasado: a
- * assinatura vale a partir do próximo vencimento.
+ * assinatura vale a partir do próximo vencimento. Duas gerações simultâneas do mesmo modelo são serializadas por um lock na
+ * linha dele (a segunda espera e então vê a despesa já criada).
  */
 @Component
 @RequiredArgsConstructor
@@ -48,6 +49,11 @@ public class RecurringExpenseMaterializer {
         if (dueDate.isBefore(LocalDate.now(clock))) {
             return Optional.empty();
         }
+
+        // Serializa a geração do mesmo modelo: duas transações (o resumo e o job, por exemplo) esperam aqui uma pela outra, e a segunda
+        // já enxerga o que a primeira criou, em vez de estourar a unique de modelo + vencimento no commit.
+        recurringExpenseRepository.findByIdForUpdate(recurringExpense.getId());
+
         if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
             return Optional.empty();
         }
