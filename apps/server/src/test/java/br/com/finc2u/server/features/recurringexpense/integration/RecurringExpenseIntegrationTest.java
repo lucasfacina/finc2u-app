@@ -5,7 +5,10 @@ import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
+import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
+import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.features.recurringexpense.service.RecurringExpenseService;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
@@ -27,8 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 class RecurringExpenseIntegrationTest {
@@ -60,6 +62,12 @@ class RecurringExpenseIntegrationTest {
 
     @Autowired
     private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private ExpenseService expenseService;
+
+    @Autowired
+    private RecurringExpenseSkipRepository skipRepository;
 
     @Test
     void create_shouldMaterializeTheCurrentAndTheNextMonth() {
@@ -125,6 +133,52 @@ class RecurringExpenseIntegrationTest {
             .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 10, 2026).summary().getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(21.90)
             .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 11, 2026).summary().getTotalExpenses()));
+    }
+
+    // O usuário apagou a despesa de outubro que a assinatura gerou: o vencimento fica registrado como pulado.
+    @Test
+    void deleteGeneratedExpense_shouldRecordTheSkippedMonth() {
+        var userId = registerUser("recorrente.pulo@email.com");
+        var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        var october = instancesOf(userId).getFirst();
+
+        expenseService.delete(october.getId());
+
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 11, 25)));
+    }
+
+    @Test
+    void deleteExpenseLaunchedByTheUser_shouldNotRecordASkip() {
+        var userId = registerUser("recorrente.avulsa@email.com");
+        var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        var launched = Expense.builder()
+            .description("Mercado")
+            .value(BigDecimal.TEN)
+            .dueDate(LocalDate.of(2026, 10, 25))
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(PaymentStatus.PENDING)
+            .build();
+        var saved = expenseService.create(userId, new ExpenseCommand(launched, null, null,
+            categoryService.getByUser(userId).getFirst().getId(), null));
+
+        expenseService.delete(saved.getId());
+
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+    }
+
+    // Apagar o modelo apaga os pulos dele (a FK recusaria o contrário).
+    @Test
+    void deleteModel_shouldRemoveItsSkips() {
+        var userId = registerUser("recorrente.pulo.apagar@email.com");
+        var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        expenseService.delete(instancesOf(userId).getFirst().getId());
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+
+        recurringExpenseService.delete(model.getId());
+
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+        assertTrue(recurringExpenseService.getByUser(userId).isEmpty());
     }
 
     @Test
