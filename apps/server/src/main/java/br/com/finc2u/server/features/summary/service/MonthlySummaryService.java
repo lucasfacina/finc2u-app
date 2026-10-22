@@ -53,8 +53,7 @@ public class MonthlySummaryService {
      * nenhuma despesa. Grava também os totais por categoria (no recálculo, os antigos saem). Devolve se o resumo foi criado
      * agora ou recalculado. Calcula só o mês pedido: o carryover para os meses seguintes é do recalculateFrom.
      */
-    @Transactional
-    public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
+    private MonthlySummaryResult calculate(UUID userId, Integer month, Integer year) {
         User user = userService.getById(userId);
         MonthlyPeriod period = MonthlyPeriod.of(month, year);
 
@@ -91,6 +90,12 @@ public class MonthlySummaryService {
         return new MonthlySummaryResult(saved, categoryTotals, existing.isEmpty());
     }
 
+    // Um mês só, sem propagar o carryover (o recalculateFrom faz isso); a transação é deste ponto de entrada.
+    @Transactional
+    public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
+        return calculate(userId, month, year);
+    }
+
     /*
      * Calcula o mês pedido (criando o resumo se ele não existir) e, em ordem crescente, os resumos que já existem nos meses
      * seguintes: o remainingAmount de um mês é o cashBalance do próximo, então cada um lê o anterior já atualizado. Não cria
@@ -99,7 +104,7 @@ public class MonthlySummaryService {
      */
     @Transactional
     public MonthlySummaryResult recalculateFrom(UUID userId, YearMonth from) {
-        var result = calculateOrRecalculate(userId, from.getMonthValue(), from.getYear());
+        var result = calculate(userId, from.getMonthValue(), from.getYear());
         recalculateExistingFrom(userId, from.plusMonths(1));
         return result;
     }
@@ -132,7 +137,7 @@ public class MonthlySummaryService {
     // Só recalcula o que já existe, na ordem dos meses; a consulta antes de cada cálculo grava o que o mês anterior mudou.
     private void recalculateExistingFrom(UUID userId, YearMonth first) {
         monthlySummaryRepository.findFromPeriod(userId, first.getYear(), first.getMonthValue())
-            .forEach(summary -> calculateOrRecalculate(userId, summary.getMonth(), summary.getYear()));
+            .forEach(summary -> calculate(userId, summary.getMonth(), summary.getYear()));
     }
 
     private MonthlySummary findByPeriod(UUID userId, Integer month, Integer year) {
