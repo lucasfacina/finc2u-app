@@ -134,8 +134,13 @@ public class MonthlySummaryService {
         recalculateExistingFrom(userId, YearMonth.of(year, month).plusMonths(1));
     }
 
-    // Só recalcula o que já existe, na ordem dos meses; a consulta antes de cada cálculo grava o que o mês anterior mudou.
-    private void recalculateExistingFrom(UUID userId, YearMonth first) {
+    /*
+     * Recalcula, em ordem crescente, só os resumos que já existem do mês informado em diante (inclusive); nunca cria um. É o
+     * que o aviso de alteração de dados chama: quem não tem resumo não faz nada. A consulta antes de cada cálculo grava o
+     * que o mês anterior mudou.
+     */
+    @Transactional
+    public void recalculateExistingFrom(UUID userId, YearMonth first) {
         monthlySummaryRepository.findFromPeriod(userId, first.getYear(), first.getMonthValue())
             .forEach(summary -> calculate(userId, summary.getMonth(), summary.getYear()));
     }
