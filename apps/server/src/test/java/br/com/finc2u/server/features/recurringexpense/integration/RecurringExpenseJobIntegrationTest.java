@@ -6,6 +6,7 @@ import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.job.RecurringExpenseJob;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.summary.service.MonthlySummaryService;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,9 @@ class RecurringExpenseJobIntegrationTest {
     private RecurringExpenseJob recurringExpenseJob;
 
     @Autowired
+    private MonthlySummaryService monthlySummaryService;
+
+    @Autowired
     private ScheduledAnnotationBeanPostProcessor scheduledAnnotationBeanPostProcessor;
 
     // Sobe o contexto com o agendamento ligado: o cron e o fuso (SpEL do bean clock) precisam resolver para ele subir.
@@ -99,6 +103,19 @@ class RecurringExpenseJobIntegrationTest {
         recurringExpenseJob.materializeActiveRecurringExpenses();
 
         assertEquals(2, instancesOf(userId).size());
+    }
+
+    // O job é um gatilho de fundo: as despesas que ele gera entram nos resumos que já existem, sem ninguém pedir.
+    @Test
+    void job_shouldRecalculateTheExistingSummariesOfTheMonthsItGenerates() {
+        var userId = registerUser("job.resumo@email.com");
+        monthlySummaryService.calculateOrRecalculate(userId, 10, 2026);
+        saveModel(userId, "Spotify", YearMonth.of(2026, 8), null);
+
+        recurringExpenseJob.materializeActiveRecurringExpenses();
+
+        assertEquals(0, BigDecimal.valueOf(21.90)
+            .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 10, 2026).summary().getTotalExpenses()));
     }
 
     private UUID registerUser(String email) {
