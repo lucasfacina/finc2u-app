@@ -14,8 +14,7 @@ import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class ExpenseRequestTest {
 
@@ -74,11 +73,81 @@ class ExpenseRequestTest {
         assertEquals("Tipo de despesa é obrigatório!", messageOf(violations));
     }
 
+    // ---- categoria: por id ou por nome (exatamente um dos dois) ----
+
+    @Test
+    void shouldBeValid_whenTheCategoryComesOnlyByName() {
+        assertTrue(validateCategory(null, "Pets").isEmpty());
+    }
+
+    @Test
+    void shouldBeValid_whenTheCategoryComesOnlyById() {
+        assertTrue(validateCategory(UUID.randomUUID(), null).isEmpty());
+    }
+
+    @Test
+    void shouldTreatABlankCategoryNameAsAbsent_whenTheIdComes() {
+        assertTrue(validateCategory(UUID.randomUUID(), "   ").isEmpty());
+    }
+
+    @Test
+    void shouldBeInvalid_whenNoCategoryIsInformed() {
+        var violations = validateCategory(null, null);
+
+        assertEquals(1, violations.size());
+        assertEquals("Categoria é obrigatória: informe o categoryId ou o categoryName.", messageOf(violations));
+    }
+
+    @Test
+    void shouldBeInvalid_whenTheCategoryNameIsOnlyBlank() {
+        var violations = validateCategory(null, "  ");
+
+        assertEquals(1, violations.size());
+        assertEquals("Categoria é obrigatória: informe o categoryId ou o categoryName.", messageOf(violations));
+    }
+
+    @Test
+    void shouldBeInvalid_whenTheCategoryComesByIdAndByName() {
+        var violations = validateCategory(UUID.randomUUID(), "Pets");
+
+        assertEquals(1, violations.size());
+        assertEquals("Informe a categoria por id ou por nome, não pelos dois.", messageOf(violations));
+    }
+
+    @Test
+    void shouldBeInvalid_whenTheCategoryNameIsLongerThan60Characters() {
+        var violations = validateCategory(null, "x".repeat(61));
+
+        assertEquals(1, violations.size());
+        assertEquals("O nome da categoria deve conter no máximo 60 caracteres.", messageOf(violations));
+    }
+
+    @Test
+    void toCommand_shouldCarryTheCategoryName() {
+        var request = requestWithCategory(null, "Pets");
+
+        var command = request.toCommand();
+
+        assertEquals("Pets", command.categoryName());
+        assertNull(command.categoryId());
+    }
+
+    private Set<ConstraintViolation<ExpenseRequest>> validateCategory(UUID categoryId, String categoryName) {
+        return VALIDATOR.validate(requestWithCategory(categoryId, categoryName));
+    }
+
+    private ExpenseRequest requestWithCategory(UUID categoryId, String categoryName) {
+        return new ExpenseRequest(
+            "Compra", BigDecimal.valueOf(100), ExpenseType.VARIABLE, LocalDate.of(2026, 6, 20), null,
+            PaymentStatus.PENDING, null, null, null, categoryId, categoryName, null, null
+        );
+    }
+
     private Set<ConstraintViolation<ExpenseRequest>> validate(ExpenseType type, Integer currentInstallment,
                                                               Integer totalInstallment) {
         var request = new ExpenseRequest(
             "Compra", BigDecimal.valueOf(100), type, LocalDate.of(2026, 6, 20), null,
-            PaymentStatus.PENDING, null, currentInstallment, totalInstallment, UUID.randomUUID(), null, null
+            PaymentStatus.PENDING, null, currentInstallment, totalInstallment, UUID.randomUUID(), null, null, null
         );
         return VALIDATOR.validate(request);
     }
