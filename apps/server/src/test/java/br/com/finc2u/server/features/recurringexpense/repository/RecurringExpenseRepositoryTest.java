@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -140,6 +141,24 @@ class RecurringExpenseRepositoryTest {
 
         assertEquals(MODELS, models.size());
         assertEquals(LIST_STATEMENTS, statistics.getPrepareStatementCount());
+    }
+
+    // A linha do modelo fica travada até o fim da transação: quem gera as despesas dele espera pela outra transação.
+    @Test
+    void findByIdForUpdate_shouldReturnTheModelLockedForWriting() {
+        var model = persistModel("Spotify", ana, persistCategory("Assinaturas", ana), null);
+        entityManager.flush();
+        entityManager.clear();
+
+        var found = recurringExpenseRepository.findByIdForUpdate(model.getId()).orElseThrow();
+
+        assertEquals(model.getId(), found.getId());
+        assertEquals(LockModeType.PESSIMISTIC_WRITE, entityManager.getLockMode(found));
+    }
+
+    @Test
+    void findByIdForUpdate_shouldBeEmpty_whenTheModelDoesNotExist() {
+        assertTrue(recurringExpenseRepository.findByIdForUpdate(java.util.UUID.randomUUID()).isEmpty());
     }
 
     @Test
