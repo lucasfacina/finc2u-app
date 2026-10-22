@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,9 @@ class RecurringExpenseMaterializerTest {
 
     @Mock
     private RecurringExpenseRepository recurringExpenseRepository;
+
+    @Mock
+    private RecurringExpenseSkipRepository recurringExpenseSkipRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -296,6 +300,83 @@ class RecurringExpenseMaterializerTest {
         materializer.materializeForUser(user.getId(), YearMonth.of(2026, 11));
 
         verifyNoInteractions(eventPublisher);
+    }
+
+    // ---- mês pulado: o usuário apagou a despesa deste vencimento de propósito, e ela não volta ----
+
+    @Test
+    void materialize_shouldNotCreateAnything_whenTheDueDateWasSkipped() {
+        skipped(LocalDate.of(2026, 10, 25));
+
+        var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        assertTrue(created.isEmpty());
+        verifyNoInteractions(expenseService);
+    }
+
+    // Com cartão o vencimento segue a fatura: o pulo é conferido na data real do vencimento, não no dia do modelo.
+    @Test
+    void materialize_shouldCheckTheSkipOnTheInvoiceDueDate_whenThereIsACard() {
+        recurringExpense.setCardAccount(CardAccount.builder()
+            .cardName("Nubank")
+            .closingDate(3)
+            .dueDate(10)
+            .build());
+        skipped(LocalDate.of(2026, 11, 10));
+
+        var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        assertTrue(created.isEmpty());
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void materialize_shouldStillCreateTheOtherMonths_whenOnlyOneDueDateWasSkipped() {
+        skipped(LocalDate.of(2026, 10, 25));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(expenseService, never()).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
+    }
+
+    // O mês corrente foi pulado e o seguinte é criado: o aviso ao resumo parte do mês do que foi de fato criado.
+    @Test
+    void materializeUpcoming_shouldPublishFromTheNextMonth_whenTheCurrentOneWasSkipped() {
+        skipped(LocalDate.of(2026, 10, 25));
+        createdOn(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(user.getId(), YearMonth.of(2026, 11)));
+    }
+
+    @Test
+    void materializeUpcoming_shouldNotPublish_whenBothMonthsWereSkipped() {
+        skipped(LocalDate.of(2026, 10, 25));
+        skipped(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verifyNoInteractions(expenseService, eventPublisher);
+    }
+
+    @Test
+    void materializeForUser_shouldNotRecreateTheSkippedMonth() {
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+            .thenReturn(List.of(recurringExpense));
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), LocalDate.of(2026, 10, 25)))
+            .thenReturn(false);
+        skipped(LocalDate.of(2026, 11, 25));
+
+        materializer.materializeForUser(user.getId(), YearMonth.of(2026, 11));
+
+        verify(expenseService, never()).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
+    }
+
+    private void skipped(LocalDate dueDate) {
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+            .thenReturn(true);
     }
 
     // O VO que o materializer entrega ao ExpenseService, campo a campo: o expense não conhece o modelo, só estes dados.
