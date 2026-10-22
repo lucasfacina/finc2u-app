@@ -12,6 +12,7 @@ import br.com.finc2u.server.features.expense.filter.ExpenseFilter;
 import br.com.finc2u.server.features.expense.mapper.ExpenseMapper;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
+import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -499,7 +500,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var created = expenseService.createFromRecurrence(recurringExpense, dueDate).orElseThrow();
+        var created = expenseService.createFromRecurrence(recurrenceCommand(recurringExpense, dueDate)).orElseThrow();
 
         assertEquals("Spotify", created.getDescription());
         assertEquals(BigDecimal.valueOf(21.90), created.getValue());
@@ -510,7 +511,7 @@ class ExpenseServiceTest {
         assertSame(user, created.getUser());
         assertSame(category, created.getCategory());
         assertSame(cardAccount, created.getCardAccount());
-        assertSame(recurringExpense, created.getRecurringExpense());
+        assertEquals(recurringExpense.getId(), created.getRecurringExpenseId());
     }
 
     // Rodar duas vezes não duplica: a despesa do modelo naquele vencimento já existe.
@@ -522,7 +523,7 @@ class ExpenseServiceTest {
         when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
             .thenReturn(true);
 
-        var created = expenseService.createFromRecurrence(recurringExpense, dueDate);
+        var created = expenseService.createFromRecurrence(recurrenceCommand(recurringExpense, dueDate));
 
         assertTrue(created.isEmpty());
         verify(expenseRepository, never()).save(any(Expense.class));
@@ -786,7 +787,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        expenseService.createFromRecurrence(recurringExpense, dueDate);
+        expenseService.createFromRecurrence(recurrenceCommand(recurringExpense, dueDate));
 
         verifyNoInteractions(eventPublisher);
     }
@@ -807,6 +808,12 @@ class ExpenseServiceTest {
         }).when(expenseMapper).applyEditableFields(expense, updates);
 
         expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, categoryId, null));
+    }
+
+    // Monta o VO como o materializer faz: a feature expense recebe os dados do modelo, não o modelo.
+    private RecurrenceExpenseCommand recurrenceCommand(RecurringExpense model, LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(model.getId(), model.getDescription(), model.getValue(), dueDate, model.getUser(),
+            model.getCategory(), model.getCardAccount());
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
