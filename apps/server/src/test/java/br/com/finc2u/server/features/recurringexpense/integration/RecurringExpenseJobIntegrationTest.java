@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.recurringexpense.integration;
 import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.job.RecurringExpenseJob;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
@@ -60,6 +61,9 @@ class RecurringExpenseJobIntegrationTest {
     private ExpenseRepository expenseRepository;
 
     @Autowired
+    private ExpenseService expenseService;
+
+    @Autowired
     private RecurringExpenseJob recurringExpenseJob;
 
     @Autowired
@@ -103,6 +107,19 @@ class RecurringExpenseJobIntegrationTest {
         recurringExpenseJob.materializeActiveRecurringExpenses();
 
         assertEquals(2, instancesOf(userId).size());
+    }
+
+    // O usuário apagou a despesa de outubro: o job do mês seguinte não a recria, e a de novembro continua valendo.
+    @Test
+    void job_shouldNotRecreateTheMonthTheUserDeleted() {
+        var userId = registerUser("job.pulo@email.com");
+        saveModel(userId, "Spotify", YearMonth.of(2026, 8), null);
+        recurringExpenseJob.materializeActiveRecurringExpenses();
+        expenseService.delete(instancesOf(userId).getFirst().getId());
+
+        recurringExpenseJob.materializeActiveRecurringExpenses();
+
+        assertEquals(List.of(LocalDate.of(2026, 11, 25)), instancesOf(userId).stream().map(Expense::getDueDate).toList());
     }
 
     // O job é um gatilho de fundo: as despesas que ele gera entram nos resumos que já existem, sem ninguém pedir.
