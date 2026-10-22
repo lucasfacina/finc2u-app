@@ -60,16 +60,16 @@ class RecurringExpenseSeederTest {
         nubank = CardAccount.builder().cardName("Nubank").build();
         mercadoPago = CardAccount.builder().cardName("Mercado Pago").build();
         context = new SeedContext();
-        context.setUser(user);
-        context.putCard(nubank);
-        context.putCard(mercadoPago);
-        List.of("Assinaturas", "Saúde").forEach(name -> context.putCategory(Category.of(name)));
+        context.put(User.class, user);
+        context.put(CardAccount.class, nubank.getCardName(), nubank);
+        context.put(CardAccount.class, mercadoPago.getCardName(), mercadoPago);
+        List.of("Assinaturas", "Saúde").forEach(name -> context.put(Category.class, name, Category.of(name)));
         seeder = new RecurringExpenseSeeder(recurringExpenseRepository, recurringExpenseMaterializer, clock);
     }
 
     @Test
     void seed_shouldCreateTheModelsStartingInTheMonthOfTheClock() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.getUser().getId()))
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -78,12 +78,12 @@ class RecurringExpenseSeederTest {
         var models = modelsCaptor.getValue();
         assertEquals(List.of("Netflix", "Vivo", "Gympass"), models.stream().map(RecurringExpense::getDescription).toList());
         assertTrue(models.stream().allMatch(model -> LocalDate.of(2026, 10, 1).equals(model.getStartMonth())));
-        assertTrue(models.stream().allMatch(model -> model.getUser() == context.getUser()));
+        assertTrue(models.stream().allMatch(model -> model.getUser() == context.get(User.class)));
     }
 
     @Test
     void seed_shouldCoverWithAndWithoutCardAndWithAndWithoutEndMonth() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.getUser().getId()))
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -99,7 +99,7 @@ class RecurringExpenseSeederTest {
 
     @Test
     void seed_shouldMaterializeTheUpcomingMonthsOfEveryModel() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.getUser().getId()))
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -111,7 +111,7 @@ class RecurringExpenseSeederTest {
     @Test
     void seed_shouldNotRecreateAnExistingModel_butMaterializeItAgain() {
         var existing = RecurringExpense.of("Netflix", new BigDecimal("20.90"), 15, YearMonth.of(2026, 9), null);
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.getUser().getId()))
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
             .thenReturn(List.of(existing));
 
         seeder.seed(context);
