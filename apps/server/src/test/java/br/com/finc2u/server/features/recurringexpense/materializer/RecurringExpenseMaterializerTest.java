@@ -4,6 +4,7 @@ import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
+import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.user.entity.User;
@@ -26,8 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -77,7 +77,7 @@ class RecurringExpenseMaterializerTest {
     void materialize_shouldAskTheExpenseServiceForTheExpenseOfTheDueDateOfTheMonth() {
         var expense = Expense.builder()
             .build();
-        when(expenseService.createFromRecurrence(recurringExpense, LocalDate.of(2026, 10, 25)))
+        when(expenseService.createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25))))
             .thenReturn(Optional.of(expense));
 
         var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
@@ -85,10 +85,33 @@ class RecurringExpenseMaterializerTest {
         assertSame(expense, created.orElseThrow());
     }
 
+    @Test
+    void materialize_shouldHandTheExpenseServiceTheDataOfTheModelAndNotTheModelItself() {
+        var card = CardAccount.builder()
+            .cardName("Nubank")
+            .closingDate(3)
+            .dueDate(10)
+            .build();
+        recurringExpense.setCardAccount(card);
+        var captor = org.mockito.ArgumentCaptor.forClass(RecurrenceExpenseCommand.class);
+
+        materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        verify(expenseService).createFromRecurrence(captor.capture());
+        var command = captor.getValue();
+        assertEquals(recurringExpense.getId(), command.recurringExpenseId());
+        assertEquals("Spotify", command.description());
+        assertEquals(BigDecimal.valueOf(21.90), command.value());
+        assertEquals(LocalDate.of(2026, 11, 10), command.dueDate());
+        assertSame(user, command.user());
+        assertSame(category, command.category());
+        assertSame(card, command.cardAccount());
+    }
+
     // Rodar duas vezes não duplica: na segunda, o service diz que a despesa do vencimento já existe.
     @Test
     void materialize_shouldReturnEmpty_whenTheExpenseOfTheDueDateAlreadyExists() {
-        when(expenseService.createFromRecurrence(recurringExpense, LocalDate.of(2026, 10, 25)))
+        when(expenseService.createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25))))
             .thenReturn(Optional.empty());
 
         var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
@@ -106,7 +129,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materialize(recurringExpense, CURRENT_MONTH);
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 11, 10));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 10)));
     }
 
     @Test
@@ -115,7 +138,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materialize(recurringExpense, YearMonth.of(2026, 11));
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 11, 30));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 30)));
     }
 
     @Test
@@ -144,7 +167,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materialize(recurringExpense, YearMonth.of(2026, 11));
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 11, 25));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
     }
 
     // Sem retroativo: o mês passado não vira despesa atrasada que ninguém lançou.
@@ -160,8 +183,8 @@ class RecurringExpenseMaterializerTest {
     void materializeUpcoming_shouldCreateTheCurrentAndTheNextMonth() {
         materializer.materializeUpcoming(recurringExpense);
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 10, 25));
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 11, 25));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
         verifyNoMoreInteractions(expenseService);
     }
 
@@ -171,7 +194,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materializeUpcoming(recurringExpense);
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2026, 11, 25));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
         verifyNoMoreInteractions(expenseService);
     }
 
@@ -187,10 +210,10 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materializeForUser(user.getId(), YearMonth.of(2027, 3));
 
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2027, 2, 25));
-        verify(expenseService).createFromRecurrence(recurringExpense, LocalDate.of(2027, 3, 25));
-        verify(expenseService).createFromRecurrence(other, LocalDate.of(2027, 2, 5));
-        verify(expenseService).createFromRecurrence(other, LocalDate.of(2027, 3, 5));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2027, 2, 25)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2027, 3, 25)));
+        verify(expenseService).createFromRecurrence(commandFor(other, LocalDate.of(2027, 2, 5)));
+        verify(expenseService).createFromRecurrence(commandFor(other, LocalDate.of(2027, 3, 5)));
         verifyNoMoreInteractions(expenseService);
     }
 
@@ -201,7 +224,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materializeForUser(user.getId(), YearMonth.of(2026, 9));
 
-        verify(expenseService, never()).createFromRecurrence(any(), any());
+        verify(expenseService, never()).createFromRecurrence(any());
     }
 
     // ---- aviso ao resumo mensal (PeriodDataChangedEvent): só quando alguma despesa foi criada ----
@@ -220,7 +243,7 @@ class RecurringExpenseMaterializerTest {
     // O mês corrente já tinha a despesa (idempotência): só o seguinte foi criado, e o aviso parte dele.
     @Test
     void materializeUpcoming_shouldPublishFromTheNextMonth_whenOnlyTheNextOneWasCreated() {
-        when(expenseService.createFromRecurrence(recurringExpense, LocalDate.of(2026, 10, 25)))
+        when(expenseService.createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25))))
             .thenReturn(Optional.empty());
         createdOn(LocalDate.of(2026, 11, 25));
 
@@ -275,8 +298,14 @@ class RecurringExpenseMaterializerTest {
         verifyNoInteractions(eventPublisher);
     }
 
+    // O VO que o materializer entrega ao ExpenseService, campo a campo: o expense não conhece o modelo, só estes dados.
+    private RecurrenceExpenseCommand commandFor(RecurringExpense model, LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(model.getId(), model.getDescription(), model.getValue(), dueDate, model.getUser(),
+            model.getCategory(), model.getCardAccount());
+    }
+
     private void createdOn(LocalDate dueDate) {
-        when(expenseService.createFromRecurrence(recurringExpense, dueDate))
+        when(expenseService.createFromRecurrence(commandFor(recurringExpense, dueDate)))
             .thenReturn(Optional.of(Expense.builder().dueDate(dueDate).build()));
     }
 
