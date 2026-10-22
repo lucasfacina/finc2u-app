@@ -72,7 +72,7 @@ class RecurringExpenseIntegrationTest {
             instances.stream().map(Expense::getDueDate).toList());
         assertTrue(instances.stream().allMatch(expense -> expense.getExpenseType() == ExpenseType.FIXED
             && expense.getPaymentStatus() == PaymentStatus.PENDING
-            && model.getId().equals(expense.getRecurringExpense().getId())));
+            && model.getId().equals(expense.getRecurringExpenseId())));
     }
 
     // B1: a assinatura aparece no resumo de um mês futuro, e recalcular de novo não duplica nada.
@@ -136,7 +136,7 @@ class RecurringExpenseIntegrationTest {
 
         var instances = instancesOf(userId);
         assertEquals(2, instances.size());
-        assertTrue(instances.stream().allMatch(expense -> expense.getRecurringExpense() == null));
+        assertTrue(instances.stream().allMatch(expense -> expense.getRecurringExpenseId() == null));
         assertTrue(recurringExpenseService.getByUser(userId).isEmpty());
     }
 
