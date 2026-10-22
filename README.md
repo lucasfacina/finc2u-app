@@ -267,7 +267,8 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   vencimento segue a fatura em que a compra (no `dayOfMonth`) cai.
 - **Quando as despesas são geradas:** ao criar o modelo (mês corrente e seguinte), ao calcular o resumo de um mês
   (`POST /monthly-summary`) e por um **job mensal** (dia 1, 03:00), ligado por `app.scheduling.enabled`
-  (`true` em dev; desligado nos testes). Meses anteriores ao corrente nunca são gerados.
+  (`true` em dev; desligado nos testes). Meses anteriores ao corrente nunca são gerados, e a despesa que já venceria
+  **antes de hoje** também não: a assinatura vale a partir do próximo vencimento (não nasce atrasada).
 - **Editar** o modelo vale daqui para frente (as despesas já geradas não mudam). **Apagar** o modelo mantém as despesas
   já geradas. Para parar de gerar, defina o `endMonth`.
 
