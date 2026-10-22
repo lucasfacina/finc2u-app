@@ -565,6 +565,125 @@ class MonthlySummaryServiceTest {
         verify(monthlySummaryRepository, never()).delete(any(MonthlySummary.class));
     }
 
+    // ---- recalculateFrom: o mês pedido e, em ordem, os resumos existentes seguintes ----
+
+    private void stubServices() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseService.getByUserAndPeriod(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+            .thenReturn(List.of());
+        when(extraIncomeService.getByUserAndPeriod(eq(userId), any(LocalDate.class), any(LocalDate.class)))
+            .thenReturn(List.of());
+        when(monthlySummaryRepository.save(any(MonthlySummary.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(salaryHistoryService.getBaseSalaryForPeriod(eq(userId), any(LocalDate.class)))
+            .thenReturn(BigDecimal.valueOf(3000));
+    }
+
+    @Test
+    void recalculateFrom_shouldCalculateTheRequestedMonth_andReturnItsResult() {
+        stubServices();
+
+        var result = monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, MONTH));
+
+        assertTrue(result.created());
+        assertEquals(MONTH, result.summary().getMonth());
+        verify(monthlySummaryRepository).findFromPeriod(userId, YEAR, MONTH + 1);
+    }
+
+    // A cascata começa no mês seguinte também na virada do ano.
+    @Test
+    void recalculateFrom_shouldLookForTheLaterSummariesStartingInJanuary_whenTheMonthIsDecember() {
+        stubServices();
+
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 12));
+
+        verify(monthlySummaryRepository).findFromPeriod(userId, YEAR + 1, 1);
+    }
+
+    // Cada mês lê o anterior já atualizado: o remainingAmount de um vira o cashBalance do seguinte.
+    @Test
+    void recalculateFrom_shouldPassTheRemainingAmountOnToEachExistingLaterMonth_inOrder() {
+        stubServices();
+        var june = summaryOf(6);
+        var july = summaryOf(7);
+        var august = summaryOf(8);
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 5, YEAR)).thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 6, YEAR)).thenReturn(Optional.of(june));
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 7, YEAR)).thenReturn(Optional.of(july));
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 8, YEAR)).thenReturn(Optional.of(august));
+        when(monthlySummaryRepository.findFromPeriod(userId, YEAR, 7)).thenReturn(List.of(july, august));
+        when(expenseService.getByUserAndPeriod(eq(userId), eq(LocalDate.of(YEAR, 6, 1)), any(LocalDate.class)))
+            .thenReturn(List.of(expenseOf(BigDecimal.valueOf(500), PaymentStatus.PENDING, TODAY.plusDays(10))));
+
+        var result = monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 6));
+
+        assertFalse(result.created());
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(june.getRemainingAmount()));
+        assertEquals(0, BigDecimal.valueOf(2500).compareTo(july.getCashBalance()));
+        assertEquals(0, BigDecimal.valueOf(5500).compareTo(july.getRemainingAmount()));
+        assertEquals(0, BigDecimal.valueOf(5500).compareTo(august.getCashBalance()));
+        assertEquals(0, BigDecimal.valueOf(8500).compareTo(august.getRemainingAmount()));
+    }
+
+    // Lacuna entre os meses: o resumo que não existe não é criado, e o seguinte a ela fica sem o carryover, avisando.
+    @Test
+    void recalculateFrom_shouldNotCreateAMissingMonth_andFlagTheOneAfterTheGap() {
+        stubServices();
+        var august = MonthlySummary.builder()
+            .month(8)
+            .year(YEAR)
+            .user(user)
+            .cashBalance(BigDecimal.valueOf(999))
+            .build();
+        august.setId(UUID.randomUUID());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 5, YEAR)).thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 6, YEAR)).thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 7, YEAR)).thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 8, YEAR)).thenReturn(Optional.of(august));
+        when(monthlySummaryRepository.findFromPeriod(userId, YEAR, 7)).thenReturn(List.of(august));
+        var savedMonths = ArgumentCaptor.forClass(MonthlySummary.class);
+
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 6));
+
+        verify(monthlySummaryRepository, times(2)).save(savedMonths.capture());
+        assertEquals(List.of(6, 8), savedMonths.getAllValues().stream().map(MonthlySummary::getMonth).toList());
+        assertTrue(august.getPreviousMonthMissing());
+        assertEquals(0, BigDecimal.ZERO.compareTo(august.getCashBalance()));
+    }
+
+    // Apagar o resumo de um mês tira o carryover do seguinte (que existe e é recalculado).
+    @Test
+    void delete_shouldRecalculateTheExistingLaterSummaries_whichLoseTheCarryOver() {
+        stubServices();
+        var june = summaryOf(6);
+        var july = summaryOf(7);
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 6, YEAR))
+            .thenReturn(Optional.of(june))
+            .thenReturn(Optional.empty());
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 7, YEAR)).thenReturn(Optional.of(july));
+        when(monthlySummaryRepository.findFromPeriod(userId, YEAR, 7)).thenReturn(List.of(july));
+
+        monthlySummaryService.delete(userId, 6, YEAR);
+
+        var inOrder = inOrder(monthlySummaryRepository);
+        inOrder.verify(monthlySummaryRepository).delete(june);
+        inOrder.verify(monthlySummaryRepository).findFromPeriod(userId, YEAR, 7);
+        assertTrue(july.getPreviousMonthMissing());
+        assertEquals(0, BigDecimal.ZERO.compareTo(july.getCashBalance()));
+    }
+
+    @Test
+    void delete_shouldRecalculateNothing_whenThereIsNoLaterSummary() {
+        var june = summaryOf(6);
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, 6, YEAR)).thenReturn(Optional.of(june));
+
+        monthlySummaryService.delete(userId, 6, YEAR);
+
+        verify(monthlySummaryRepository).findFromPeriod(userId, YEAR, 7);
+        verify(monthlySummaryRepository, never()).save(any(MonthlySummary.class));
+    }
+
     private MonthlySummary summaryOf(int month) {
         var summary = MonthlySummary.builder()
             .month(month)
