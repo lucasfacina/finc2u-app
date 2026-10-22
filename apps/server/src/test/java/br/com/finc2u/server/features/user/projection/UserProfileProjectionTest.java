@@ -1,8 +1,8 @@
 package br.com.finc2u.server.features.user.projection;
 
-import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.form.UserResponse;
+import br.com.finc2u.server.features.user.port.CurrentSalaryPort;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,7 +27,7 @@ class UserProfileProjectionTest {
     private UserService userService;
 
     @Mock
-    private SalaryHistoryService salaryHistoryService;
+    private CurrentSalaryPort currentSalaryPort;
 
     private UserProfileProjection projection;
     private User ana;
@@ -35,14 +35,14 @@ class UserProfileProjectionTest {
 
     @BeforeEach
     void setUp() {
-        projection = new UserProfileProjection(userService, salaryHistoryService);
+        projection = new UserProfileProjection(userService, currentSalaryPort);
         ana = user("Ana", "ana@email.com");
         beto = user("Beto", "beto@email.com");
     }
 
     @Test
     void toProfile_shouldIncludeTheCurrentSalary() {
-        when(salaryHistoryService.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
+        when(currentSalaryPort.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
 
         UserResponse result = projection.toProfile(ana);
 
@@ -53,7 +53,7 @@ class UserProfileProjectionTest {
 
     @Test
     void toProfile_shouldLeaveSalaryNull_whenNoSalaryHasStarted() {
-        when(salaryHistoryService.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.empty());
+        when(currentSalaryPort.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.empty());
 
         assertNull(projection.toProfile(ana).baseSalary());
     }
@@ -61,7 +61,7 @@ class UserProfileProjectionTest {
     @Test
     void getProfile_shouldLoadTheUserAndItsCurrentSalary() {
         when(userService.getById(ana.getId())).thenReturn(ana);
-        when(salaryHistoryService.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
+        when(currentSalaryPort.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
 
         UserResponse result = projection.getProfile(ana.getId());
 
@@ -72,7 +72,7 @@ class UserProfileProjectionTest {
     @Test
     void getProfiles_shouldFetchAllSalariesInOneCall() {
         when(userService.getAll()).thenReturn(List.of(ana, beto));
-        when(salaryHistoryService.getCurrentBaseSalaries(List.of(ana.getId(), beto.getId())))
+        when(currentSalaryPort.getCurrentBaseSalaries(List.of(ana.getId(), beto.getId())))
             .thenReturn(Map.of(ana.getId(), BigDecimal.valueOf(3500)));
 
         List<UserResponse> result = projection.getProfiles();
@@ -80,7 +80,7 @@ class UserProfileProjectionTest {
         assertEquals(2, result.size());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(0).baseSalary()));
         assertNull(result.get(1).baseSalary());
-        verify(salaryHistoryService, never()).getCurrentBaseSalary(ana.getId());
+        verify(currentSalaryPort, never()).getCurrentBaseSalary(ana.getId());
     }
 
     private User user(String name, String email) {
