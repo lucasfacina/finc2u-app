@@ -115,7 +115,7 @@ class ExpenseServiceTest {
         assertNotNull(response);
         assertEquals(expense.getDescription(), response.getDescription());
         verify(expenseMapper).applyCardAccount(expense, cardAccountId, null);
-        verify(expenseMapper).applyCategory(expense, categoryId);
+        verify(expenseMapper).applyCategory(expense, categoryId, null);
         verify(expenseRepository, times(1)).save(any(Expense.class));
     }
 
@@ -386,7 +386,7 @@ class ExpenseServiceTest {
         var updates = Expense.builder()
             .description("Mercado do mês")
             .build();
-        var command = new ExpenseCommand(updates, cardAccountId, null, categoryId, null);
+        var command = new ExpenseCommand(updates, cardAccountId, null, categoryId, null, null);
 
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
@@ -397,7 +397,7 @@ class ExpenseServiceTest {
 
         assertEquals(expenseId, response.getId());
         verify(expenseMapper).applyCardAccount(expense, cardAccountId, null);
-        verify(expenseMapper).applyCategory(expense, categoryId);
+        verify(expenseMapper).applyCategory(expense, categoryId, null);
         verify(expenseMapper).applyEditableFields(expense, updates);
         verify(expenseRepository).save(expense);
     }
@@ -467,7 +467,7 @@ class ExpenseServiceTest {
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
         doThrow(new ResourceNotFoundException("Categoria não encontrada com o ID: " + categoryId))
-            .when(expenseMapper).applyCategory(expense, categoryId);
+            .when(expenseMapper).applyCategory(expense, categoryId, null);
 
         assertThrows(ResourceNotFoundException.class,
             () -> expenseService.update(expenseId, command(expense, cardAccountId, null)));
@@ -647,6 +647,35 @@ class ExpenseServiceTest {
 
         assertNotNull(response);
         assertEquals(1, response.size());
+    }
+
+    // ---- categoria por nome: o service só repassa id e nome ao mapper, que decide (e cria, se faltar) ----
+
+    @Test
+    void create_shouldPassTheCategoryNameToTheMapper() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(expenseRepository.save(any(Expense.class)))
+            .thenReturn(expense);
+
+        expenseService.create(userId, new ExpenseCommand(expense, cardAccountId, null, null, "Pets", null));
+
+        verify(expenseMapper).applyCategory(expense, null, "Pets");
+    }
+
+    @Test
+    void update_shouldPassTheCategoryNameToTheMapper() {
+        var updates = Expense.builder()
+            .description("Mercado do mês")
+            .build();
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, null, "Pets", null));
+
+        verify(expenseMapper).applyCategory(expense, null, "Pets");
     }
 
     // ---- aviso ao resumo mensal (PeriodDataChangedEvent): sempre o mês mais antigo afetado ----
@@ -833,7 +862,7 @@ class ExpenseServiceTest {
             return null;
         }).when(expenseMapper).applyEditableFields(expense, updates);
 
-        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, categoryId, null));
+        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, categoryId, null, null));
     }
 
     // Monta o VO como o materializer faz: a feature expense recebe os dados do modelo, não o modelo.
@@ -843,7 +872,7 @@ class ExpenseServiceTest {
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
-        return new ExpenseCommand(expense, cardAccountId, null, categoryId, purchaseDate);
+        return new ExpenseCommand(expense, cardAccountId, null, categoryId, null, purchaseDate);
     }
 
 }
