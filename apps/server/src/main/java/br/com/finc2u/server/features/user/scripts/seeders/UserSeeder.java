@@ -1,9 +1,8 @@
 package br.com.finc2u.server.features.user.scripts.seeders;
 
-import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
-import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.repository.UserRepository;
+import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.seed.SeedContext;
 import br.com.finc2u.server.shared.seed.Seeder;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,7 @@ public class UserSeeder implements Seeder {
     private static final String SEED_EMAIL = "facina3@gmail.com";
 
     private final UserRepository userRepository;
-    private final SalaryHistoryRepository salaryHistoryRepository;
+    private final UserService userService;
 
     @Override
     public int order() {
@@ -28,28 +27,20 @@ public class UserSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        User user = userRepository.findByEmail(SEED_EMAIL)
-            .orElseGet(this::createSeedUser);
-
-        context.setUser(user);
-
-        if (!salaryHistoryRepository.existsByUserId(user.getId())) {
-            salaryHistoryRepository.save(SalaryHistory.builder()
-                .user(user)
-                .baseSalary(new BigDecimal("3000.00"))
-                .effectiveFrom(LocalDate.of(2026, 1, 1))
-                .build());
-        }
+        context.setUser(userRepository.findByEmail(SEED_EMAIL)
+            .orElseGet(this::registerSeedUser));
     }
 
-    private User createSeedUser() {
-        User user = User.builder()
+    // Cadastra pelo caminho de um cadastro real: o primeiro salário e as categorias padrão nascem dos listeners do
+    // UserRegisteredEvent, e o seed não precisa conhecer a feature do salário.
+    private User registerSeedUser() {
+        var user = User.builder()
             .name("Lucas Facina")
             .email(SEED_EMAIL)
             .savingsBalance(new BigDecimal("5000.00"))
             .build();
 
-        return userRepository.save(user);
+        return userService.create(user, new BigDecimal("3000.00"), LocalDate.of(2026, 1, 1));
     }
 
 }
