@@ -148,6 +148,22 @@ class RecurringExpenseIntegrationTest {
         assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 11, 25)));
     }
 
+    // A despesa apagada não volta quando o resumo é recalculado: nem o do próprio mês, nem o do mês seguinte (que olha o anterior).
+    @Test
+    void deleteGeneratedExpense_shouldNotComeBackWhenTheSummariesAreRecalculated() {
+        var userId = registerUser("recorrente.pulo.resumo@email.com");
+        recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        monthlySummaryService.calculateOrRecalculate(userId, 10, 2026);
+        var october = instancesOf(userId).getFirst();
+
+        expenseService.delete(october.getId());
+        var octoberSummary = monthlySummaryService.calculateOrRecalculate(userId, 10, 2026).summary();
+        monthlySummaryService.calculateOrRecalculate(userId, 11, 2026);
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(octoberSummary.getTotalExpenses()));
+        assertEquals(List.of(LocalDate.of(2026, 11, 25)), instancesOf(userId).stream().map(Expense::getDueDate).toList());
+    }
+
     @Test
     void deleteExpenseLaunchedByTheUser_shouldNotRecordASkip() {
         var userId = registerUser("recorrente.avulsa@email.com");
