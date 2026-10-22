@@ -30,12 +30,33 @@ public record RecurringExpenseRequest(
     // Opcional: último mês em que a despesa se repete; ausente = sem término.
     YearMonth endMonth,
 
-    @NotNull(message = "Categoria é obrigatória!")
+    // A categoria vem por id OU por nome (exatamente um dos dois).
     UUID categoryId,
+
+    // Alternativa ao categoryId; resolvido entre as categorias do próprio usuário (sem diferenciar maiúsculas de minúsculas) e criada na
+    // hora se ainda não existir
+    @Size(max = 60, message = "O nome da categoria deve conter no máximo 60 caracteres.")
+    String categoryName,
 
     // Opcional: despesa recorrente pode ser avulsa (aluguel, condomínio) sem cartão vinculado.
     UUID cardAccountId
 ) {
+
+    // A categoria é obrigatória: por id ou por nome.
+    @JsonIgnore
+    @AssertTrue(message = "Categoria é obrigatória: informe o categoryId ou o categoryName.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isCategoryInformed() {
+        return categoryId != null || (categoryName != null && !categoryName.isBlank());
+    }
+
+    // ...mas não pelos dois (consistência do próprio request).
+    @JsonIgnore
+    @AssertTrue(message = "Informe a categoria por id ou por nome, não pelos dois.")
+    @SuppressWarnings("unused") // chamado pelo Bean Validation
+    public boolean isCategoryReferenceValid() {
+        return categoryId == null || categoryName == null || categoryName.isBlank();
+    }
 
     // O término não vem antes do início (só dá para comparar quando os dois vêm).
     @JsonIgnore
@@ -50,7 +71,7 @@ public record RecurringExpenseRequest(
     }
 
     public RecurringExpenseCommand toCommand() {
-        return new RecurringExpenseCommand(toEntity(), categoryId(), cardAccountId());
+        return new RecurringExpenseCommand(toEntity(), categoryId(), categoryName(), cardAccountId());
     }
 
 }

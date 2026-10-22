@@ -100,7 +100,9 @@ public class RecurringExpenseService {
 
     private void applyReferences(RecurringExpense recurringExpense, RecurringExpenseCommand command) {
         var ownerId = recurringExpense.getUser().getId();
-        recurringExpense.setCategory(categoryService.getByIdAndUser(command.categoryId(), ownerId));
+        recurringExpense.setCategory(command.categoryId() != null
+            ? categoryService.getByIdAndUser(command.categoryId(), ownerId)
+            : categoryService.getOrCreateByName(ownerId, command.categoryName()));
         recurringExpense.setCardAccount(command.cardAccountId() != null
             ? cardAccountService.getByIdAndUser(command.cardAccountId(), ownerId)
             : null);
