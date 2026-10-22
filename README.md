@@ -225,7 +225,11 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 | DELETE | `/expenses/{id}`                         | Deletar despesa (uma parcela)             | `id` (path)                                                                                                            |
 | DELETE | `/expenses/installment-groups/{groupId}` | Deletar a compra parcelada inteira        | `groupId` (path)                                                                                                       |
 
-- **`ExpenseRequest`** — além dos campos da despesa, exige **`categoryId`** (400 se faltar; também no `PUT`) e aceita o
+- **`ExpenseRequest`** — além dos campos da despesa, exige a categoria por **`categoryId` ou `categoryName`** (400 se
+  faltar ou se vierem os dois; também no
+  `PUT`): o `categoryName` é resolvido entre as categorias do próprio usuário (sem diferenciar maiúsculas de minúsculas)
+  e a categoria que ainda não
+  existe é **criada na hora**. Aceita o
   cartão por **`cardAccountId` ou `cardName`** (os dois → 400; nenhum → despesa avulsa, que exige `dueDate`). O
   `cardName` é resolvido entre os cartões do próprio usuário.
 - Cartão e categoria precisam ser **do dono da despesa**: o de outro usuário é tratado como inexistente (404).
@@ -259,7 +263,7 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 | DELETE | `/recurring-expenses/{id}` | Deletar o modelo             | `id` (path)                                       |
 
 - **`RecurringExpenseRequest`** —
-  `{ description, value, dayOfMonth, startMonth, endMonth?, categoryId, cardAccountId? }`.
+  `{ description, value, dayOfMonth, startMonth, endMonth?, categoryId ou categoryName, cardAccountId? }`.
   `dayOfMonth` vai de 1 a 31 (em mês mais curto, a despesa vence no último dia); `startMonth` e `endMonth` usam o
   formato
   `"2026-10"`, e o término não pode ser anterior ao início (400). Categoria e cartão precisam ser do dono (404).
