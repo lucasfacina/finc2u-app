@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
+import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,7 +22,8 @@ import java.util.UUID;
 /*
  * Transforma o modelo recorrente em despesas reais, uma por mês (FIXED, PENDING). É idempotente: chamar de novo para o
  * mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco). Só gera de "este mês" em diante: os
- * meses passados não são recriados, senão apareceriam como despesas atrasadas que ninguém lançou.
+ * meses passados não são recriados, senão apareceriam como despesas atrasadas que ninguém lançou. Um vencimento que o usuário
+ * apagou de propósito (mês pulado) também não volta, nem no resumo nem pelo job.
  */
 @Component
 @RequiredArgsConstructor
@@ -29,17 +31,23 @@ public class RecurringExpenseMaterializer {
 
     private final ExpenseService expenseService;
     private final RecurringExpenseRepository recurringExpenseRepository;
+    private final RecurringExpenseSkipRepository recurringExpenseSkipRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
-    // Devolve a despesa criada, ou vazio quando não havia o que criar (fora da vigência, mês passado ou já existente).
+    // Devolve a despesa criada, ou vazio quando não havia o que criar (fora da vigência, mês passado, mês pulado ou já existente).
     @Transactional
     public Optional<Expense> materialize(RecurringExpense recurringExpense, YearMonth month) {
         if (!recurringExpense.isActiveIn(month) || month.isBefore(YearMonth.now(clock))) {
             return Optional.empty();
         }
 
-        return expenseService.createFromRecurrence(commandFor(recurringExpense, recurringExpense.dueDateIn(month)));
+        var dueDate = recurringExpense.dueDateIn(month);
+        if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
+            return Optional.empty();
+        }
+
+        return expenseService.createFromRecurrence(commandFor(recurringExpense, dueDate));
     }
 
     /*
