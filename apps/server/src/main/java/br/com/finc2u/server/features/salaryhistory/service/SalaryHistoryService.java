@@ -6,6 +6,7 @@ import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
 import br.com.finc2u.server.features.user.entity.User;
+import br.com.finc2u.server.features.user.port.CurrentSalaryPort;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class SalaryHistoryService {
+public class SalaryHistoryService implements CurrentSalaryPort {
 
     private final SalaryHistoryRepository salaryHistoryRepository;
     private final UserService userService;
@@ -70,6 +71,7 @@ public class SalaryHistoryService {
      * Salário com vigência mais recente com effectiveFrom <= hoje.
      * Será vazio se o usuário ainda não tem nenhuma vigência iniciada.
      */
+    @Override
     @Transactional(readOnly = true)
     public Optional<BigDecimal> getCurrentBaseSalary(UUID userId) {
         return Optional.ofNullable(getCurrentBaseSalaries(List.of(userId)).get(userId));
@@ -79,6 +81,7 @@ public class SalaryHistoryService {
      * Salário vigente de vários usuários por uma única consulta (evita N+1 na listagem).
      * Usuários sem vigência iniciada não aparecem no mapa.
      */
+    @Override
     @Transactional(readOnly = true)
     public Map<UUID, BigDecimal> getCurrentBaseSalaries(Collection<UUID> userIds) {
         if (userIds.isEmpty()) {
