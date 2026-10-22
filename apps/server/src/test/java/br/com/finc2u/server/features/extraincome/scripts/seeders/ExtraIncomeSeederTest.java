@@ -43,7 +43,7 @@ class ExtraIncomeSeederTest {
             .build();
         user.setId(UUID.randomUUID());
         context = new SeedContext();
-        context.setUser(user);
+        context.put(User.class, user);
     }
 
     // Relativo ao mês do Clock: o resumo de hoje sempre tem ganhos extras.
@@ -68,7 +68,7 @@ class ExtraIncomeSeederTest {
 
     @Test
     void seed_shouldNotSaveAnything_whenTheUserAlreadyHasExtraIncomes() {
-        when(extraIncomeRepository.existsByUserId(context.getUser().getId()))
+        when(extraIncomeRepository.existsByUserId(context.get(User.class).getId()))
             .thenReturn(true);
 
         seederAt(TODAY).seed(context);
