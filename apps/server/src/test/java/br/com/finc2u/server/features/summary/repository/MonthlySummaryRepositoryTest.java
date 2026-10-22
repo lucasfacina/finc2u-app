@@ -13,6 +13,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -73,6 +74,51 @@ class MonthlySummaryRepositoryTest {
     @Test
     void findByUserIdAndMonthAndYear_shouldNotFindThePeriodOfAnotherUser() {
         assertTrue(monthlySummaryRepository.findByUserIdAndMonthAndYear(ana.getId(), 4, 2026).isEmpty());
+    }
+
+    // ---- findFromPeriod: o alcance e a ordem da cascata do carryover ----
+
+    // Do mês informado em diante (inclusive), do mais antigo ao mais novo, atravessando a virada do ano e pulando as lacunas.
+    @Test
+    void findFromPeriod_shouldReturnTheExistingSummariesFromThePeriodOn_inAscendingOrder() {
+        persistAndReset(ana, 1, 2027);
+        persistAndReset(ana, 12, 2026);
+
+        var found = monthlySummaryRepository.findFromPeriod(ana.getId(), 2026, 2);
+
+        assertEquals(List.of("2026-02", "2026-03", "2026-12", "2027-01"), found.stream()
+            .map(summary -> YearMonth.of(summary.getYear(), summary.getMonth()).toString())
+            .toList());
+    }
+
+    @Test
+    void findFromPeriod_shouldNotReturnTheSummariesOfAnotherUser() {
+        var found = monthlySummaryRepository.findFromPeriod(ana.getId(), 2026, 1);
+
+        assertEquals(3, found.size());
+        assertTrue(found.stream().allMatch(summary -> ana.getId().equals(summary.getUser().getId())));
+    }
+
+    @Test
+    void findFromPeriod_shouldReturnNothing_whenThereIsNoSummaryFromThePeriodOn() {
+        assertTrue(monthlySummaryRepository.findFromPeriod(ana.getId(), 2026, 4).isEmpty());
+    }
+
+    @Test
+    void findFromPeriod_shouldServeTheCascadeInASingleStatement_evenReadingTheResponse() {
+        var responses = monthlySummaryRepository.findFromPeriod(ana.getId(), 2026, 1).stream()
+            .map(summary -> MonthlySummaryResponse.from(summary, List.of()))
+            .toList();
+
+        assertEquals(3, responses.size());
+        assertEquals(1, statistics.getPrepareStatementCount());
+    }
+
+    private void persistAndReset(User user, int month, int year) {
+        testEntityManager.persist(MonthlySummary.forPeriod(user, month, year));
+        testEntityManager.flush();
+        testEntityManager.clear();
+        statistics.clear();
     }
 
     private User persistUser(String name, String email) {
