@@ -302,6 +302,76 @@ class RecurringExpenseMaterializerTest {
         verifyNoInteractions(eventPublisher);
     }
 
+    // ---- vencimento já passado: a assinatura vale a partir do próximo vencimento, não nasce atrasada (hoje = 21/10) ----
+
+    @Test
+    void materialize_shouldNotCreateAnything_whenTheDueDateAlreadyPassedThisMonth() {
+        recurringExpense.setDayOfMonth(5);
+
+        var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        assertTrue(created.isEmpty());
+        verifyNoInteractions(expenseService, recurringExpenseSkipRepository);
+    }
+
+    @Test
+    void materialize_shouldNotCreateAnything_whenTheDueDateWasYesterday() {
+        recurringExpense.setDayOfMonth(20);
+
+        assertTrue(materializer.materialize(recurringExpense, CURRENT_MONTH).isEmpty());
+        verifyNoInteractions(expenseService);
+    }
+
+    // O vencimento de hoje ainda não venceu: nasce normalmente.
+    @Test
+    void materialize_shouldCreate_whenTheDueDateIsToday() {
+        recurringExpense.setDayOfMonth(21);
+        createdOn(LocalDate.of(2026, 10, 21));
+
+        var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
+
+        assertTrue(created.isPresent());
+    }
+
+    // Com cartão vale o vencimento da fatura: cobrada dia 5, antes do fechamento (dia 9), cai na fatura que venceu dia 15.
+    @Test
+    void materialize_shouldNotCreateAnything_whenTheInvoiceDueDateAlreadyPassed() {
+        recurringExpense.setDayOfMonth(5);
+        recurringExpense.setCardAccount(CardAccount.builder()
+            .cardName("Nubank")
+            .closingDate(9)
+            .dueDate(15)
+            .build());
+
+        assertTrue(materializer.materialize(recurringExpense, CURRENT_MONTH).isEmpty());
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void materializeUpcoming_shouldCreateOnlyTheNextMonth_whenTheDueDateOfTheCurrentOneAlreadyPassed() {
+        recurringExpense.setDayOfMonth(5);
+        createdOn(LocalDate.of(2026, 11, 5));
+
+        materializer.materializeUpcoming(recurringExpense);
+
+        verify(expenseService, never()).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 5)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 5)));
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(user.getId(), YearMonth.of(2026, 11)));
+    }
+
+    @Test
+    void materializeForUser_shouldNotCreateTheExpenseThatAlreadyPassedDue() {
+        recurringExpense.setDayOfMonth(5);
+        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+            .thenReturn(List.of(recurringExpense));
+        createdOn(LocalDate.of(2026, 11, 5));
+
+        materializer.materializeForUser(user.getId(), YearMonth.of(2026, 11));
+
+        verify(expenseService, never()).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 5)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 5)));
+    }
+
     // ---- mês pulado: o usuário apagou a despesa deste vencimento de propósito, e ela não volta ----
 
     @Test
