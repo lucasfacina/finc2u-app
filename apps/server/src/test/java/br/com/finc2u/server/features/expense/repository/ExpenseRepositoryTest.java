@@ -360,9 +360,9 @@ class ExpenseRepositoryTest {
         expenseRepository.detachFromRecurringExpense(model.getId());
         resetPersistenceContext();
 
-        assertNull(expenseRepository.findById(october.getId()).orElseThrow().getRecurringExpense());
-        assertNull(expenseRepository.findById(november.getId()).orElseThrow().getRecurringExpense());
-        assertEquals(otherModel.getId(), expenseRepository.findById(other.getId()).orElseThrow().getRecurringExpense().getId());
+        assertNull(expenseRepository.findById(october.getId()).orElseThrow().getRecurringExpenseId());
+        assertNull(expenseRepository.findById(november.getId()).orElseThrow().getRecurringExpenseId());
+        assertEquals(otherModel.getId(), expenseRepository.findById(other.getId()).orElseThrow().getRecurringExpenseId());
     }
 
     private void resetPersistenceContext() {
@@ -446,7 +446,9 @@ class ExpenseRepositoryTest {
             .paymentStatus(PaymentStatus.PENDING)
             .user(user)
             .category(persistCategory("Categoria da instância " + UUID.randomUUID()))
-            .recurringExpense(model)
+            .recurringExpenseId(model != null
+                ? model.getId()
+                : null)
             .build();
     }
 
