@@ -167,7 +167,7 @@ class SummaryCascadeEndToEndIntegrationTest {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .build();
-        expenseService.update(may.getId(), new ExpenseCommand(moved, null, null, firstCategoryId(userId), null));
+        expenseService.update(may.getId(), new ExpenseCommand(moved, null, null, firstCategoryId(userId), null, null));
 
         assertEquals(2100, remaining(userId, 3));
         assertEquals(2100, summary(userId, 4).getCashBalance().intValue());
@@ -216,7 +216,7 @@ class SummaryCascadeEndToEndIntegrationTest {
             .totalInstallment(3)
             .build();
 
-        var first = expenseService.create(userId, new ExpenseCommand(purchase, null, null, firstCategoryId(userId), null));
+        var first = expenseService.create(userId, new ExpenseCommand(purchase, null, null, firstCategoryId(userId), null, null));
 
         assertEquals(2700, remaining(userId, 3));
         assertEquals(5400, remaining(userId, 4));
@@ -339,7 +339,7 @@ class SummaryCascadeEndToEndIntegrationTest {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .build();
-        return expenseService.create(userId, new ExpenseCommand(expense, null, null, firstCategoryId(userId), null));
+        return expenseService.create(userId, new ExpenseCommand(expense, null, null, firstCategoryId(userId), null, null));
     }
 
     private UUID registerUser(String email) {
