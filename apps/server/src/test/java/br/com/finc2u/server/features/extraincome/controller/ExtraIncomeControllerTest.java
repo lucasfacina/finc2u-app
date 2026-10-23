@@ -51,7 +51,7 @@ class ExtraIncomeControllerTest {
         extraIncomeId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
-        User user = User.builder()
+        var user = User.builder()
             .build();
         user.setId(userId);
 
@@ -119,8 +119,8 @@ class ExtraIncomeControllerTest {
 
     @Test
     void getByUserIdAndPeriod_shouldReturnOk() throws Exception {
-        LocalDate start = LocalDate.of(2026, 5, 1);
-        LocalDate end = LocalDate.of(2026, 5, 31);
+        var start = LocalDate.of(2026, 5, 1);
+        var end = LocalDate.of(2026, 5, 31);
 
         when(extraIncomeService.getByUserAndPeriod(userId, start, end))
             .thenReturn(List.of(extraIncome));

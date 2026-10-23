@@ -71,7 +71,7 @@ class ExtraIncomeServiceTest {
         when(extraIncomeRepository.save(any(ExtraIncome.class)))
             .thenReturn(extraIncome);
 
-        ExtraIncome result = extraIncomeService.create(extraIncome, userId);
+        var result = extraIncomeService.create(extraIncome, userId);
 
         assertNotNull(result);
         assertEquals(user, result.getUser());
@@ -83,7 +83,7 @@ class ExtraIncomeServiceTest {
         when(extraIncomeRepository.findById(extraIncomeId))
             .thenReturn(Optional.of(extraIncome));
 
-        ExtraIncome result = extraIncomeService.getById(extraIncomeId);
+        var result = extraIncomeService.getById(extraIncomeId);
 
         assertNotNull(result);
         assertEquals(extraIncomeId, result.getId());
@@ -104,7 +104,7 @@ class ExtraIncomeServiceTest {
         when(extraIncomeRepository.findByUserId(userId))
             .thenReturn(List.of(extraIncome));
 
-        List<ExtraIncome> result = extraIncomeService.getByUser(userId);
+        var result = extraIncomeService.getByUser(userId);
 
         assertNotNull(result);
         assertEquals(1, result.size());
@@ -112,7 +112,7 @@ class ExtraIncomeServiceTest {
 
     @Test
     void update_shouldUpdateFieldsAndSave() {
-        ExtraIncome updates = ExtraIncome.builder()
+        var updates = ExtraIncome.builder()
             .description("Freela app")
             .value(BigDecimal.valueOf(1200))
             .date(LocalDate.of(2026, 5, 20))
@@ -123,7 +123,7 @@ class ExtraIncomeServiceTest {
         when(extraIncomeRepository.save(any(ExtraIncome.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        ExtraIncome result = extraIncomeService.update(extraIncomeId, updates);
+        var result = extraIncomeService.update(extraIncomeId, updates);
 
         assertEquals("Freela app", result.getDescription());
         assertEquals(0, BigDecimal.valueOf(1200).compareTo(result.getValue()));
