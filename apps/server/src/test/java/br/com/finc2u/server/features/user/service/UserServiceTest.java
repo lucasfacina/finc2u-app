@@ -66,7 +66,7 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class)))
             .thenReturn(user);
 
-        User response = userService.create(user, BigDecimal.valueOf(5000), LocalDate.of(2026, 1, 1));
+        var response = userService.create(user, BigDecimal.valueOf(5000), LocalDate.of(2026, 1, 1));
 
         assertNotNull(response);
         assertEquals(user.getName(), response.getName());
@@ -117,7 +117,7 @@ public class UserServiceTest {
         when(userRepository.findById(userId))
             .thenReturn(Optional.of(user));
 
-        User response = userService.getById(userId);
+        var response = userService.getById(userId);
 
         assertNotNull(response);
         assertEquals(userId, response.getId());
@@ -136,7 +136,7 @@ public class UserServiceTest {
         when(userRepository.findAll())
             .thenReturn(List.of(user));
 
-        List<User> response = userService.getAll();
+        var response = userService.getAll();
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
@@ -150,7 +150,7 @@ public class UserServiceTest {
         when(userRepository.save(any(User.class)))
             .thenReturn(user);
 
-        User response = userService.update(userId, user);
+        var response = userService.update(userId, user);
 
         assertNotNull(response);
         assertEquals(user.getName(), response.getName());

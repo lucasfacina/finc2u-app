@@ -12,7 +12,7 @@ class UserTest {
 
     @Test
     void savingsBalanceOrZero_shouldReturnZero_whenSavingsBalanceIsNull() {
-        User user = User.builder()
+        var user = User.builder()
             .savingsBalance(null)
             .build();
 
@@ -21,7 +21,7 @@ class UserTest {
 
     @Test
     void savingsBalanceOrZero_shouldReturnTheInformedValue() {
-        User user = User.builder()
+        var user = User.builder()
             .savingsBalance(BigDecimal.valueOf(1500))
             .build();
 

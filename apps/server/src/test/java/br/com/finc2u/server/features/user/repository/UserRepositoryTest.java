@@ -13,7 +13,6 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -47,7 +46,7 @@ class UserRepositoryTest {
 
     @Test
     void findAll_shouldLoadUsersInSingleQuery() {
-        List<User> users = userRepository.findAll();
+        var users = userRepository.findAll();
 
         assertEquals(3, users.size());
         assertEquals(1, statistics.getPrepareStatementCount());
@@ -55,7 +54,7 @@ class UserRepositoryTest {
 
     @Test
     void findByEmail_shouldLoadUserInSingleQuery() {
-        User user = userRepository.findByEmail("beto@email.com")
+        var user = userRepository.findByEmail("beto@email.com")
             .orElseThrow();
 
         assertEquals(0, BigDecimal.valueOf(100).compareTo(user.getSavingsBalance()));
@@ -85,7 +84,7 @@ class UserRepositoryTest {
     }
 
     private void persistUser(String name, String email) {
-        User user = User.builder()
+        var user = User.builder()
             .name(name)
             .email(email)
             .savingsBalance(BigDecimal.valueOf(100))

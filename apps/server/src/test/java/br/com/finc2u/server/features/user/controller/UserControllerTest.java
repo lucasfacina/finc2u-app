@@ -83,7 +83,7 @@ class UserControllerTest {
 
     @Test
     void create_shouldReturnBadRequest_whenInvalidInput() throws Exception {
-        UserRequest invalidRequest = new UserRequest(
+        var invalidRequest = new UserRequest(
             "",
             "invalid-email",
             BigDecimal.valueOf(-1),

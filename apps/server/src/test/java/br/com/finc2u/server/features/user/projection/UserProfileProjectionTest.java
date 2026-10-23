@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.user.projection;
 
 import br.com.finc2u.server.features.user.entity.User;
-import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.port.CurrentSalaryPort;
 import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +43,7 @@ class UserProfileProjectionTest {
     void toProfile_shouldIncludeTheCurrentSalary() {
         when(currentSalaryPort.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
 
-        UserResponse result = projection.toProfile(ana);
+        var result = projection.toProfile(ana);
 
         assertEquals(ana.getId(), result.id());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.baseSalary()));
@@ -63,7 +62,7 @@ class UserProfileProjectionTest {
         when(userService.getById(ana.getId())).thenReturn(ana);
         when(currentSalaryPort.getCurrentBaseSalary(ana.getId())).thenReturn(Optional.of(BigDecimal.valueOf(3500)));
 
-        UserResponse result = projection.getProfile(ana.getId());
+        var result = projection.getProfile(ana.getId());
 
         assertEquals("Ana", result.name());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.baseSalary()));
@@ -75,7 +74,7 @@ class UserProfileProjectionTest {
         when(currentSalaryPort.getCurrentBaseSalaries(List.of(ana.getId(), beto.getId())))
             .thenReturn(Map.of(ana.getId(), BigDecimal.valueOf(3500)));
 
-        List<UserResponse> result = projection.getProfiles();
+        var result = projection.getProfiles();
 
         assertEquals(2, result.size());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(0).baseSalary()));

@@ -1,6 +1,5 @@
 package br.com.finc2u.server.features.user.dto;
 
-import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -11,7 +10,7 @@ class UserRequestTest {
 
     @Test
     void toEntity_shouldBuildUserWithSavingsBalance() {
-        UserRequest request = new UserRequest(
+        var request = new UserRequest(
             "Lucas",
             "lucas@email.com",
             BigDecimal.valueOf(3000),
@@ -19,7 +18,7 @@ class UserRequestTest {
             null
         );
 
-        User user = request.toEntity();
+        var user = request.toEntity();
 
         assertEquals("Lucas", user.getName());
         assertEquals("lucas@email.com", user.getEmail());
