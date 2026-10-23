@@ -114,6 +114,13 @@ class ExpenseRequestTest {
         assertEquals("Informe a categoria por id ou por nome, não pelos dois.", messageOf(violations));
     }
 
+    // O caminho da violação vira o prefixo do detalhe do 400 ("categoryInformed: ..."): não pode mudar.
+    @Test
+    void shouldReportTheCategoryViolations_underTheirOwnPropertyNames() {
+        assertEquals("categoryInformed", validateCategory(null, null).iterator().next().getPropertyPath().toString());
+        assertEquals("categoryReferenceValid", validateCategory(UUID.randomUUID(), "Pets").iterator().next().getPropertyPath().toString());
+    }
+
     @Test
     void shouldBeInvalid_whenTheCategoryNameIsLongerThan60Characters() {
         var violations = validateCategory(null, "x".repeat(61));
