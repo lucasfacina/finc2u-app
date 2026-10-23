@@ -23,7 +23,6 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,12 +63,12 @@ class SalaryHistoryServiceTest {
 
     @Test
     void create_shouldSaveAndReturnHistory() {
-        SalaryHistory input = SalaryHistory.builder()
+        var input = SalaryHistory.builder()
             .baseSalary(BigDecimal.valueOf(3500))
             .effectiveFrom(LocalDate.of(2026, 8, 1))
             .build();
 
-        SalaryHistory saved = SalaryHistory.builder()
+        var saved = SalaryHistory.builder()
             .user(user)
             .baseSalary(BigDecimal.valueOf(3500))
             .effectiveFrom(LocalDate.of(2026, 8, 1))
@@ -78,7 +77,7 @@ class SalaryHistoryServiceTest {
         when(userService.getById(userId)).thenReturn(user);
         when(salaryHistoryRepository.save(any())).thenReturn(saved);
 
-        SalaryHistory result = salaryHistoryService.create(input, userId);
+        var result = salaryHistoryService.create(input, userId);
 
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getBaseSalary()));
         assertEquals(LocalDate.of(2026, 8, 1), result.getEffectiveFrom());
@@ -87,12 +86,12 @@ class SalaryHistoryServiceTest {
 
     @Test
     void getByUser_shouldReturnHistoryOrderedByDateDesc() {
-        SalaryHistory history1 = SalaryHistory.builder()
+        var history1 = SalaryHistory.builder()
             .user(user)
             .baseSalary(BigDecimal.valueOf(3500))
             .effectiveFrom(LocalDate.of(2026, 8, 1))
             .build();
-        SalaryHistory history2 = SalaryHistory.builder()
+        var history2 = SalaryHistory.builder()
             .user(user)
             .baseSalary(BigDecimal.valueOf(3000))
             .effectiveFrom(LocalDate.of(2026, 1, 1))
@@ -100,7 +99,7 @@ class SalaryHistoryServiceTest {
 
         when(salaryHistoryRepository.findByUserIdOrderByEffectiveFromDesc(userId)).thenReturn(List.of(history1, history2));
 
-        List<SalaryHistory> result = salaryHistoryService.getByUser(userId);
+        var result = salaryHistoryService.getByUser(userId);
 
         assertEquals(2, result.size());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getFirst().getBaseSalary()));
@@ -108,7 +107,7 @@ class SalaryHistoryServiceTest {
 
     @Test
     void getBaseSalaryForPeriod_shouldReturnHistoricalSalary_whenExists() {
-        SalaryHistory history = SalaryHistory.builder()
+        var history = SalaryHistory.builder()
             .user(user)
             .baseSalary(BigDecimal.valueOf(3000))
             .effectiveFrom(LocalDate.of(2026, 1, 1))
@@ -118,7 +117,7 @@ class SalaryHistoryServiceTest {
             userId, LocalDate.of(2026, 6, 1)))
             .thenReturn(Optional.of(history));
 
-        BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
+        var result = salaryHistoryService.getBaseSalaryForPeriod(
             userId,
             LocalDate.of(2026, 6, 1)
         );
@@ -132,7 +131,7 @@ class SalaryHistoryServiceTest {
             userId, LocalDate.of(2026, 6, 1)))
             .thenReturn(Optional.empty());
 
-        BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
+        var result = salaryHistoryService.getBaseSalaryForPeriod(
             userId,
             LocalDate.of(2026, 6, 1)
         );
@@ -142,7 +141,7 @@ class SalaryHistoryServiceTest {
 
     @Test
     void getBaseSalaryForPeriod_shouldNotReturnFutureSalary() {
-        SalaryHistory januarySalary = SalaryHistory.builder()
+        var januarySalary = SalaryHistory.builder()
             .user(user)
             .baseSalary(BigDecimal.valueOf(3000))
             .effectiveFrom(LocalDate.of(2026, 1, 1))
@@ -152,7 +151,7 @@ class SalaryHistoryServiceTest {
             userId, LocalDate.of(2026, 6, 1)))
             .thenReturn(Optional.of(januarySalary));
 
-        BigDecimal result = salaryHistoryService.getBaseSalaryForPeriod(
+        var result = salaryHistoryService.getBaseSalaryForPeriod(
             userId,
             LocalDate.of(2026, 6, 1)
         );
@@ -169,7 +168,7 @@ class SalaryHistoryServiceTest {
                 new CurrentSalary(userId, BigDecimal.valueOf(3500)),
                 new CurrentSalary(otherUserId, BigDecimal.valueOf(4200))));
 
-        Map<UUID, BigDecimal> result = salaryHistoryService.getCurrentBaseSalaries(userIds);
+        var result = salaryHistoryService.getCurrentBaseSalaries(userIds);
 
         assertEquals(2, result.size());
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.get(userId)));
