@@ -3,43 +3,72 @@ package br.com.finc2u.server.features.recurringexpense.dto;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.UUID;
 
+@Schema(description = "Dados para cadastrar ou alterar uma despesa recorrente (modelo mensal).")
 public record RecurringExpenseRequest(
+
     @NotBlank(message = "Descrição é obrigatória!")
+    @Schema(
+        description = "Descrição da despesa.",
+        example = "Netflix"
+    )
     String description,
 
     @NotNull(message = "Valor é obrigatório!")
     @Positive(message = "Valor deve ser positivo.")
+    @Schema(
+        description = "Valor cobrado a cada mês. Deve ser positivo.",
+        example = "39.90"
+    )
     BigDecimal value,
 
-    // Em mês mais curto que o dia informado, a despesa vence no último dia do mês.
     @NotNull(message = "O dia do mês é obrigatório!")
     @Min(value = 1, message = "O dia do mês deve ser no mínimo 1.")
     @Max(value = 31, message = "O dia do mês deve ser no máximo 31.")
+    @Schema(
+        description = "Dia do mês da cobrança (1 a 31). Em mês mais curto, vence no último dia do mês.",
+        example = "5"
+    )
     Integer dayOfMonth,
 
-    // Mês/ano no formato "2026-10".
     @NotNull(message = "O mês de início é obrigatório!")
+    @Schema(
+        description = "Primeiro mês em que a despesa se repete (AAAA-MM).",
+        example = "2026-10"
+    )
     YearMonth startMonth,
 
-    // Opcional: último mês em que a despesa se repete; ausente = sem término.
+    @Schema(
+        description = "Último mês em que a despesa se repete (AAAA-MM). Omitido, não tem término.",
+        example = "2027-09"
+    )
     YearMonth endMonth,
 
-    // A categoria vem por id OU por nome (exatamente um dos dois).
+    @Schema(
+        description = "Id da categoria. Informe o categoryId OU o categoryName (exatamente um dos dois).",
+        example = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
     UUID categoryId,
 
-    // Alternativa ao categoryId; resolvido entre as categorias do próprio usuário (sem diferenciar maiúsculas de minúsculas) e criada na
-    // hora se ainda não existir
     @Size(max = 60, message = "O nome da categoria deve conter no máximo 60 caracteres.")
+    @Schema(
+        description = "Nome da categoria (até 60 caracteres), alternativa ao categoryId: resolvido entre as categorias do próprio usuário, sem diferenciar maiúsculas de minúsculas, e criada na hora se ainda não existir.",
+        example = "Pets"
+    )
     String categoryName,
 
-    // Opcional: despesa recorrente pode ser avulsa (aluguel, condomínio) sem cartão vinculado.
+    @Schema(
+        description = "Id do cartão, opcional. Sem cartão, a despesa é avulsa (aluguel, condomínio).",
+        example = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
     UUID cardAccountId
+
 ) {
 
     // A categoria é obrigatória: por id ou por nome.
