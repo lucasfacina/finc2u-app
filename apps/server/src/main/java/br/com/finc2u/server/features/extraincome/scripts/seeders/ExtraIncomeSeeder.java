@@ -27,9 +27,10 @@ public class ExtraIncomeSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
+        if (extraIncomeRepository.existsByUserId(context.get(User.class).getId())) return;
+
         // Relativo ao mês corrente (do Clock): o resumo de hoje sempre tem ganhos extras.
         var competencia = YearMonth.now(clock).atDay(15);
-
         var extraIncomes = List.of(
             ExtraIncome.builder()
                 .description("Mãe")
@@ -44,8 +45,6 @@ public class ExtraIncomeSeeder implements Seeder {
                 .user(context.get(User.class))
                 .build()
         );
-
-        if (extraIncomeRepository.existsByUserId(context.get(User.class).getId())) return;
 
         extraIncomeRepository.saveAll(extraIncomes);
     }

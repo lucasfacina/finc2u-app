@@ -58,12 +58,14 @@ public class ExtraIncomeService {
     public ExtraIncome update(UUID id, ExtraIncome updates) {
         var extraIncome = getById(id);
         var previousDate = extraIncome.getDate();
+
         extraIncome.setDescription(updates.getDescription());
         extraIncome.setValue(updates.getValue());
         extraIncome.setDate(updates.getDate());
 
         var saved = extraIncomeRepository.save(extraIncome);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(extraIncome.getUser().getId(), previousDate, extraIncome.getDate()));
+
         return saved;
     }
 
