@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.expense.vo;
 
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
-import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,28 +31,12 @@ public record InstallmentSchedule(List<Expense> installments) {
         var installments = new ArrayList<Expense>();
         installments.add(first);
 
-        var firstInstallment = first.getCurrentInstallment();
-        for (var installment = firstInstallment + 1; installment <= first.getTotalInstallment(); installment++) {
-            installments.add(futureInstallmentOf(first, installment, installment - firstInstallment));
+        var lastMonth = first.getTotalInstallment() - first.getCurrentInstallment();
+        for (var months = 1; months <= lastMonth; months++) {
+            installments.add(first.installmentAfter(months));
         }
 
         return new InstallmentSchedule(installments);
-    }
-
-    private static Expense futureInstallmentOf(Expense first, int installment, int monthsAfterFirst) {
-        return Expense.builder()
-            .description(first.getDescription())
-            .value(first.getValue())
-            .dueDate(first.getDueDate().plusMonths(monthsAfterFirst))
-            .expenseType(first.getExpenseType())
-            .paymentStatus(PaymentStatus.PENDING)
-            .currentInstallment(installment)
-            .totalInstallment(first.getTotalInstallment())
-            .installmentGroupId(first.getInstallmentGroupId())
-            .user(first.getUser())
-            .cardAccount(first.getCardAccount())
-            .category(first.getCategory())
-            .build();
     }
 
 }
