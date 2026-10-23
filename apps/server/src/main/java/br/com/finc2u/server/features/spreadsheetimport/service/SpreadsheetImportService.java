@@ -25,22 +25,26 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.*;
 
-/*
- * Grava o que o SpreadsheetReader leu, sempre pelos services das outras features (nunca pelo repository), numa transação
+/**
+ * Grava o que o {@code SpreadsheetReader} leu, sempre pelos services das outras features (nunca pelo repository), numa transação
  * só: se algo falhar, nada fica pela metade. É idempotente: antes de criar, procura o que já existe com a mesma chave
  * (descrição, vencimento, valor, parcela e cartão) e só cria o que falta, então rodar de novo não duplica.
- *
+ * <p>
  * Como cada parte da planilha vira dado do backend:
- * - `FIXOS` viram modelos recorrentes (um por trecho de meses com o mesmo valor) e as despesas dos meses já passados entram
- *   pelo `createFromRecurrence`, porque o gerador normal nunca volta no tempo.
- * - A parcela `n/m` vira compra parcelada: a primeira parcela lida cria as seguintes (como o POST /expenses), e depois as
- *   parcelas dos meses que a planilha cobre são ajustadas ao que ela diz (valor e pago) ou removidas, se a planilha não as
- *   tem naquele mês; o que passa do último mês da planilha fica como projeção.
- * - `GERAIS` (compras à vista) vira uma despesa por cartão e mês; os valores negativos (ajustes de saldo) viram uma renda
- *   extra "Ajuste de balanço", porque a despesa não aceita valor negativo.
- * - Contas fixas e extras viram uma despesa cada; o `PG` vira PAID com `paidAt` nulo (a planilha não diz o dia).
- * - Toda a renda vira renda extra no mês de pagamento: a planilha tem o total recebido de cada mês, e o salário (que o
- *   backend guarda por vigência) aparece em poucos meses e com valores soltos.
+ * <ul>
+ *   <li>{@code FIXOS} viram modelos recorrentes (um por trecho de meses com o mesmo valor) e as despesas de cada mês lido
+ *       entram pelo {@code createFromRecurrence}, porque o gerador normal nunca volta no tempo.</li>
+ *   <li>A parcela {@code n/m} vira compra parcelada: a primeira parcela lida cria as seguintes (como o {@code POST /expenses}),
+ *       e depois as parcelas dos meses que a planilha cobre são ajustadas ao que ela diz (valor e pago) ou removidas, se a
+ *       planilha não as tem naquele mês; o que passa do último mês da planilha fica como projeção.</li>
+ *   <li>Cada linha de {@code GERAIS} (compras à vista) vira uma despesa no cartão; os valores negativos (ajustes de saldo) viram uma
+ *       renda extra "Ajuste de balanço", porque a despesa não aceita valor negativo.</li>
+ *   <li>Contas fixas e extras viram uma despesa cada; o {@code PG} vira {@code PAID} com {@code paidAt} nulo (a planilha não diz
+ *       o dia).</li>
+ *   <li>Toda a renda vira renda extra no mês de pagamento: a planilha tem o total recebido de cada mês, e o salário (que o
+ *       backend guarda por vigência) aparece em poucos meses e com valores soltos. Essa escolha é específica da planilha do
+ *       autor.</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -53,6 +57,15 @@ public class SpreadsheetImportService {
     private final RecurringExpenseService recurringExpenseService;
     private final ExtraIncomeService extraIncomeService;
 
+    /**
+     * Importa os registros lidos para o usuário. Cria os cartões que faltam (reaproveita o de mesmo nome, sem diferenciar
+     * maiúsculas de minúsculas), as assinaturas fixas, as compras parceladas, as despesas avulsas e a renda.
+     *
+     * @param userId  dono dos dados importados
+     * @param data    cartões, linhas e totais lidos da planilha
+     * @param options regras de categoria e dia do vencimento, escolhidos pelo usuário
+     * @return quanto foi criado e quanto já existia (rodar de novo não cria nada)
+     */
     @Transactional
     public ImportResult importFor(UUID userId, SpreadsheetData data, ImportOptions options) {
         var tally = new Tally();
