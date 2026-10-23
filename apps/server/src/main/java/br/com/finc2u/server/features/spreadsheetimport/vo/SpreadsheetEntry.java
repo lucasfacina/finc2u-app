@@ -22,6 +22,41 @@ public record SpreadsheetEntry(
     boolean paid
 ) {
 
+    public static SpreadsheetEntry cardItem(YearMonth paymentMonth, String card, BigDecimal value, InstallmentMark installment) {
+        return of(EntryKind.CARD_ITEM, paymentMonth, card, null, value, installment, false);
+    }
+
+    public static SpreadsheetEntry cardFixed(YearMonth paymentMonth, String card, String description, BigDecimal value) {
+        return of(EntryKind.CARD_FIXED, paymentMonth, card, description, value, null, false);
+    }
+
+    public static SpreadsheetEntry cardGeneral(YearMonth paymentMonth, String card, BigDecimal value) {
+        return of(EntryKind.CARD_GENERAL, paymentMonth, card, null, value, null, false);
+    }
+
+    public static SpreadsheetEntry bill(YearMonth paymentMonth, String description, BigDecimal value, boolean paid) {
+        return of(EntryKind.BILL, paymentMonth, null, description, value, null, paid);
+    }
+
+    public static SpreadsheetEntry extra(YearMonth paymentMonth, String description, BigDecimal value, InstallmentMark installment, boolean paid) {
+        return of(EntryKind.EXTRA, paymentMonth, null, description, value, installment, paid);
+    }
+
+    public static SpreadsheetEntry income(YearMonth paymentMonth, String description, BigDecimal value, boolean paid) {
+        return of(EntryKind.INCOME, paymentMonth, null, description, value, null, paid);
+    }
+
+    private static SpreadsheetEntry of(EntryKind kind, YearMonth paymentMonth, String card, String description, BigDecimal value, InstallmentMark installment, boolean paid) {
+        var number = installment == null
+            ? null
+            : installment.number();
+        var total = installment == null
+            ? null
+            : installment.total();
+
+        return new SpreadsheetEntry(paymentMonth, kind, card, description, value, number, total, paid);
+    }
+
     public SpreadsheetEntry markedPaid() {
         return new SpreadsheetEntry(paymentMonth, kind, card, description, value, installment, totalInstallments, true);
     }
