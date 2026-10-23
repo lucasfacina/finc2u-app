@@ -15,21 +15,21 @@ class MonthlySummaryTotalsTest {
 
     private static Expense expense(BigDecimal value, ExpenseType type, PaymentStatus status) {
         return Expense.builder()
-                .value(value)
-                .expenseType(type)
-                .paymentStatus(status)
-                .build();
+            .value(value)
+            .expenseType(type)
+            .paymentStatus(status)
+            .build();
     }
 
     private static ExtraIncome extraIncome(BigDecimal value) {
         return ExtraIncome.builder()
-                .value(value)
-                .build();
+            .value(value)
+            .build();
     }
 
     @Test
     void from_shouldReturnAllZeros_whenListsAreEmpty() {
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(List.of(), List.of());
+        var totals = MonthlySummaryTotals.from(List.of(), List.of());
 
         assertEquals(BigDecimal.ZERO, totals.totalExpenses());
         assertEquals(BigDecimal.ZERO, totals.totalPaid());
@@ -40,25 +40,25 @@ class MonthlySummaryTotalsTest {
 
     @Test
     void from_shouldSumAllExpenses_forTotalExpenses() {
-        List<Expense> expenses = List.of(
-                expense(BigDecimal.valueOf(100), ExpenseType.FIXED, PaymentStatus.PAID),
-                expense(BigDecimal.valueOf(200), ExpenseType.VARIABLE, PaymentStatus.PENDING)
+        var expenses = List.of(
+            expense(BigDecimal.valueOf(100), ExpenseType.FIXED, PaymentStatus.PAID),
+            expense(BigDecimal.valueOf(200), ExpenseType.VARIABLE, PaymentStatus.PENDING)
         );
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, List.of());
+        var totals = MonthlySummaryTotals.from(expenses, List.of());
 
         assertEquals(0, BigDecimal.valueOf(300).compareTo(totals.totalExpenses()));
     }
 
     @Test
     void from_shouldSeparatePaidAndPending() {
-        List<Expense> expenses = List.of(
-                expense(BigDecimal.valueOf(150), ExpenseType.VARIABLE, PaymentStatus.PAID),
-                expense(BigDecimal.valueOf(80), ExpenseType.VARIABLE, PaymentStatus.PENDING),
-                expense(BigDecimal.valueOf(70), ExpenseType.VARIABLE, PaymentStatus.PENDING)
+        var expenses = List.of(
+            expense(BigDecimal.valueOf(150), ExpenseType.VARIABLE, PaymentStatus.PAID),
+            expense(BigDecimal.valueOf(80), ExpenseType.VARIABLE, PaymentStatus.PENDING),
+            expense(BigDecimal.valueOf(70), ExpenseType.VARIABLE, PaymentStatus.PENDING)
         );
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, List.of());
+        var totals = MonthlySummaryTotals.from(expenses, List.of());
 
         assertEquals(0, BigDecimal.valueOf(150).compareTo(totals.totalPaid()));
         assertEquals(0, BigDecimal.valueOf(150).compareTo(totals.totalPending()));
@@ -66,23 +66,23 @@ class MonthlySummaryTotalsTest {
 
     @Test
     void from_shouldSumOnlyFixed_forTotalFixed() {
-        List<Expense> expenses = List.of(
-                expense(BigDecimal.valueOf(50), ExpenseType.FIXED, PaymentStatus.PAID),
-                expense(BigDecimal.valueOf(30), ExpenseType.FIXED, PaymentStatus.PENDING),
-                expense(BigDecimal.valueOf(200), ExpenseType.VARIABLE, PaymentStatus.PAID),
-                expense(BigDecimal.valueOf(100), ExpenseType.PARCELED, PaymentStatus.PENDING)
+        var expenses = List.of(
+            expense(BigDecimal.valueOf(50), ExpenseType.FIXED, PaymentStatus.PAID),
+            expense(BigDecimal.valueOf(30), ExpenseType.FIXED, PaymentStatus.PENDING),
+            expense(BigDecimal.valueOf(200), ExpenseType.VARIABLE, PaymentStatus.PAID),
+            expense(BigDecimal.valueOf(100), ExpenseType.PARCELED, PaymentStatus.PENDING)
         );
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(expenses, List.of());
+        var totals = MonthlySummaryTotals.from(expenses, List.of());
 
         assertEquals(0, BigDecimal.valueOf(80).compareTo(totals.totalFixed()));
     }
 
     @Test
     void from_shouldSumAllExtras() {
-        List<ExtraIncome> extraIncomes = List.of(extraIncome(BigDecimal.valueOf(500)), extraIncome(BigDecimal.valueOf(300)));
+        var extraIncomes = List.of(extraIncome(BigDecimal.valueOf(500)), extraIncome(BigDecimal.valueOf(300)));
 
-        MonthlySummaryTotals totals = MonthlySummaryTotals.from(List.of(), extraIncomes);
+        var totals = MonthlySummaryTotals.from(List.of(), extraIncomes);
 
         assertEquals(0, BigDecimal.valueOf(800).compareTo(totals.totalExtras()));
     }

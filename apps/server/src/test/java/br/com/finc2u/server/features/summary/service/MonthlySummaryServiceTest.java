@@ -148,12 +148,12 @@ class MonthlySummaryServiceTest {
 
     @Test
     void calculateOrRecalculate_shouldComputeTotalsAndSave() {
-        Expense expense1 = expenseOf(
+        var expense1 = expenseOf(
             BigDecimal.valueOf(500),
             PaymentStatus.PAID,
             TODAY.plusDays(10)
         );
-        Expense expense2 = expenseOf(
+        var expense2 = expenseOf(
             BigDecimal.valueOf(300),
             PaymentStatus.PENDING,
             TODAY.plusDays(20)
@@ -166,7 +166,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(800).compareTo(result.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalPaid()));
@@ -201,7 +201,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void calculateOrRecalculate_shouldIncludeAvulsoExpense_whenNoCardAccount() {
-        Expense avulso = expenseOf(
+        var avulso = expenseOf(
             BigDecimal.valueOf(200),
             PaymentStatus.PENDING,
             LocalDate.of(YEAR, MONTH, 5)
@@ -216,14 +216,14 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(200).compareTo(result.getTotalExpenses()));
     }
 
     @Test
     void calculateOrRecalculate_shouldNotChangeExpenses_whenPendingIsOverdue() {
-        Expense overdue = expenseOf(
+        var overdue = expenseOf(
             BigDecimal.valueOf(400),
             PaymentStatus.PENDING,
             TODAY.minusDays(1)
@@ -236,7 +236,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(PaymentStatus.PENDING, overdue.getPaymentStatus());
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getTotalPaid()));
@@ -254,7 +254,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(500).compareTo(result.getTotalExtras()));
         assertEquals(0, BigDecimal.valueOf(3500).compareTo(result.getRemainingAmount()));
@@ -262,7 +262,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void calculateOrRecalculate_shouldAutoFillCashBalance_fromPreviousMonthRemaining() {
-        MonthlySummary previousSummary = MonthlySummary.builder()
+        var previousSummary = MonthlySummary.builder()
             .month(5)
             .year(YEAR)
             .user(user)
@@ -276,7 +276,7 @@ class MonthlySummaryServiceTest {
             previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
@@ -290,7 +290,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertTrue(result.getPreviousMonthMissing());
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getCashBalance()));
@@ -298,7 +298,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void calculateOrRecalculate_shouldNotFlagThePreviousMonthAsMissing_whenThePreviousSummaryExists() {
-        MonthlySummary previousSummary = MonthlySummary.builder()
+        var previousSummary = MonthlySummary.builder()
             .month(5)
             .year(YEAR)
             .user(user)
@@ -312,14 +312,14 @@ class MonthlySummaryServiceTest {
             previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertFalse(result.getPreviousMonthMissing());
     }
 
     @Test
     void calculateOrRecalculate_shouldUsePreviousMonthRemaining_asCashBalance() {
-        MonthlySummary previousSummary = MonthlySummary.builder()
+        var previousSummary = MonthlySummary.builder()
             .month(5)
             .year(YEAR)
             .user(user)
@@ -333,7 +333,7 @@ class MonthlySummaryServiceTest {
             previousSummary
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(350).compareTo(result.getCashBalance()));
     }
@@ -347,7 +347,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.valueOf(1000).compareTo(result.getSavingsBalance()));
     }
@@ -358,14 +358,14 @@ class MonthlySummaryServiceTest {
         user.setSavingsBalance(null);
         stubRepositories(List.of(), List.of(), null, null);
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getSavingsBalance()));
     }
 
     @Test
     void calculateOrUpdate_shouldRecalculateExistingSummary_whenAlreadyExists() {
-        MonthlySummary existing = MonthlySummary.builder()
+        var existing = MonthlySummary.builder()
             .month(MONTH)
             .year(YEAR)
             .user(user)
@@ -379,7 +379,7 @@ class MonthlySummaryServiceTest {
             null
         );
 
-        MonthlySummary result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+        var result = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
 
         assertEquals(0, BigDecimal.ZERO.compareTo(result.getCashBalance()));
         verify(monthlySummaryRepository, times(1)).save(any(MonthlySummary.class));
@@ -413,7 +413,7 @@ class MonthlySummaryServiceTest {
     @Test
     void getByUserAndPeriod_shouldReturnSummaryWithItsCategoryTotals_whenExists() {
         var summaryId = UUID.randomUUID();
-        MonthlySummary summary = MonthlySummary.builder()
+        var summary = MonthlySummary.builder()
             .month(MONTH)
             .year(YEAR)
             .user(user)
@@ -433,7 +433,7 @@ class MonthlySummaryServiceTest {
 
     @Test
     void getByUserAndPeriod_shouldReturnAnEmptyCategoryList_whenTheSummaryHasNoExpenses() {
-        MonthlySummary summary = MonthlySummary.builder()
+        var summary = MonthlySummary.builder()
             .month(MONTH)
             .year(YEAR)
             .user(user)

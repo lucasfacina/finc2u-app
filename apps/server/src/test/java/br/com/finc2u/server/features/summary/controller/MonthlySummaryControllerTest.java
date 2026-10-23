@@ -49,7 +49,7 @@ class MonthlySummaryControllerTest {
     void setUp() {
         userId = UUID.randomUUID();
 
-        User user = User.builder()
+        var user = User.builder()
             .build();
         user.setId(userId);
 
@@ -78,7 +78,7 @@ class MonthlySummaryControllerTest {
 
     @Test
     void createOrUpdate_shouldReturnCreated_whenSummaryIsNew() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
+        var request = new MonthlySummaryRequest(userId, MONTH, YEAR);
         when(monthlySummaryService.recalculateFrom(eq(userId), eq(YearMonth.of(YEAR, MONTH))))
             .thenReturn(new MonthlySummaryResult(summary, List.of(groceriesTotal), true));
 
@@ -97,7 +97,7 @@ class MonthlySummaryControllerTest {
 
     @Test
     void createOrUpdate_shouldReturnOk_whenSummaryAlreadyExists() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, YEAR);
+        var request = new MonthlySummaryRequest(userId, MONTH, YEAR);
         when(monthlySummaryService.recalculateFrom(eq(userId), eq(YearMonth.of(YEAR, MONTH))))
             .thenReturn(new MonthlySummaryResult(summary, List.of(), false));
 
@@ -111,7 +111,7 @@ class MonthlySummaryControllerTest {
 
     @Test
     void createOrUpdate_shouldReturnBadRequest_whenUserIdIsNull() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(null, MONTH, YEAR);
+        var request = new MonthlySummaryRequest(null, MONTH, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +122,7 @@ class MonthlySummaryControllerTest {
     @Test
     @SuppressWarnings("DataFlowIssue")
     void createOrUpdate_shouldReturnBadRequest_whenMonthIsInvalid() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, 0, YEAR);
+        var request = new MonthlySummaryRequest(userId, 0, YEAR);
 
         mockMvc.perform(post("/monthly-summary")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +133,7 @@ class MonthlySummaryControllerTest {
     @Test
     @SuppressWarnings("DataFlowIssue")
     void createOrUpdate_shouldReturnBadRequest_whenYearIsInvalid() throws Exception {
-        MonthlySummaryRequest request = new MonthlySummaryRequest(userId, MONTH, 1999);
+        var request = new MonthlySummaryRequest(userId, MONTH, 1999);
 
         mockMvc.perform(post("/monthly-summary")
                 .contentType(MediaType.APPLICATION_JSON)

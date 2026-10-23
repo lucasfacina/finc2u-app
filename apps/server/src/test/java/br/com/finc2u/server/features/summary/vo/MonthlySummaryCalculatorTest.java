@@ -200,7 +200,7 @@ class MonthlySummaryCalculatorTest {
         assertEquals(List.of(), figures.categoryTotals());
     }
 
-    // ---- totalOverdue: atraso derivado da data de referência (D13) ----
+    // ---- totalOverdue: atraso derivado da data de referência ----
 
     @Test
     void calculate_shouldSumOnlyThePendingExpensesDueBeforeTheReferenceDate_asOverdue() {

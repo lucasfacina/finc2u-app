@@ -166,7 +166,7 @@ class PeriodDataChangedIntegrationTest {
             .map(Category::getId)
             .findFirst()
             .orElseThrow();
-        expenseService.create(userId, new ExpenseCommand(expense, null, null, category, null, null));
+        expenseService.create(userId, ExpenseCommand.of(expense).withCategoryId(category));
     }
 
     private UUID registerUser(String email) {

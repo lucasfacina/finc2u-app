@@ -16,11 +16,11 @@ class MonthlySummaryTest {
 
     @Test
     void forPeriod_shouldBuildSummaryWithPeriodAndUser() {
-        UUID userId = UUID.randomUUID();
-        User user = User.builder().build();
+        var userId = UUID.randomUUID();
+        var user = User.builder().build();
         user.setId(userId);
 
-        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
+        var summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         assertEquals(6, summary.getMonth());
         assertEquals(2026, summary.getYear());
@@ -31,8 +31,8 @@ class MonthlySummaryTest {
 
     @Test
     void apply_shouldStoreEveryFigureWithoutChangingThePeriodOrTheUser() {
-        User user = User.builder().build();
-        MonthlySummary summary = MonthlySummary.forPeriod(user, 6, 2026);
+        var user = User.builder().build();
+        var summary = MonthlySummary.forPeriod(user, 6, 2026);
 
         summary.apply(new MonthlySummaryFigures(
             BigDecimal.valueOf(3000),
