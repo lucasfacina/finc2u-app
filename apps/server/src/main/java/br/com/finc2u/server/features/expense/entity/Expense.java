@@ -141,6 +141,17 @@ public class Expense extends BaseModel {
     }
 
     /*
+     * Confere que o cartão da despesa vale na data da compra: compra depois da validade é recusada. Sem cartão não há o que
+     * conferir (a despesa pode ser avulsa). Fica fora do prepareForPersistence porque, na alteração, só roda quando a data da
+     * compra é informada.
+     */
+    public void assertCardUsableOn(LocalDate purchaseDate) {
+        if (cardAccount == null) return;
+
+        cardAccount.assertUsableOn(purchaseDate);
+    }
+
+    /*
      * Muda o status de pagamento mantendo o paidAt coerente: PAID sem data usa a data de referência (hoje); PENDING
      * limpa o paidAt (informá-lo junto com PENDING é erro). Valida antes de alterar, para não deixar a entidade pela metade.
      */
