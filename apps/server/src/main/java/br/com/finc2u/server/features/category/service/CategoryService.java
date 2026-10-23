@@ -29,9 +29,8 @@ public class CategoryService {
 
         // A constraint unique do banco diferencia maiúsculas de minúsculas ("Lazer" × "lazer"); esta checagem não,
         // e devolve um erro de negócio claro em vez de uma violação de integridade.
-        if (categoryRepository.findByUserIdAndNameIgnoreCase(userId, category.getName()).isPresent()) {
+        if (categoryRepository.findByUserIdAndNameIgnoreCase(userId, category.getName()).isPresent())
             throw new BusinessException("Categoria já cadastrada!");
-        }
 
         category.setUser(user);
 
