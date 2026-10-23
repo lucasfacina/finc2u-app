@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,19 +56,19 @@ class RecurringExpenseRepositoryTest {
     }
 
     @Test
-    void findByUserIdOrderByDescriptionAsc_shouldReturnOnlyModelsOfTheUser_sortedByDescription() {
+    void findByUserId_shouldReturnOnlyModelsOfTheUser() {
         var category = persistCategory("Assinaturas", ana);
         persistModel("Spotify", ana, category, null);
         persistModel("Netflix", ana, category, null);
         persistModel("Aluguel", beto, persistCategory("Moradia", beto), null);
 
-        var models = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(ana.getId());
+        var models = recurringExpenseRepository.findByUserId(ana.getId());
 
-        assertEquals(List.of("Netflix", "Spotify"), models.stream().map(RecurringExpense::getDescription).toList());
+        assertEquals(Set.of("Netflix", "Spotify"), models.stream().map(RecurringExpense::getDescription).collect(Collectors.toSet()));
     }
 
     @Test
-    void findByUserIdOrderByDescriptionAsc_shouldNotGrowWithTheNumberOfCardsAndCategories() {
+    void findByUserId_shouldNotGrowWithTheNumberOfCardsAndCategories() {
         for (int i = 1; i <= MODELS; i++) {
             persistModel("Modelo " + i, ana, persistCategory("Categoria " + i, ana), persistCard("Cartão " + i, ana));
         }
@@ -77,7 +79,7 @@ class RecurringExpenseRepositoryTest {
         entityManager.clear();
         statistics.clear();
 
-        var models = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(ana.getId());
+        var models = recurringExpenseRepository.findByUserId(ana.getId());
         models.forEach(model -> {
             assertNotNull(model.getCategory().getName());
             assertNotNull(model.getCardAccount().getCardName());

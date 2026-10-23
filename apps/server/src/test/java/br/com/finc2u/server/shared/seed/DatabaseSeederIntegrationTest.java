@@ -139,13 +139,13 @@ class DatabaseSeederIntegrationTest {
     void seed_shouldBeIdempotent_whenItRunsAgainOnAPopulatedDatabase() {
         var expensesBefore = expenseRepository.findByUserId(user.getId()).size();
         var extraIncomesBefore = extraIncomeRepository.findByUserId(user.getId()).size();
-        var modelsBefore = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()).size();
+        var modelsBefore = recurringExpenseRepository.findByUserId(user.getId()).size();
 
         databaseSeeder.run();
 
         assertEquals(expensesBefore, expenseRepository.findByUserId(user.getId()).size());
         assertEquals(extraIncomesBefore, extraIncomeRepository.findByUserId(user.getId()).size());
-        assertEquals(modelsBefore, recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()).size());
+        assertEquals(modelsBefore, recurringExpenseRepository.findByUserId(user.getId()).size());
         assertEquals(1, salaryHistoryService.getByUser(user.getId()).size());
         assertEquals(8, categoryService.getByUser(user.getId()).size());
     }

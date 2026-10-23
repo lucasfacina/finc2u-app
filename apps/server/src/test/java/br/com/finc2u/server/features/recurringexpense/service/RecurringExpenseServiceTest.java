@@ -26,6 +26,7 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -156,12 +157,27 @@ class RecurringExpenseServiceTest {
     void getByUser_shouldValidateTheUserAndReturnHisModels() {
         when(userService.getById(userId))
             .thenReturn(user);
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(userId))
+        when(recurringExpenseRepository.findByUserId(userId))
             .thenReturn(List.of(saved));
 
         var response = recurringExpenseService.getByUser(userId);
 
         assertEquals(List.of(saved), response);
+    }
+
+    // A ordem não vem do banco: o service ordena em português, sem depender da collation do servidor.
+    @Test
+    void getByUser_shouldSortTheDescriptionsInPortugueseOrder_whateverTheOrderTheRepositoryReturns() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(recurringExpenseRepository.findByUserId(userId))
+            .thenReturn(Stream.of("Zebra", "ônibus", "Alimentação", "Água", "Ótica", "alimentação")
+                .map(description -> RecurringExpense.of(description, BigDecimal.TEN, 5, YearMonth.of(2026, 10), null))
+                .toList());
+
+        var response = recurringExpenseService.getByUser(userId);
+
+        assertEquals(List.of("Água", "alimentação", "Alimentação", "ônibus", "Ótica", "Zebra"), response.stream().map(RecurringExpense::getDescription).toList());
     }
 
     @Test

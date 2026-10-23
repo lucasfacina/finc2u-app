@@ -209,7 +209,7 @@ class RecurringExpenseMaterializerTest {
         other.setId(UUID.randomUUID());
         other.setUser(user);
         other.setCategory(category);
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+        when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense, other));
 
         materializer.materializeForUser(user.getId(), YearMonth.of(2027, 3));
@@ -223,7 +223,7 @@ class RecurringExpenseMaterializerTest {
 
     @Test
     void materializeForUser_shouldNotCreateThePastMonths_whenTheSummaryIsOfThePast() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+        when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense));
 
         materializer.materializeForUser(user.getId(), YearMonth.of(2026, 9));
@@ -292,7 +292,7 @@ class RecurringExpenseMaterializerTest {
     // Quem chama é o próprio cálculo do resumo: avisar de lá seria recursão.
     @Test
     void materializeForUser_shouldNotPublish_evenWhenItCreatesExpenses() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+        when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense));
         createdOn(LocalDate.of(2026, 10, 25));
         createdOn(LocalDate.of(2026, 11, 25));
@@ -362,7 +362,7 @@ class RecurringExpenseMaterializerTest {
     @Test
     void materializeForUser_shouldNotCreateTheExpenseThatAlreadyPassedDue() {
         recurringExpense.setDayOfMonth(5);
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+        when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense));
         createdOn(LocalDate.of(2026, 11, 5));
 
@@ -458,7 +458,7 @@ class RecurringExpenseMaterializerTest {
 
     @Test
     void materializeForUser_shouldNotRecreateTheSkippedMonth() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(user.getId()))
+        when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense));
         when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), LocalDate.of(2026, 10, 25)))
             .thenReturn(false);

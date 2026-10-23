@@ -69,7 +69,7 @@ class RecurringExpenseSeederTest {
 
     @Test
     void seed_shouldCreateTheModelsStartingInTheMonthOfTheClock() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
+        when(recurringExpenseRepository.findByUserId(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -83,7 +83,7 @@ class RecurringExpenseSeederTest {
 
     @Test
     void seed_shouldCoverWithAndWithoutCardAndWithAndWithoutEndMonth() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
+        when(recurringExpenseRepository.findByUserId(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -99,7 +99,7 @@ class RecurringExpenseSeederTest {
 
     @Test
     void seed_shouldMaterializeTheUpcomingMonthsOfEveryModel() {
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
+        when(recurringExpenseRepository.findByUserId(context.get(User.class).getId()))
             .thenReturn(List.of());
 
         seeder.seed(context);
@@ -111,7 +111,7 @@ class RecurringExpenseSeederTest {
     @Test
     void seed_shouldNotRecreateAnExistingModel_butMaterializeItAgain() {
         var existing = RecurringExpense.of("Netflix", new BigDecimal("20.90"), 15, YearMonth.of(2026, 9), null);
-        when(recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId()))
+        when(recurringExpenseRepository.findByUserId(context.get(User.class).getId()))
             .thenReturn(List.of(existing));
 
         seeder.seed(context);
