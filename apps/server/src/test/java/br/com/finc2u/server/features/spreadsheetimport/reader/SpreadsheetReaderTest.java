@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.spreadsheetimport.reader;
 
+import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.features.spreadsheetimport.enums.EntryKind;
 import br.com.finc2u.server.features.spreadsheetimport.support.SpreadsheetWorkbookBuilder;
 import br.com.finc2u.server.features.spreadsheetimport.vo.SpreadsheetData;
@@ -247,8 +248,8 @@ class SpreadsheetReaderTest {
     void read_shouldFail_whenTheFileDoesNotExistOrIsNotXlsx() throws IOException {
         var csv = Files.writeString(dir.resolve("planilha.csv"), "a;b");
 
-        assertThrows(IllegalArgumentException.class, () -> reader.read(dir.resolve("nao-existe.xlsx"), FROM));
-        assertThrows(IllegalArgumentException.class, () -> reader.read(csv, FROM));
+        assertThrows(BusinessException.class, () -> reader.read(dir.resolve("nao-existe.xlsx"), FROM));
+        assertThrows(BusinessException.class, () -> reader.read(csv, FROM));
     }
 
     @Test
@@ -256,7 +257,7 @@ class SpreadsheetReaderTest {
         var big = dir.resolve("grande.xlsx");
         Files.write(big, new byte[10 * 1024 * 1024 + 1]);
 
-        assertThrows(IllegalArgumentException.class, () -> reader.read(big, FROM));
+        assertThrows(BusinessException.class, () -> reader.read(big, FROM));
     }
 
     @Test
