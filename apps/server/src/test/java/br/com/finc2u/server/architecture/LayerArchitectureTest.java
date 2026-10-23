@@ -10,8 +10,7 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 
 /*
  * As regras de camada do guia de classes: cada camada só conhece a de dentro. Analisa o `main` inteiro, e uma regra que não
@@ -52,6 +51,12 @@ class LayerArchitectureTest {
         .that().resideInAnyPackage("..dto..", "..form..")
         .should().dependOnClassesThat().resideInAnyPackage("..service..", "..repository..")
         .because("request e response só transportam dados; a conversão cabe a eles, a orquestração não");
+
+    @ArchTest
+    static final ArchRule repositoriesDoNotOrderTextInTheDatabase = noMethods()
+        .that().areDeclaredInClassesThat().resideInAPackage("..repository..")
+        .should().haveNameMatching(".*OrderBy(Name|CardName|Description).*")
+        .because("a ordem de um texto no banco depende da collation do servidor; quem entrega a lista ordena em Java com `TextOrder`");
 
     private static ArchCondition<JavaMethod> notExposeAnEntity() {
         return new ArchCondition<>("not return (or wrap) an entity") {
