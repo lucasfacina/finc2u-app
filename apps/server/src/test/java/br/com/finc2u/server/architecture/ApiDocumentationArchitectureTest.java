@@ -30,7 +30,7 @@ class ApiDocumentationArchitectureTest {
         .that().areMetaAnnotatedWith(RequestMapping.class)
         .or().areAnnotatedWith(RequestMapping.class)
         .should().beAnnotatedWith(Operation.class)
-        .because("cada endpoint precisa de resumo, descrição e `operationId` (o Angular vai gerar o cliente a partir deles)");
+        .because("cada endpoint precisa de resumo, descrição e `operationId` (o cliente do frontend é gerado a partir deles)");
 
     @ArchTest
     static final ArchRule domainDoesNotKnowSwagger = noClasses()
