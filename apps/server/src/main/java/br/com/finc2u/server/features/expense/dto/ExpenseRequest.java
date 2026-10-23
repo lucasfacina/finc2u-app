@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.expense.dto;
 
 import br.com.finc2u.server.config.BusinessConstants;
+import br.com.finc2u.server.features.category.dto.CategoryReference;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
@@ -97,23 +98,7 @@ public record ExpenseRequest(
     )
     String cardName
 
-) {
-
-    // A categoria é obrigatória: por id ou por nome.
-    @JsonIgnore
-    @AssertTrue(message = "Categoria é obrigatória: informe o categoryId ou o categoryName.")
-    @SuppressWarnings("unused") // chamado pelo Bean Validation
-    public boolean isCategoryInformed() {
-        return categoryId != null || (categoryName != null && !categoryName.isBlank());
-    }
-
-    // ...mas não pelos dois (consistência do próprio request).
-    @JsonIgnore
-    @AssertTrue(message = "Informe a categoria por id ou por nome, não pelos dois.")
-    @SuppressWarnings("unused") // chamado pelo Bean Validation
-    public boolean isCategoryReferenceValid() {
-        return categoryId == null || categoryName == null || categoryName.isBlank();
-    }
+) implements CategoryReference {
 
     // O cartão é informado por id ou por nome, nunca pelos dois (consistência do próprio request).
     @JsonIgnore

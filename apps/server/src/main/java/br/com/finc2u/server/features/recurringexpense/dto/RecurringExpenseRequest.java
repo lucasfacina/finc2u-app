@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.recurringexpense.dto;
 
+import br.com.finc2u.server.features.category.dto.CategoryReference;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -69,23 +70,7 @@ public record RecurringExpenseRequest(
     )
     UUID cardAccountId
 
-) {
-
-    // A categoria é obrigatória: por id ou por nome.
-    @JsonIgnore
-    @AssertTrue(message = "Categoria é obrigatória: informe o categoryId ou o categoryName.")
-    @SuppressWarnings("unused") // chamado pelo Bean Validation
-    public boolean isCategoryInformed() {
-        return categoryId != null || (categoryName != null && !categoryName.isBlank());
-    }
-
-    // ...mas não pelos dois (consistência do próprio request).
-    @JsonIgnore
-    @AssertTrue(message = "Informe a categoria por id ou por nome, não pelos dois.")
-    @SuppressWarnings("unused") // chamado pelo Bean Validation
-    public boolean isCategoryReferenceValid() {
-        return categoryId == null || categoryName == null || categoryName.isBlank();
-    }
+) implements CategoryReference {
 
     // O término não vem antes do início (só dá para comparar quando os dois vêm).
     @JsonIgnore
