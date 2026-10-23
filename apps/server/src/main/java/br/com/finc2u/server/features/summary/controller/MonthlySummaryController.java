@@ -56,7 +56,7 @@ public class MonthlySummaryController {
     )
     public ResponseEntity<List<MonthlySummaryResponse>> getHistoryByUserId(@RequestParam UUID userId) {
         var monthlySummaryResponse = monthlySummaryService.getByUser(userId).stream()
-            .map(detail -> MonthlySummaryResponse.from(detail.summary(), detail.categoryTotals()))
+            .map(MonthlySummaryResponse::from)
             .toList();
         return ResponseEntity.ok(monthlySummaryResponse);
     }
@@ -71,7 +71,7 @@ public class MonthlySummaryController {
     @ApiResponse(responseCode = "404", description = "Não há resumo para o período.")
     public ResponseEntity<MonthlySummaryResponse> getPeriodByUserId(@PathVariable UUID userId, @PathVariable Integer year, @PathVariable Integer month) {
         var detail = monthlySummaryService.getByUserAndPeriod(userId, month, year);
-        return ResponseEntity.ok(MonthlySummaryResponse.from(detail.summary(), detail.categoryTotals()));
+        return ResponseEntity.ok(MonthlySummaryResponse.from(detail));
     }
 
     @DeleteMapping("/{userId}/{year}/{month}")

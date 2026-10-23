@@ -23,7 +23,6 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @Tag(name = "Despesas", description = "Lançamento, consulta, alteração e exclusão das despesas do usuário, inclusive as " +
@@ -65,12 +64,9 @@ public class ExpenseController {
     @ApiResponse(responseCode = "404", description = "Usuário não encontrado.")
     public ResponseEntity<List<ExpenseResponse>> getAllByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
-        var expenseResponse = expenseService.getByUser(userId)
-            .stream()
-            .map(expense -> ExpenseResponse.from(expense, today))
-            .toList();
+        var expenses = expenseService.getByUser(userId);
 
-        return ResponseEntity.ok(expenseResponse);
+        return ResponseEntity.ok(ExpenseResponse.listOf(expenses, today));
     }
 
     @GetMapping("/filters")
@@ -86,7 +82,8 @@ public class ExpenseController {
     public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid @ParameterObject ExpenseFilterRequest filter) {
         var today = LocalDate.now(clock);
         var expenses = expenseService.getWithFilters(userId, filter.toFilter());
-        return ResponseEntity.ok(expenses.stream().map(expense -> ExpenseResponse.from(expense, today)).toList());
+
+        return ResponseEntity.ok(ExpenseResponse.listOf(expenses, today));
     }
 
     @GetMapping("/{id}")
@@ -112,9 +109,9 @@ public class ExpenseController {
     @ApiResponse(responseCode = "404", description = "Nenhuma compra parcelada com esse grupo.")
     public ResponseEntity<List<ExpenseResponse>> getInstallmentGroup(@PathVariable UUID groupId) {
         var today = LocalDate.now(clock);
-        return ResponseEntity.ok(expenseService.getByInstallmentGroup(groupId).stream()
-            .map(expense -> ExpenseResponse.from(expense, today))
-            .toList());
+        var installments = expenseService.getByInstallmentGroup(groupId);
+
+        return ResponseEntity.ok(ExpenseResponse.listOf(installments, today));
     }
 
     @GetMapping("/projections")
@@ -126,16 +123,9 @@ public class ExpenseController {
     )
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
-        var expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId, today)
-            .entrySet().stream()
-            .collect(Collectors.toMap(
-                Map.Entry::getKey, entry -> entry.getValue()
-                    .stream()
-                    .map(expense -> ExpenseResponse.from(expense, today))
-                    .toList()
-            ));
+        var projections = futureInstallmentProjection.getProjectionsByUser(userId, today);
 
-        return ResponseEntity.ok(expenseResponse);
+        return ResponseEntity.ok(ExpenseResponse.byMonth(projections, today));
     }
 
     @PutMapping("/{id}")
