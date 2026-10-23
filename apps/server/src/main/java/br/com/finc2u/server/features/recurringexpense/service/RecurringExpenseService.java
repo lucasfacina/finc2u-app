@@ -1,11 +1,10 @@
 package br.com.finc2u.server.features.recurringexpense.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
-import br.com.finc2u.server.features.card.service.CardAccountService;
-import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpenseSkip;
+import br.com.finc2u.server.features.recurringexpense.mapper.RecurringExpenseMapper;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
@@ -23,7 +22,7 @@ import java.util.UUID;
 /**
  * Modelos de despesa mensal (assinaturas, contas que se repetem). O modelo guarda a regra; as despesas reais, uma por mês, são
  * geradas pelo {@link RecurringExpenseMaterializer}. Categoria e cartão do modelo precisam ser do dono (os de outro usuário são
- * tratados como inexistentes).
+ * tratados como inexistentes); quem os resolve é o {@link RecurringExpenseMapper}.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,9 +31,8 @@ public class RecurringExpenseService {
     private final RecurringExpenseRepository recurringExpenseRepository;
     private final RecurringExpenseSkipRepository recurringExpenseSkipRepository;
     private final UserService userService;
-    private final CategoryService categoryService;
-    private final CardAccountService cardAccountService;
     private final ExpenseService expenseService;
+    private final RecurringExpenseMapper recurringExpenseMapper;
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
 
     /**
@@ -42,15 +40,14 @@ public class RecurringExpenseService {
      * passado nem vencimento que já passou.
      *
      * @throws ResourceNotFoundException usuário, categoria ou cartão inexistente (ou de outro usuário)
-     *                                   (lançada por {@code UserService#getById},
-     *                                   {@code CategoryService#getByIdAndUser} e {@code CardAccountService#getByIdAndUser})
+     *                                   (lançada por {@code UserService#getById} e {@code RecurringExpenseMapper#applyReferences})
      */
     @Transactional
     public RecurringExpense create(RecurringExpenseCommand command, UUID userId) {
         var recurringExpense = command.recurringExpense();
 
         recurringExpense.setUser(userService.getById(userId));
-        applyReferences(recurringExpense, command);
+        recurringExpenseMapper.applyReferences(recurringExpense, command);
 
         var saved = recurringExpenseRepository.save(recurringExpense);
         recurringExpenseMaterializer.materializeUpcoming(saved);
@@ -93,20 +90,14 @@ public class RecurringExpenseService {
      * Altera o modelo. Vale daqui para frente: as despesas já geradas não mudam.
      *
      * @throws ResourceNotFoundException modelo, categoria ou cartão inexistente
-     *                                   (lançada por {@code RecurringExpenseService#getById},
-     *                                   {@code CategoryService#getByIdAndUser} e {@code CardAccountService#getByIdAndUser})
+     *                                   (lançada por {@code RecurringExpenseService#getById} e {@code RecurringExpenseMapper#applyReferences})
      */
     @Transactional
     public RecurringExpense update(UUID id, RecurringExpenseCommand command) {
         var recurringExpense = getById(id);
-        var updates = command.recurringExpense();
 
-        recurringExpense.setDescription(updates.getDescription());
-        recurringExpense.setValue(updates.getValue());
-        recurringExpense.setDayOfMonth(updates.getDayOfMonth());
-        recurringExpense.setStartMonth(updates.getStartMonth());
-        recurringExpense.setEndMonth(updates.getEndMonth());
-        applyReferences(recurringExpense, command);
+        recurringExpenseMapper.applyEditableFields(recurringExpense, command.recurringExpense());
+        recurringExpenseMapper.applyReferences(recurringExpense, command);
 
         return recurringExpenseRepository.save(recurringExpense);
     }
@@ -136,17 +127,6 @@ public class RecurringExpenseService {
                 recurringExpenseSkipRepository.save(RecurringExpenseSkip.of(recurringExpense, dueDate));
             }
         });
-    }
-
-    private void applyReferences(RecurringExpense recurringExpense, RecurringExpenseCommand command) {
-        var ownerId = recurringExpense.getUser().getId();
-
-        recurringExpense.setCategory(command.categoryId() != null
-            ? categoryService.getByIdAndUser(command.categoryId(), ownerId)
-            : categoryService.getOrCreateByName(ownerId, command.categoryName()));
-        recurringExpense.setCardAccount(command.cardAccountId() != null
-            ? cardAccountService.getByIdAndUser(command.cardAccountId(), ownerId)
-            : null);
     }
 
 }
