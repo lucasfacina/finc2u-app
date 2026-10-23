@@ -119,7 +119,7 @@ class UserOwnedResponsesIntegrationTest {
 
         assertEquals(userId, MonthlySummaryResponse.from(calculated, List.of()).userId());
         assertEquals(1, history.size());
-        assertEquals(userId, MonthlySummaryResponse.from(history.getFirst().summary(), history.getFirst().categoryTotals()).userId());
+        assertEquals(userId, MonthlySummaryResponse.from(history.getFirst()).userId());
     }
 
     private UUID registerUser(String email) {
