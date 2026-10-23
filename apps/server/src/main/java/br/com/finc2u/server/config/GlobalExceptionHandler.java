@@ -38,6 +38,7 @@ public class GlobalExceptionHandler {
             "O recurso solicitado não foi encontrado.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -51,6 +52,7 @@ public class GlobalExceptionHandler {
             "Regra de negócio violada.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -64,6 +66,7 @@ public class GlobalExceptionHandler {
             "A requisição não pôde ser processada.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -78,6 +81,7 @@ public class GlobalExceptionHandler {
             detail,
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -91,6 +95,7 @@ public class GlobalExceptionHandler {
             "Verifique o formato e os tipos dos campos enviados.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -101,13 +106,13 @@ public class GlobalExceptionHandler {
         var details = exception.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .collect(Collectors.joining(", "));
-
         var error = new ErrorResponse(
             status.value(),
             "Erro de validação.",
             details,
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -126,6 +131,7 @@ public class GlobalExceptionHandler {
                 : "Violação de integridade referencial.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -139,6 +145,7 @@ public class GlobalExceptionHandler {
             "O parâmetro '" + exception.getParameterName() + "' é obrigatório.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -152,6 +159,7 @@ public class GlobalExceptionHandler {
             "Nenhum endpoint corresponde a '" + exception.getResourcePath() + "'.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -168,6 +176,7 @@ public class GlobalExceptionHandler {
             "O método '" + exception.getMethod() + "' não é suportado nesta rota. Métodos aceitos: " + supported + ".",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -184,6 +193,7 @@ public class GlobalExceptionHandler {
             "O Content-Type '" + exception.getContentType() + "' não é suportado. Tipos aceitos: " + supported + ".",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -199,6 +209,7 @@ public class GlobalExceptionHandler {
             "Ocorreu um erro inesperado. Tente novamente mais tarde.",
             LocalDateTime.now()
         );
+
         return new ResponseEntity<>(error, status);
     }
 
@@ -212,6 +223,7 @@ public class GlobalExceptionHandler {
                 return true;
             }
         }
+
         return false;
     }
 
