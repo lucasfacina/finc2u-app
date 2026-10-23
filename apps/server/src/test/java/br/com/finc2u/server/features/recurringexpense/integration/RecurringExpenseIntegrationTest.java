@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -162,14 +161,14 @@ class RecurringExpenseIntegrationTest {
         var transactions = new TransactionTemplate(transactionManager);
 
         try (var pool = Executors.newFixedThreadPool(2)) {
-            Future<Boolean> first = pool.submit(() -> transactions.execute(status -> {
+            var first = pool.submit(() -> transactions.execute(status -> {
                 var createdByFirst = materializer.materialize(model, december).isPresent();
                 firstCreated.countDown();
                 await(secondStarted);
                 holdTheTransactionWhileTheSecondTries();
                 return createdByFirst;
             }));
-            Future<Boolean> second = pool.submit(() -> {
+            var second = pool.submit(() -> {
                 firstCreated.await();
                 secondStarted.countDown();
                 return transactions.execute(status -> materializer.materialize(model, december).isPresent());
@@ -237,8 +236,7 @@ class RecurringExpenseIntegrationTest {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
             .build();
-        var saved = expenseService.create(userId, new ExpenseCommand(launched, null, null,
-            categoryService.getByUser(userId).getFirst().getId(), null, null));
+        var saved = expenseService.create(userId, ExpenseCommand.of(launched).withCategoryId(categoryService.getByUser(userId).getFirst().getId()));
 
         expenseService.delete(saved.getId());
 
@@ -307,7 +305,7 @@ class RecurringExpenseIntegrationTest {
     private RecurringExpenseCommand subscription(UUID userId, YearMonth startMonth, YearMonth endMonth, int dayOfMonth) {
         var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), dayOfMonth, startMonth, endMonth);
         var categoryId = categoryService.getByUser(userId).getFirst().getId();
-        return new RecurringExpenseCommand(model, categoryId, null, null);
+        return RecurringExpenseCommand.of(model).withCategoryId(categoryId);
     }
 
     private List<Expense> instancesOf(UUID userId) {
