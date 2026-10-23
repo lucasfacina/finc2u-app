@@ -6,59 +6,97 @@ import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.vo.ExpenseCommand;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@Schema(description = "Dados para lançar ou alterar uma despesa.")
 public record ExpenseRequest(
+
     @NotBlank(message = "Descrição é obrigatória!")
+    @Schema(
+        description = "Descrição da despesa.",
+        example = "Mercado"
+    )
     String description,
 
     @NotNull(message = "Valor é obrigatório!")
     @Positive(message = "Valor deve ser positivo.")
+    @Schema(
+        description = "Valor da despesa (o da parcela, se for parcelada). Deve ser positivo.",
+        example = "350.00"
+    )
     BigDecimal value,
 
     @NotNull(message = "Tipo de despesa é obrigatório!")
+    @Schema(description = "Tipo da despesa: FIXED (fixa), VARIABLE (variável) ou PARCELED (parcelada).")
     ExpenseType expenseType,
 
-    // Opcional: quando ausente e houver cartão, é calculado a partir de purchaseDate + fechamento/vencimento do cartão.
-    // Para despesas avulsas (sem cartão), continua sendo obrigatório (validado no service).
+    @Schema(
+        description = "Vencimento (AAAA-MM-DD). Com cartão, pode ser omitido: sai da fatura calculada a partir de purchaseDate. Em despesa avulsa (sem cartão) é obrigatório.",
+        example = "2026-10-15"
+    )
     LocalDate dueDate,
 
-    // Opcional: data da compra, usada para determinar em qual fatura (e vencimento) a despesa cai.
+    @Schema(
+        description = "Data da compra, que define em qual fatura (e vencimento) a despesa cai (AAAA-MM-DD). Omitida, vale hoje.",
+        example = "2026-10-01"
+    )
     LocalDate purchaseDate,
 
-    // Opcional: quando ausente, a despesa nasce PENDING. Com vencimento anterior a hoje, é obrigatório informar (400).
+    @Schema(description = "Status de pagamento. Omitido, a despesa nasce PENDING; se o vencimento for anterior a hoje, é obrigatório informar.")
     PaymentStatus paymentStatus,
 
-    // Opcional: data real do pagamento. Só vale com PAID e não pode ser futura (422); desconhecida = ausente.
+    @Schema(
+        description = "Data real do pagamento (AAAA-MM-DD). Só vale com PAID e não pode ser futura; desconhecida = omitida.",
+        example = "2026-10-14"
+    )
     LocalDate paidAt,
 
-    // Opcionais (só valem para PARCELED, senão 400). Com valor informado, ficam entre 1 e o teto de parcelas e a parcela
-    // atual não passa do total (400); a entidade mantém a mesma guarda (422) para quem não passa pelo request.
     @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Parcela atual deve ser no mínimo 1.")
     @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Parcela atual deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
+    @Schema(
+        description = "Parcela atual (1 até o total). Só em PARCELED; omitida, começa na 1.",
+        example = "1"
+    )
     Integer currentInstallment,
 
     @Min(value = BusinessConstants.MIN_INSTALLMENTS, message = "Total de parcelas deve ser no mínimo 1.")
     @Max(value = BusinessConstants.MAX_INSTALLMENTS, message = "Total de parcelas deve ser no máximo " + BusinessConstants.MAX_INSTALLMENTS + ".")
+    @Schema(
+        description = "Total de parcelas (1 a 120). Só pode ser informado em PARCELED, e nelas é obrigatório.",
+        example = "10"
+    )
     Integer totalInstallment,
 
-    // A categoria vem por id OU por nome (exatamente um dos dois).
+    @Schema(
+        description = "Id da categoria. Informe o categoryId OU o categoryName (exatamente um dos dois).",
+        example = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
     UUID categoryId,
 
-    // Alternativa ao categoryId; resolvido entre as categorias do próprio usuário (sem diferenciar maiúsculas de minúsculas) e criada na
-    // hora se ainda não existir
     @Size(max = 60, message = "O nome da categoria deve conter no máximo 60 caracteres.")
+    @Schema(
+        description = "Nome da categoria (até 60 caracteres), alternativa ao categoryId: resolvido entre as categorias do próprio usuário, sem diferenciar maiúsculas de minúsculas, e criada na hora se ainda não existir.",
+        example = "Pets"
+    )
     String categoryName,
 
-    // Opcional: despesa pode ser avulsa (boleto, conta de consumo) sem cartão vinculado
+    @Schema(
+        description = "Id do cartão. Informe o cardAccountId OU o cardName; nenhum dos dois = despesa avulsa (boleto, conta de consumo).",
+        example = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
     UUID cardAccountId,
 
-    // Opcional: alternativa ao cardAccountId; resolvido entre os cartões do próprio usuário (sem diferenciar maiúsculas de minúsculas)
+    @Schema(
+        description = "Nome do cartão, alternativa ao cardAccountId: resolvido entre os cartões do próprio usuário, sem diferenciar maiúsculas de minúsculas.",
+        example = "Nubank"
+    )
     String cardName
+
 ) {
 
     // A categoria é obrigatória: por id ou por nome.
