@@ -40,7 +40,8 @@ public class ExpenseSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        if (expenseRepository.existsByUserId(context.get(User.class).getId())) return;
+        var user = context.get(User.class);
+        if (expenseRepository.existsByUserId(user.getId())) return;
 
         var today = LocalDate.now(clock);
         var month = YearMonth.from(today);
@@ -56,7 +57,7 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(nubankDue)
             .expenseType(ExpenseType.FIXED)
             .paymentStatus(PaymentStatus.PAID)
-            .user(context.get(User.class))
+            .user(user)
             .cardAccount(context.get(CardAccount.class, "Nubank"))
             .category(context.get(Category.class, "Assinaturas"))
             .build());
@@ -68,7 +69,7 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(nubankDue)
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PAID)
-            .user(context.get(User.class))
+            .user(user)
             .cardAccount(context.get(CardAccount.class, "Nubank"))
             .category(context.get(Category.class, "Alimentação"))
             .build());
@@ -82,7 +83,7 @@ public class ExpenseSeeder implements Seeder {
             .paymentStatus(PaymentStatus.PAID)
             .currentInstallment(5)
             .totalInstallment(5)
-            .user(context.get(User.class))
+            .user(user)
             .cardAccount(context.get(CardAccount.class, "Nubank"))
             .category(context.get(Category.class, "Lazer"))
             .build()));
@@ -96,7 +97,7 @@ public class ExpenseSeeder implements Seeder {
             .paymentStatus(PaymentStatus.PENDING)
             .currentInstallment(4)
             .totalInstallment(10)
-            .user(context.get(User.class))
+            .user(user)
             .cardAccount(context.get(CardAccount.class, "Mercado Pago"))
             .category(context.get(Category.class, "Lazer"))
             .build()));
@@ -109,7 +110,7 @@ public class ExpenseSeeder implements Seeder {
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PAID)
             .paidAt(today.minusDays(1))
-            .user(context.get(User.class))
+            .user(user)
             .cardAccount(context.get(CardAccount.class, "Mercado Pago"))
             .category(context.get(Category.class, "Saúde"))
             .build());
@@ -121,7 +122,7 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(month.atDay(25))
             .expenseType(ExpenseType.FIXED)
             .paymentStatus(PaymentStatus.PENDING)
-            .user(context.get(User.class))
+            .user(user)
             .category(context.get(Category.class, "Transporte"))
             .build());
 
@@ -132,7 +133,7 @@ public class ExpenseSeeder implements Seeder {
             .dueDate(today.minusDays(3))
             .expenseType(ExpenseType.VARIABLE)
             .paymentStatus(PaymentStatus.PENDING)
-            .user(context.get(User.class))
+            .user(user)
             .category(context.get(Category.class, "Moradia"))
             .build());
 
