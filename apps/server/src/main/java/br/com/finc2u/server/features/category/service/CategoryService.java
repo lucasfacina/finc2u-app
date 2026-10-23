@@ -7,6 +7,7 @@ import br.com.finc2u.server.features.category.enums.DefaultCategory;
 import br.com.finc2u.server.features.category.repository.CategoryRepository;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.text.TextOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,14 +84,16 @@ public class CategoryService {
     }
 
     /**
-     * Categorias do usuário, ordenadas pelo nome.
+     * Categorias do usuário, ordenadas pelo nome na ordem alfabética do português ({@code TextOrder}).
      *
      * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
     @Transactional(readOnly = true)
     public List<Category> getByUser(UUID userId) {
         userService.getById(userId);
-        return categoryRepository.findByUserIdOrderByNameAsc(userId);
+        return categoryRepository.findByUserId(userId).stream()
+            .sorted(TextOrder.by(Category::getName))
+            .toList();
     }
 
     /**
@@ -101,7 +104,7 @@ public class CategoryService {
     public void createDefaults(User user) {
         var existingNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-        categoryRepository.findByUserIdOrderByNameAsc(user.getId())
+        categoryRepository.findByUserId(user.getId())
             .forEach(category -> existingNames.add(category.getName()));
 
         var missingCategories = Arrays.stream(DefaultCategory.values())

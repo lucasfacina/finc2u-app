@@ -26,7 +26,7 @@ public class CategorySeeder implements Seeder {
     public void seed(SeedContext context) {
         var user = context.get(User.class);
 
-        var existingCategories = categoryRepository.findByUserIdOrderByNameAsc(user.getId());
+        var existingCategories = categoryRepository.findByUserId(user.getId());
         existingCategories.forEach(category -> remember(context, category));
 
         var existingNames = existingCategories.stream().map(Category::getName).toList();
