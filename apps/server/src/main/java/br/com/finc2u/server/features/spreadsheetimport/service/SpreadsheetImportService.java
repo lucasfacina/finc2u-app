@@ -116,9 +116,11 @@ public class SpreadsheetImportService {
                 .orElse(null);
 
             if (model == null) {
-                model = recurringExpenseService.create(new RecurringExpenseCommand(
-                    RecurringExpense.of(span.description(), span.value(), card.getClosingDate(), firstCharge, endCharge),
-                    null, context.options().categoryFor(span.description()), card.getId()), context.userId());
+                var recurring = RecurringExpense.of(span.description(), span.value(), card.getClosingDate(), firstCharge, endCharge);
+                var command = RecurringExpenseCommand.of(recurring)
+                    .withCategoryName(context.options().categoryFor(span.description()))
+                    .withCardAccountId(card.getId());
+                model = recurringExpenseService.create(command, context.userId());
                 models.add(model);
                 tally.recurring++;
             } else {
@@ -190,8 +192,10 @@ public class SpreadsheetImportService {
                 .currentInstallment(first.installment())
                 .totalInstallment(chain.total())
                 .build();
-            var saved = expenseService.create(context.userId(),
-                new ExpenseCommand(purchase, null, cardName, null, context.options().categoryFor(chain.description()), null));
+            var command = ExpenseCommand.of(purchase)
+                .withCardName(cardName)
+                .withCategoryName(context.options().categoryFor(chain.description()));
+            var saved = expenseService.create(context.userId(), command);
             var rows = expenseService.getByInstallmentGroup(saved.getInstallmentGroupId());
             tally.expenses += rows.size();
 
@@ -239,7 +243,10 @@ public class SpreadsheetImportService {
                 .expenseType(type)
                 .paymentStatus(status(entry))
                 .build();
-            expenseService.create(context.userId(), new ExpenseCommand(expense, null, cardName, null, context.options().categoryFor(entry.description()), null));
+            var command = ExpenseCommand.of(expense)
+                .withCardName(cardName)
+                .withCategoryName(context.options().categoryFor(entry.description()));
+            expenseService.create(context.userId(), command);
             tally.expenses++;
         }
     }
@@ -299,7 +306,10 @@ public class SpreadsheetImportService {
             ? null
             : expense.getCardAccount().getId();
 
-        expenseService.update(expense.getId(), new ExpenseCommand(edited, cardId, null, expense.getCategory().getId(), null, null));
+        var command = ExpenseCommand.of(edited)
+            .withCardAccountId(cardId)
+            .withCategoryId(expense.getCategory().getId());
+        expenseService.update(expense.getId(), command);
     }
 
     private PaymentStatus status(SpreadsheetEntry entry) {
