@@ -27,3 +27,6 @@ app:
     enabled: false
   scheduling:
     enabled: false
+# Os controllers que só existem nos testes (/test/exceptions) não fazem parte da API documentada.
+springdoc:
+  paths-to-exclude: /test/**
