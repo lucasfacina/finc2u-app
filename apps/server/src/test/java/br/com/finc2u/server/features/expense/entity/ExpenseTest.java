@@ -4,11 +4,15 @@ import br.com.finc2u.server.config.BusinessConstants;
 import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
+import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
+import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -283,6 +287,85 @@ public class ExpenseTest {
             () -> expense.assertCardUsableOn(LocalDate.of(2026, 6, 1)));
 
         assertEquals("Cartão expirado em 05/2026.", exception.getMessage());
+    }
+
+    // ---- installmentAfter ----
+
+    @Test
+    void installmentAfter_shouldCopyThePurchaseData() {
+        var groupId = UUID.randomUUID();
+        var user = User.builder().name("Lucas").build();
+        var card = CardAccount.builder().cardName("Nubank").build();
+        var category = Category.of("Compras");
+        var expense = Expense.builder()
+            .description("Notebook")
+            .value(BigDecimal.valueOf(500))
+            .dueDate(TODAY)
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(2)
+            .totalInstallment(6)
+            .installmentGroupId(groupId)
+            .user(user)
+            .cardAccount(card)
+            .category(category)
+            .build();
+
+        var installment = expense.installmentAfter(1);
+
+        assertEquals("Notebook", installment.getDescription());
+        assertEquals(0, BigDecimal.valueOf(500).compareTo(installment.getValue()));
+        assertEquals(ExpenseType.PARCELED, installment.getExpenseType());
+        assertEquals(6, installment.getTotalInstallment());
+        assertEquals(groupId, installment.getInstallmentGroupId());
+        assertSame(user, installment.getUser());
+        assertSame(card, installment.getCardAccount());
+        assertSame(category, installment.getCategory());
+    }
+
+    @Test
+    void installmentAfter_shouldNumberTheInstallmentFromTheCurrentOne() {
+        var expense = Expense.builder()
+            .dueDate(TODAY)
+            .currentInstallment(4)
+            .totalInstallment(10)
+            .build();
+
+        assertEquals(5, expense.installmentAfter(1).getCurrentInstallment());
+        assertEquals(7, expense.installmentAfter(3).getCurrentInstallment());
+    }
+
+    @Test
+    void installmentAfter_shouldCountTheDueDateFromThisOne_notChainedFromThePreviousInstallment() {
+        var expense = Expense.builder()
+            .dueDate(LocalDate.of(2026, 1, 31))
+            .currentInstallment(1)
+            .totalInstallment(4)
+            .build();
+
+        assertEquals(LocalDate.of(2026, 2, 28), expense.installmentAfter(1).getDueDate());
+        assertEquals(LocalDate.of(2026, 3, 31), expense.installmentAfter(2).getDueDate());
+        assertEquals(LocalDate.of(2026, 4, 30), expense.installmentAfter(3).getDueDate());
+    }
+
+    @Test
+    void installmentAfter_shouldBeANewPendingExpense_withoutIdPaidAtOrRecurrence() {
+        var expense = Expense.builder()
+            .dueDate(TODAY)
+            .paymentStatus(PaymentStatus.PAID)
+            .paidAt(TODAY)
+            .currentInstallment(1)
+            .totalInstallment(3)
+            .recurringExpenseId(UUID.randomUUID())
+            .build();
+        expense.setId(UUID.randomUUID());
+
+        var installment = expense.installmentAfter(1);
+
+        assertNotSame(expense, installment);
+        assertNull(installment.getId());
+        assertEquals(PaymentStatus.PENDING, installment.getPaymentStatus());
+        assertNull(installment.getPaidAt());
+        assertNull(installment.getRecurringExpenseId());
     }
 
     // ---- isOverdue ----
