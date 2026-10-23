@@ -20,8 +20,8 @@ public class ExpenseTest {
 
     @Test
     void resolveDueDate_shouldKeepManualDueDate_whenAlreadyInformed() {
-        LocalDate manual = LocalDate.of(2026, 7, 10);
-        Expense expense = Expense.builder()
+        var manual = LocalDate.of(2026, 7, 10);
+        var expense = Expense.builder()
             .dueDate(manual)
             .build();
 
@@ -32,7 +32,7 @@ public class ExpenseTest {
 
     @Test
     void resolveDueDate_ShouldThrow_WhenNoCardAndNoDueDate() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .build();
 
         assertThrows(BusinessException.class, () -> expense.resolveDueDate(null));
@@ -40,9 +40,9 @@ public class ExpenseTest {
 
     @Test
     void resolveDueDate_ShouldThrow_WhenCardWithoutClosingOrDueConfigured() {
-        CardAccount card = CardAccount.builder()
+        var card = CardAccount.builder()
             .build();
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(card)
             .build();
 
@@ -52,11 +52,11 @@ public class ExpenseTest {
 
     @Test
     void resolveDueDate_ShouldCalculateFromCard_WhenDueDateNull() {
-        CardAccount card = CardAccount.builder()
+        var card = CardAccount.builder()
             .closingDate(30)
             .dueDate(15)
             .build();
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(card)
             .build();
 
@@ -69,7 +69,7 @@ public class ExpenseTest {
 
     @Test
     void resolveDefaultPaymentStatus_shouldThrowInvalidRequest_whenNullAndDueDateInThePast() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(1))
             .build();
 
@@ -92,7 +92,7 @@ public class ExpenseTest {
 
     @Test
     void resolveDefaultPaymentStatus_shouldBePending_whenNullAndDueDateInFuture() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(5))
             .build();
 
@@ -103,7 +103,7 @@ public class ExpenseTest {
 
     @Test
     void resolveDefaultPaymentStatus_shouldKeepExistingStatus_whenAlreadySet() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.minusDays(1))
             .paymentStatus(PaymentStatus.PENDING)
             .build();
@@ -291,7 +291,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenParceledWithoutTotalInstallments() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .build();
 
@@ -300,7 +300,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenParceledWithTotalBelowMinimum() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(0)
             .build();
@@ -310,7 +310,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldDefaultCurrentInstallment_whenNull() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(3)
             .build();
@@ -323,7 +323,7 @@ public class ExpenseTest {
     // A última parcela não vira PAID por ser a última: quem decide o status é o pagamento.
     @Test
     void applyInstallmentRules_shouldKeepStatus_whenLastInstallment() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(3)
             .totalInstallment(3)
@@ -337,7 +337,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldKeepStatus_whenSingleInstallmentPurchase() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(1)
             .paymentStatus(PaymentStatus.PENDING)
@@ -351,7 +351,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldKeepPaid_whenLastInstallmentWasInformedAsPaid() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(5)
             .totalInstallment(5)
@@ -365,7 +365,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenCurrentInstallmentExceedsTotal() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(10)
             .totalInstallment(5)
@@ -376,7 +376,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenCurrentInstallmentIsZero() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(0)
             .totalInstallment(3)
@@ -387,7 +387,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenCurrentInstallmentIsNegative() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(-5)
             .totalInstallment(3)
@@ -398,7 +398,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldThrow_whenTotalInstallmentExceedsMaximum() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(BusinessConstants.MAX_INSTALLMENTS + 1)
             .build();
@@ -408,7 +408,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldAccept_whenTotalInstallmentIsTheMaximum() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(BusinessConstants.MAX_INSTALLMENTS)
             .build();
@@ -420,7 +420,7 @@ public class ExpenseTest {
 
     @Test
     void applyInstallmentRules_shouldDoNothing_whenNotParceled() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .expenseType(ExpenseType.VARIABLE)
             .build();
 
@@ -433,11 +433,11 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldResolveDueDateFromCard() {
-        CardAccount card = CardAccount.builder()
+        var card = CardAccount.builder()
             .closingDate(30)
             .dueDate(15)
             .build();
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(card)
             .expenseType(ExpenseType.VARIABLE)
             .build();
@@ -449,7 +449,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldDefaultStatusToPending_whenResolvedDueDateIsNotInThePast() {
-        Expense future = Expense.builder()
+        var future = Expense.builder()
             .dueDate(TODAY.plusDays(5))
             .expenseType(ExpenseType.VARIABLE)
             .build();
@@ -477,7 +477,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldApplyInstallmentRules() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(1))
             .expenseType(ExpenseType.PARCELED)
             .totalInstallment(3)
@@ -490,7 +490,7 @@ public class ExpenseTest {
 
     @Test
     void prepareForPersistence_shouldKeepFutureLastInstallmentPending() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .dueDate(TODAY.plusDays(1))
             .expenseType(ExpenseType.PARCELED)
             .currentInstallment(3)

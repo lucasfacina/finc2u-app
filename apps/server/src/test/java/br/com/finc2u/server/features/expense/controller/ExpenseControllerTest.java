@@ -88,9 +88,9 @@ class ExpenseControllerTest {
         categoryId = UUID.randomUUID();
         userId = UUID.randomUUID();
 
-        CardAccount cardAccount = CardAccount.builder().cardName("Cartão Nu").build();
+        var cardAccount = CardAccount.builder().cardName("Cartão Nu").build();
         cardAccount.setId(cardAccountId);
-        Category category = Category.of("Alimentação");
+        var category = Category.of("Alimentação");
         category.setId(categoryId);
 
         expense = Expense.builder()
@@ -522,10 +522,10 @@ class ExpenseControllerTest {
                 .param("overdue", "true"))
             .andExpect(status().isOk());
 
-        ArgumentCaptor<ExpenseFilter> captor = ArgumentCaptor.forClass(ExpenseFilter.class);
+        var captor = ArgumentCaptor.forClass(ExpenseFilter.class);
         verify(expenseService).getWithFilters(eq(userId), captor.capture());
 
-        ExpenseFilter filter = captor.getValue();
+        var filter = captor.getValue();
         assertEquals(5, filter.month());
         assertEquals(2026, filter.year());
         assertEquals(PaymentStatus.PAID, filter.status());

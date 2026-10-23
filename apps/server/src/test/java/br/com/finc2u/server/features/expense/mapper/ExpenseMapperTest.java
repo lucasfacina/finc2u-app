@@ -40,14 +40,14 @@ public class ExpenseMapperTest {
         var owner = User.builder()
             .build();
         owner.setId(UUID.randomUUID());
-        UUID cardId = UUID.randomUUID();
-        CardAccount card = CardAccount.builder()
+        var cardId = UUID.randomUUID();
+        var card = CardAccount.builder()
             .build();
         card.setId(cardId);
         when(cardAccountService.getByIdAndUser(cardId, owner.getId()))
             .thenReturn(card);
 
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .user(owner)
             .build();
         expenseMapper.applyCardAccount(expense, cardId, null);
@@ -60,11 +60,11 @@ public class ExpenseMapperTest {
         var owner = User.builder()
             .build();
         owner.setId(UUID.randomUUID());
-        UUID cardId = UUID.randomUUID();
+        var cardId = UUID.randomUUID();
         when(cardAccountService.getByIdAndUser(cardId, owner.getId()))
             .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o ID: " + cardId));
 
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .user(owner)
             .build();
 
@@ -77,13 +77,13 @@ public class ExpenseMapperTest {
         var owner = User.builder()
             .build();
         owner.setId(UUID.randomUUID());
-        CardAccount card = CardAccount.builder()
+        var card = CardAccount.builder()
             .cardName("Nubank")
             .build();
         when(cardAccountService.getByUserAndName(owner.getId(), "nubank"))
             .thenReturn(card);
 
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .user(owner)
             .build();
         expenseMapper.applyCardAccount(expense, null, "nubank");
@@ -100,7 +100,7 @@ public class ExpenseMapperTest {
         when(cardAccountService.getByUserAndName(owner.getId(), "Nubank"))
             .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado com o nome: Nubank"));
 
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .user(owner)
             .build();
 
@@ -110,7 +110,7 @@ public class ExpenseMapperTest {
 
     @Test
     void applyCardAccount_shouldUnlink_whenNameIsBlank() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(CardAccount.builder().build())
             .build();
 
@@ -122,7 +122,7 @@ public class ExpenseMapperTest {
 
     @Test
     void applyCardAccount_shouldUnlink_whenIdNull() {
-        Expense expense = Expense.builder()
+        var expense = Expense.builder()
             .cardAccount(CardAccount.builder().build())
             .build();
 
@@ -208,16 +208,16 @@ public class ExpenseMapperTest {
 
     @Test
     void applyEditableFields_shouldCopyScalarFields_butNotAssociations() {
-        CardAccount card = CardAccount.builder().
+        var card = CardAccount.builder().
             build();
 
-        Expense target = Expense.builder()
+        var target = Expense.builder()
             .description("antigo")
             .value(BigDecimal.valueOf(10))
             .cardAccount(card)
             .build();
 
-        Expense source = Expense.builder()
+        var source = Expense.builder()
             .description("novo")
             .value(BigDecimal.valueOf(99))
             .dueDate(LocalDate.of(2026, 8, 1))

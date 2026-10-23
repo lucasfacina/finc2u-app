@@ -110,7 +110,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenReturn(expense);
 
-        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertNotNull(response);
         assertEquals(expense.getDescription(), response.getDescription());
@@ -144,7 +144,7 @@ class ExpenseServiceTest {
         when(expenseRepository.saveAll(any()))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
     }
@@ -238,7 +238,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(
+        var response = expenseService.create(
             userId,
             command(expense, cardAccountId, LocalDate.of(2026, 5, 20))
         );
@@ -282,7 +282,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.create(userId, command(expense, cardAccountId, null));
+        var response = expenseService.create(userId, command(expense, cardAccountId, null));
 
         assertEquals(PaymentStatus.PENDING, response.getPaymentStatus());
     }
@@ -386,14 +386,14 @@ class ExpenseServiceTest {
         var updates = Expense.builder()
             .description("Mercado do mês")
             .build();
-        var command = new ExpenseCommand(updates, cardAccountId, null, categoryId, null, null);
+        var command = ExpenseCommand.of(updates).withCardAccountId(cardAccountId).withCategoryId(categoryId);
 
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        Expense response = expenseService.update(expenseId, command);
+        var response = expenseService.update(expenseId, command);
 
         assertEquals(expenseId, response.getId());
         verify(expenseMapper).applyCardAccount(expense, cardAccountId, null);
@@ -544,7 +544,7 @@ class ExpenseServiceTest {
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
 
-        Expense response = expenseService.getById(expenseId);
+        var response = expenseService.getById(expenseId);
 
         assertNotNull(response);
         assertEquals(expenseId, response.getId());
@@ -565,7 +565,7 @@ class ExpenseServiceTest {
         when(expenseRepository.findByUserId(userId))
             .thenReturn(List.of(expense));
 
-        List<Expense> response = expenseService.getByUser(userId);
+        var response = expenseService.getByUser(userId);
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
@@ -643,7 +643,7 @@ class ExpenseServiceTest {
                 null, // maxPrice
                 null // overdue
             );
-        List<Expense> response = expenseService.getWithFilters(userId, filter);
+        var response = expenseService.getWithFilters(userId, filter);
 
         assertNotNull(response);
         assertEquals(1, response.size());
@@ -658,7 +658,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenReturn(expense);
 
-        expenseService.create(userId, new ExpenseCommand(expense, cardAccountId, null, null, "Pets", null));
+        expenseService.create(userId, ExpenseCommand.of(expense).withCardAccountId(cardAccountId).withCategoryName("Pets"));
 
         verify(expenseMapper).applyCategory(expense, null, "Pets");
     }
@@ -673,7 +673,7 @@ class ExpenseServiceTest {
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
-        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, null, "Pets", null));
+        expenseService.update(expenseId, ExpenseCommand.of(updates).withCardAccountId(cardAccountId).withCategoryName("Pets"));
 
         verify(expenseMapper).applyCategory(expense, null, "Pets");
     }
@@ -862,7 +862,7 @@ class ExpenseServiceTest {
             return null;
         }).when(expenseMapper).applyEditableFields(expense, updates);
 
-        expenseService.update(expenseId, new ExpenseCommand(updates, cardAccountId, null, categoryId, null, null));
+        expenseService.update(expenseId, ExpenseCommand.of(updates).withCardAccountId(cardAccountId).withCategoryId(categoryId));
     }
 
     // Monta o VO como o materializer faz: a feature expense recebe os dados do modelo, não o modelo.
@@ -872,7 +872,7 @@ class ExpenseServiceTest {
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
-        return new ExpenseCommand(expense, cardAccountId, null, categoryId, null, purchaseDate);
+        return ExpenseCommand.of(expense).withCardAccountId(cardAccountId).withCategoryId(categoryId).withPurchaseDate(purchaseDate);
     }
 
 }
