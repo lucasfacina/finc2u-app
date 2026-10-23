@@ -71,7 +71,7 @@ class MonthlySummaryCategoryTotalRepositoryTest {
 
     @Test
     void findBySummaryIdIn_shouldServeAllTheSummariesInASingleStatement_readingTheCategoryName() {
-        var totals = categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(idsOf(summaries));
+        var totals = categoryTotalRepository.findBySummaryIdIn(idsOf(summaries));
 
         assertEquals(9, totals.size());
         totals.forEach(total -> assertNotNull(total.getCategory().getName()));
@@ -79,18 +79,8 @@ class MonthlySummaryCategoryTotalRepositoryTest {
     }
 
     @Test
-    void findBySummaryIdIn_shouldOrderTheRowsByCategoryName() {
-        var totals = categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(idsOf(summaries));
-
-        var names = totals.stream().map(total -> total.getCategory().getName()).toList();
-        assertEquals(names.stream().sorted().toList(), names);
-        assertEquals("Alimentação", names.getFirst());
-        assertEquals("Transporte", names.getLast());
-    }
-
-    @Test
     void findBySummaryIdIn_shouldReturnOnlyTheRequestedSummaries() {
-        var totals = categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(summaries.getFirst().getId()));
+        var totals = categoryTotalRepository.findBySummaryIdIn(List.of(summaries.getFirst().getId()));
 
         assertEquals(3, totals.size());
         assertTrue(totals.stream().allMatch(total -> total.getSummary().getId().equals(summaries.getFirst().getId())));
@@ -98,7 +88,7 @@ class MonthlySummaryCategoryTotalRepositoryTest {
 
     @Test
     void findBySummaryIdIn_shouldReturnNothing_forUnknownIds() {
-        assertTrue(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(UUID.randomUUID())).isEmpty());
+        assertTrue(categoryTotalRepository.findBySummaryIdIn(List.of(UUID.randomUUID())).isEmpty());
     }
 
     // O que o service faz no histórico: os resumos (1 consulta) e os totais de todos eles (1 consulta), e só.
@@ -127,8 +117,8 @@ class MonthlySummaryCategoryTotalRepositoryTest {
         categoryTotalRepository.deleteBySummaryId(target.getId());
         resetStatistics();
 
-        assertTrue(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(target.getId())).isEmpty());
-        assertEquals(6, categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(
+        assertTrue(categoryTotalRepository.findBySummaryIdIn(List.of(target.getId())).isEmpty());
+        assertEquals(6, categoryTotalRepository.findBySummaryIdIn(
             List.of(summaries.get(0).getId(), summaries.get(2).getId())).size());
     }
 
@@ -160,7 +150,7 @@ class MonthlySummaryCategoryTotalRepositoryTest {
 
     private void readHistory() {
         var history = monthlySummaryRepository.findByUserId(ana.getId());
-        categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(idsOf(history))
+        categoryTotalRepository.findBySummaryIdIn(idsOf(history))
             .forEach(total -> assertNotNull(total.getCategory().getName()));
     }
 

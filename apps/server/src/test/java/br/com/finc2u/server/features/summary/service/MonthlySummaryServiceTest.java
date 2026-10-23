@@ -30,6 +30,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -422,13 +423,52 @@ class MonthlySummaryServiceTest {
         var groceriesTotal = MonthlySummaryCategoryTotal.of(summary, groceries, BigDecimal.valueOf(300));
         when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
             .thenReturn(Optional.of(summary));
-        when(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(summaryId)))
+        when(categoryTotalRepository.findBySummaryIdIn(List.of(summaryId)))
             .thenReturn(List.of(groceriesTotal));
 
         var result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
 
         assertSame(summary, result.summary());
         assertEquals(List.of(groceriesTotal), result.categoryTotals());
+    }
+
+    // A ordem não vem do banco: o service ordena os totais pelo nome da categoria, em português.
+    @Test
+    void getByUserAndPeriod_shouldSortTheCategoryTotalsInPortugueseOrder_whateverTheOrderTheRepositoryReturns() {
+        var summary = summaryOf(MONTH);
+        var totals = Stream.of("Zebra", "ônibus", "Alimentação", "Água", "Ótica", "alimentação")
+            .map(name -> MonthlySummaryCategoryTotal.of(summary, categoryOf(name), BigDecimal.TEN))
+            .toList();
+        when(monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, MONTH, YEAR))
+            .thenReturn(Optional.of(summary));
+        when(categoryTotalRepository.findBySummaryIdIn(List.of(summary.getId())))
+            .thenReturn(totals);
+
+        var result = monthlySummaryService.getByUserAndPeriod(userId, MONTH, YEAR);
+
+        assertEquals(List.of("Água", "alimentação", "Alimentação", "ônibus", "Ótica", "Zebra"),
+            result.categoryTotals().stream().map(total -> total.getCategory().getName()).toList());
+    }
+
+    @Test
+    void getByUser_shouldSortTheCategoryTotalsOfEachSummaryInPortugueseOrder() {
+        var may = summaryOf(5);
+        var june = summaryOf(6);
+        when(monthlySummaryRepository.findByUserId(userId))
+            .thenReturn(List.of(may, june));
+        when(categoryTotalRepository.findBySummaryIdIn(List.of(may.getId(), june.getId())))
+            .thenReturn(List.of(
+                MonthlySummaryCategoryTotal.of(may, categoryOf("Zebra"), BigDecimal.TEN),
+                MonthlySummaryCategoryTotal.of(june, categoryOf("ônibus"), BigDecimal.TEN),
+                MonthlySummaryCategoryTotal.of(may, categoryOf("Água"), BigDecimal.TEN),
+                MonthlySummaryCategoryTotal.of(june, categoryOf("Ótica"), BigDecimal.TEN)));
+
+        var result = monthlySummaryService.getByUser(userId);
+
+        assertEquals(List.of("Água", "Zebra"),
+            result.get(0).categoryTotals().stream().map(total -> total.getCategory().getName()).toList());
+        assertEquals(List.of("ônibus", "Ótica"),
+            result.get(1).categoryTotals().stream().map(total -> total.getCategory().getName()).toList());
     }
 
     @Test
@@ -467,7 +507,7 @@ class MonthlySummaryServiceTest {
         var juneLeisure = MonthlySummaryCategoryTotal.of(june, leisure, BigDecimal.valueOf(50));
         when(monthlySummaryRepository.findByUserId(userId))
             .thenReturn(List.of(may, june));
-        when(categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(List.of(may.getId(), june.getId())))
+        when(categoryTotalRepository.findBySummaryIdIn(List.of(may.getId(), june.getId())))
             .thenReturn(List.of(mayTotal, juneGroceries, juneLeisure));
 
         var result = monthlySummaryService.getByUser(userId);
@@ -475,7 +515,7 @@ class MonthlySummaryServiceTest {
         assertEquals(2, result.size());
         assertEquals(List.of(mayTotal), result.get(0).categoryTotals());
         assertEquals(List.of(juneGroceries, juneLeisure), result.get(1).categoryTotals());
-        verify(categoryTotalRepository, times(1)).findBySummaryIdInOrderByCategoryNameAsc(anyCollection());
+        verify(categoryTotalRepository, times(1)).findBySummaryIdIn(anyCollection());
     }
 
     @Test

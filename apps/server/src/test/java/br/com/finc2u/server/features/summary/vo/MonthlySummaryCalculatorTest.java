@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -179,6 +180,18 @@ class MonthlySummaryCalculatorTest {
             figures.categoryTotals().stream().map(total -> total.category().getName()).toList());
         assertMoney(350, figures.categoryTotals().get(0).total());
         assertMoney(70, figures.categoryTotals().get(1).total());
+    }
+
+    @Test
+    void calculate_shouldSortTheCategoryTotalsInPortugueseOrder_whateverTheOrderOfTheExpenses() {
+        var expenses = Stream.of("Zebra", "ônibus", "Alimentação", "Água", "Ótica", "alimentação")
+            .map(name -> expense(10, PaymentStatus.PENDING, ExpenseType.VARIABLE, REFERENCE_DATE.plusDays(1), Category.of(name)))
+            .toList();
+
+        var figures = MonthlySummaryCalculator.calculate(input(expenses, List.of(), 3000, 0, null, null));
+
+        assertEquals(List.of("Água", "alimentação", "Alimentação", "ônibus", "Ótica", "Zebra"),
+            figures.categoryTotals().stream().map(total -> total.category().getName()).toList());
     }
 
     @Test
