@@ -41,22 +41,17 @@ public class RecurringExpenseMaterializer {
     // ou já existente).
     @Transactional
     public Optional<Expense> materialize(RecurringExpense recurringExpense, YearMonth month) {
-        if (!recurringExpense.isActiveIn(month) || month.isBefore(YearMonth.now(clock))) {
-            return Optional.empty();
-        }
+        if (!recurringExpense.isActiveIn(month) || month.isBefore(YearMonth.now(clock))) return Optional.empty();
 
         var dueDate = recurringExpense.dueDateIn(month);
-        if (dueDate.isBefore(LocalDate.now(clock))) {
-            return Optional.empty();
-        }
+        if (dueDate.isBefore(LocalDate.now(clock))) return Optional.empty();
 
         // Serializa a geração do mesmo modelo: duas transações (o resumo e o job, por exemplo) esperam aqui uma pela outra, e a segunda
         // já enxerga o que a primeira criou, em vez de estourar a unique de modelo + vencimento no commit.
         recurringExpenseRepository.findByIdForUpdate(recurringExpense.getId());
 
-        if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate)) {
+        if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
             return Optional.empty();
-        }
 
         return expenseService.createFromRecurrence(commandFor(recurringExpense, dueDate));
     }
