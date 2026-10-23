@@ -79,7 +79,7 @@ public class ExpenseService {
         expense.assertCardUsableOn(purchaseDate);
         expense.prepareForPersistence(purchaseDate, today);
 
-        var saved = expense.getExpenseType() == ExpenseType.PARCELED
+        var saved = expense.isParceled()
             ? saveInstallments(expense)
             : expenseRepository.save(expense);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(userId, expense.getDueDate()));

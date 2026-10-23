@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.expense.vo;
 
 import br.com.finc2u.server.features.expense.entity.Expense;
-import br.com.finc2u.server.features.expense.enums.ExpenseType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +21,7 @@ public record InstallmentSchedule(List<Expense> installments) {
     }
 
     public static InstallmentSchedule from(Expense first) {
-        if (first.getExpenseType() != ExpenseType.PARCELED)
+        if (!first.isParceled())
             throw new IllegalArgumentException("Só despesas PARCELED geram parcelas.");
 
         if (first.getInstallmentGroupId() == null)

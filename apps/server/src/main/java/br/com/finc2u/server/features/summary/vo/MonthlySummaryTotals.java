@@ -1,8 +1,6 @@
 package br.com.finc2u.server.features.summary.vo;
 
 import br.com.finc2u.server.features.expense.entity.Expense;
-import br.com.finc2u.server.features.expense.enums.ExpenseType;
-import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 
 import java.math.BigDecimal;
@@ -20,14 +18,14 @@ public record MonthlySummaryTotals(
     public static MonthlySummaryTotals from(List<Expense> expenses, List<ExtraIncome> extraIncomes) {
         return new MonthlySummaryTotals(
             summarizeExpenses(expenses, expense -> true),
-            summarizeExpenses(expenses, expense -> expense.getPaymentStatus() == PaymentStatus.PAID),
-            summarizeExpenses(expenses, expense -> expense.getPaymentStatus() == PaymentStatus.PENDING),
+            summarizeExpenses(expenses, Expense::isPaid),
+            summarizeExpenses(expenses, Expense::isPending),
 
             extraIncomes.stream()
                 .map(ExtraIncome::getValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add),
 
-            summarizeExpenses(expenses, expense -> expense.getExpenseType() == ExpenseType.FIXED));
+            summarizeExpenses(expenses, Expense::isFixed));
     }
 
     private static BigDecimal summarizeExpenses(List<Expense> expenses, Predicate<Expense> filter) {
