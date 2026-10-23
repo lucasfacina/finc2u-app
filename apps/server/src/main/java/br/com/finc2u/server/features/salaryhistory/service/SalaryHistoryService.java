@@ -5,7 +5,6 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.repository.SalaryHistoryRepository;
 import br.com.finc2u.server.features.salaryhistory.vo.CurrentSalary;
-import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.port.CurrentSalaryPort;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
@@ -31,7 +30,7 @@ public class SalaryHistoryService implements CurrentSalaryPort {
 
     @Transactional
     public SalaryHistory create(SalaryHistory history, UUID userId) {
-        User user = userService.getById(userId);
+        var user = userService.getById(userId);
         if (salaryHistoryRepository.existsByUserIdAndEffectiveFrom(userId, history.getEffectiveFrom())) {
             throw new BusinessException("Já existe um registro de salário com vigência em " +
                 history.getEffectiveFrom() + " para este usuário.");
@@ -84,9 +83,8 @@ public class SalaryHistoryService implements CurrentSalaryPort {
     @Override
     @Transactional(readOnly = true)
     public Map<UUID, BigDecimal> getCurrentBaseSalaries(Collection<UUID> userIds) {
-        if (userIds.isEmpty()) {
-            return Map.of();
-        }
+        if (userIds.isEmpty()) return Map.of();
+
         return salaryHistoryRepository.findCurrentSalaries(userIds, LocalDate.now(clock))
             .stream()
             .collect(Collectors.toMap(CurrentSalary::userId, CurrentSalary::baseSalary));
@@ -94,7 +92,7 @@ public class SalaryHistoryService implements CurrentSalaryPort {
 
     @Transactional
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
-        SalaryHistory salaryHistory = getById(id);
+        var salaryHistory = getById(id);
         var previousEffectiveFrom = salaryHistory.getEffectiveFrom();
         salaryHistoryRepository
             .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
@@ -114,7 +112,7 @@ public class SalaryHistoryService implements CurrentSalaryPort {
 
     @Transactional
     public void delete(UUID id) {
-        SalaryHistory history = getById(id);
+        var history = getById(id);
         salaryHistoryRepository.delete(history);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(history.getUser().getId(), history.getEffectiveFrom()));
     }

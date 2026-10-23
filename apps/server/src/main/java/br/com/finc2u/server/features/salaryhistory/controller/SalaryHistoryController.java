@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.salaryhistory.controller;
 
 import br.com.finc2u.server.features.salaryhistory.dto.SalaryHistoryRequest;
-import br.com.finc2u.server.features.salaryhistory.entity.SalaryHistory;
 import br.com.finc2u.server.features.salaryhistory.form.SalaryHistoryResponse;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
 import jakarta.validation.Valid;
@@ -22,16 +21,16 @@ public class SalaryHistoryController {
 
     @PostMapping
     public ResponseEntity<SalaryHistoryResponse> create(@RequestBody @Valid SalaryHistoryRequest salaryHistoryRequest) {
-        SalaryHistory savedHistory = salaryHistoryService.create(salaryHistoryRequest.toEntity(), salaryHistoryRequest.userId());
+        var savedHistory = salaryHistoryService.create(salaryHistoryRequest.toEntity(), salaryHistoryRequest.userId());
         return new ResponseEntity<>(SalaryHistoryResponse.from(savedHistory), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<SalaryHistoryResponse>> getByUserId(@RequestParam UUID userId) {
-        List<SalaryHistoryResponse> extraIncomeResponse = salaryHistoryService.getByUser(userId)
-                .stream()
-                .map(SalaryHistoryResponse::from)
-                .toList();
+        var extraIncomeResponse = salaryHistoryService.getByUser(userId)
+            .stream()
+            .map(SalaryHistoryResponse::from)
+            .toList();
         return ResponseEntity.ok(extraIncomeResponse);
     }
 
@@ -42,7 +41,7 @@ public class SalaryHistoryController {
 
     @PutMapping("/{id}")
     public ResponseEntity<SalaryHistoryResponse> update(@PathVariable UUID id, @RequestBody @Valid SalaryHistoryRequest salaryHistoryRequest) {
-        SalaryHistory updatedHistory = salaryHistoryService.update(id, salaryHistoryRequest.toEntity());
+        var updatedHistory = salaryHistoryService.update(id, salaryHistoryRequest.toEntity());
         return ResponseEntity.ok(SalaryHistoryResponse.from(updatedHistory));
     }
 
