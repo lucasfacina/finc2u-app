@@ -2,12 +2,11 @@ package br.com.finc2u.server.features.recurringexpense.service;
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
-import br.com.finc2u.server.features.card.service.CardAccountService;
 import br.com.finc2u.server.features.category.entity.Category;
-import br.com.finc2u.server.features.category.service.CategoryService;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpense;
 import br.com.finc2u.server.features.recurringexpense.entity.RecurringExpenseSkip;
+import br.com.finc2u.server.features.recurringexpense.mapper.RecurringExpenseMapper;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseRepository;
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
@@ -45,13 +44,10 @@ class RecurringExpenseServiceTest {
     private UserService userService;
 
     @Mock
-    private CategoryService categoryService;
-
-    @Mock
-    private CardAccountService cardAccountService;
-
-    @Mock
     private ExpenseService expenseService;
+
+    @Mock
+    private RecurringExpenseMapper recurringExpenseMapper;
 
     @Mock
     private RecurringExpenseMaterializer recurringExpenseMaterializer;
@@ -61,9 +57,7 @@ class RecurringExpenseServiceTest {
 
     private User user;
     private UUID userId;
-    private Category category;
     private UUID categoryId;
-    private CardAccount card;
     private UUID cardId;
     private RecurringExpense saved;
     private UUID recurringExpenseId;
@@ -78,55 +72,54 @@ class RecurringExpenseServiceTest {
         user.setId(userId);
 
         categoryId = UUID.randomUUID();
-        category = Category.builder()
+        var category = Category.builder()
             .name("Assinaturas")
             .user(user)
             .build();
         category.setId(categoryId);
 
         cardId = UUID.randomUUID();
-        card = CardAccount.builder()
+        var card = CardAccount.builder()
             .cardName("Nubank")
             .user(user)
             .build();
         card.setId(cardId);
 
         recurringExpenseId = UUID.randomUUID();
-        saved = newModel("Spotify");
+        saved = newModel();
         saved.setId(recurringExpenseId);
         saved.setUser(user);
         saved.setCategory(category);
         saved.setCardAccount(card);
     }
 
+    // O mapper precisa do dono do modelo para resolver categoria e cartão: o service o define antes.
     @Test
-    void create_shouldAttachOwnerCategoryAndCardAndSave() {
-        var model = newModel("Spotify");
+    void create_shouldAttachTheOwnerBeforeApplyingTheReferencesAndSave() {
+        var model = newModel();
+        var command = RecurringExpenseCommand.of(model).withCategoryId(categoryId).withCardAccountId(cardId);
         when(userService.getById(userId))
             .thenReturn(user);
-        when(categoryService.getByIdAndUser(categoryId, userId))
-            .thenReturn(category);
-        when(cardAccountService.getByIdAndUser(cardId, userId))
-            .thenReturn(card);
+        doAnswer(invocation -> {
+            assertSame(user, model.getUser(), "o dono deve estar definido quando as referências são resolvidas");
+            return null;
+        }).when(recurringExpenseMapper).applyReferences(model, command);
         when(recurringExpenseRepository.save(model))
             .thenReturn(saved);
 
-        var response = recurringExpenseService.create(RecurringExpenseCommand.of(model).withCategoryId(categoryId).withCardAccountId(cardId), userId);
+        var response = recurringExpenseService.create(command, userId);
 
         assertSame(saved, response);
         assertSame(user, model.getUser());
-        assertSame(category, model.getCategory());
-        assertSame(card, model.getCardAccount());
+        verify(recurringExpenseMapper).applyReferences(model, command);
     }
 
     // As despesas do mês corrente e do seguinte nascem junto com o modelo, na mesma transação.
     @Test
     void create_shouldMaterializeTheUpcomingMonthsOfTheSavedModel() {
-        var model = newModel("Spotify");
+        var model = newModel();
         when(userService.getById(userId))
             .thenReturn(user);
-        when(categoryService.getByIdAndUser(categoryId, userId))
-            .thenReturn(category);
         when(recurringExpenseRepository.save(model))
             .thenReturn(saved);
 
@@ -137,79 +130,18 @@ class RecurringExpenseServiceTest {
         inOrder.verify(recurringExpenseMaterializer).materializeUpcoming(saved);
     }
 
-    // A categoria por nome é resolvida (e criada, se faltar) entre as do dono; o id nem é consultado.
     @Test
-    void create_shouldResolveOrCreateTheCategoryByName_whenOnlyTheNameIsInformed() {
-        var model = newModel("Ração");
+    void create_shouldNotSaveNorMaterialize_whenTheMapperRejectsAReference() {
+        var model = newModel();
+        var command = RecurringExpenseCommand.of(model).withCategoryId(categoryId);
         when(userService.getById(userId))
             .thenReturn(user);
-        when(categoryService.getOrCreateByName(userId, "Pets"))
-            .thenReturn(category);
-        when(recurringExpenseRepository.save(model))
-            .thenReturn(saved);
-
-        recurringExpenseService.create(RecurringExpenseCommand.of(model).withCategoryName("Pets"), userId);
-
-        assertSame(category, model.getCategory());
-        verify(categoryService, never()).getByIdAndUser(any(), any());
-    }
-
-    @Test
-    void update_shouldResolveOrCreateTheCategoryByName_whenOnlyTheNameIsInformed() {
-        when(recurringExpenseRepository.findById(recurringExpenseId))
-            .thenReturn(Optional.of(saved));
-        when(categoryService.getOrCreateByName(userId, "Pets"))
-            .thenReturn(category);
-        when(recurringExpenseRepository.save(saved))
-            .thenReturn(saved);
-
-        recurringExpenseService.update(recurringExpenseId, RecurringExpenseCommand.of(newModel("Spotify")).withCategoryName("Pets"));
-
-        assertSame(category, saved.getCategory());
-    }
-
-    @Test
-    void create_shouldLeaveTheCardEmpty_whenNoCardIsInformed() {
-        var model = newModel("Aluguel");
-        when(userService.getById(userId))
-            .thenReturn(user);
-        when(categoryService.getByIdAndUser(categoryId, userId))
-            .thenReturn(category);
-        when(recurringExpenseRepository.save(model))
-            .thenReturn(model);
-
-        recurringExpenseService.create(RecurringExpenseCommand.of(model).withCategoryId(categoryId), userId);
-
-        assertNull(model.getCardAccount());
-        verifyNoInteractions(cardAccountService);
-    }
-
-    // O 404 vem de getByIdAndUser, que só enxerga o que é do dono (CategoryRepositoryTest / CardAccountRepositoryTest).
-    @Test
-    void create_shouldPropagateNotFound_whenTheCategoryBelongsToAnotherUser() {
-        when(userService.getById(userId))
-            .thenReturn(user);
-        when(categoryService.getByIdAndUser(categoryId, userId))
-            .thenThrow(new ResourceNotFoundException("Categoria não encontrada"));
-        var command = RecurringExpenseCommand.of(newModel("Spotify")).withCategoryId(categoryId);
+        doThrow(new ResourceNotFoundException("Categoria não encontrada"))
+            .when(recurringExpenseMapper).applyReferences(model, command);
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.create(command, userId));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
         verifyNoInteractions(recurringExpenseMaterializer);
-    }
-
-    @Test
-    void create_shouldPropagateNotFound_whenTheCardBelongsToAnotherUser() {
-        when(userService.getById(userId))
-            .thenReturn(user);
-        when(categoryService.getByIdAndUser(categoryId, userId))
-            .thenReturn(category);
-        when(cardAccountService.getByIdAndUser(cardId, userId))
-            .thenThrow(new ResourceNotFoundException("Conta/Cartão não encontrado"));
-        var command = RecurringExpenseCommand.of(newModel("Spotify")).withCategoryId(categoryId).withCardAccountId(cardId);
-
-        assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.create(command, userId));
-        verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
     }
 
     @Test
@@ -253,43 +185,33 @@ class RecurringExpenseServiceTest {
     }
 
     @Test
-    void update_shouldCopyTheEditableFieldsAndResolveTheReferencesFromTheOwner() {
-        var newCategoryId = UUID.randomUUID();
-        var newCategory = Category.builder()
-            .name("Moradia")
-            .user(user)
-            .build();
-        newCategory.setId(newCategoryId);
+    void update_shouldApplyTheEditableFieldsAndThenTheReferences_andSave() {
         var updates = RecurringExpense.of("Spotify Família", BigDecimal.valueOf(34.90), 10, YearMonth.of(2026, 11),
             YearMonth.of(2027, 5));
+        var command = RecurringExpenseCommand.of(updates).withCategoryId(categoryId);
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.of(saved));
-        when(categoryService.getByIdAndUser(newCategoryId, userId))
-            .thenReturn(newCategory);
         when(recurringExpenseRepository.save(saved))
             .thenReturn(saved);
 
-        var response = recurringExpenseService.update(recurringExpenseId, RecurringExpenseCommand.of(updates).withCategoryId(newCategoryId));
+        var response = recurringExpenseService.update(recurringExpenseId, command);
 
         assertSame(saved, response);
-        assertEquals("Spotify Família", saved.getDescription());
-        assertEquals(BigDecimal.valueOf(34.90), saved.getValue());
-        assertEquals(10, saved.getDayOfMonth());
-        assertEquals(LocalDate.of(2026, 11, 1), saved.getStartMonth());
-        assertEquals(LocalDate.of(2027, 5, 1), saved.getEndMonth());
-        assertSame(newCategory, saved.getCategory());
-        assertNull(saved.getCardAccount());
-        assertSame(user, saved.getUser());
+        var inOrder = inOrder(recurringExpenseMapper, recurringExpenseRepository);
+        inOrder.verify(recurringExpenseMapper).applyEditableFields(saved, updates);
+        inOrder.verify(recurringExpenseMapper).applyReferences(saved, command);
+        inOrder.verify(recurringExpenseRepository).save(saved);
     }
 
     @Test
     void update_shouldThrowResourceNotFoundException_whenMissing() {
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.empty());
-        var command = RecurringExpenseCommand.of(newModel("Spotify")).withCategoryId(categoryId);
+        var command = RecurringExpenseCommand.of(newModel()).withCategoryId(categoryId);
 
         assertThrows(ResourceNotFoundException.class, () -> recurringExpenseService.update(recurringExpenseId, command));
         verify(recurringExpenseRepository, never()).save(any(RecurringExpense.class));
+        verifyNoInteractions(recurringExpenseMapper);
     }
 
     // As despesas geradas ficam (sem modelo) e os pulos do modelo saem junto: os dois antes de apagar o modelo (FK).
@@ -359,8 +281,8 @@ class RecurringExpenseServiceTest {
         verifyNoInteractions(recurringExpenseSkipRepository);
     }
 
-    private RecurringExpense newModel(String description) {
-        return RecurringExpense.of(description, BigDecimal.valueOf(21.90), 5, YearMonth.of(2026, 10), null);
+    private RecurringExpense newModel() {
+        return RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 5, YearMonth.of(2026, 10), null);
     }
 
 }
