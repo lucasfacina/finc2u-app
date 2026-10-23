@@ -42,14 +42,14 @@ public class ExpenseSpecification {
 
     private static Specification<Expense> inPeriod(Integer month, Integer year) {
         if (year == null) return Specification.unrestricted();
-        LocalDate start, end;
-        if (month != null) {
-            start = LocalDate.of(year, month, 1);
-            end = start.withDayOfMonth(start.lengthOfMonth());
-        } else {
-            start = LocalDate.of(year, 1, 1);
-            end = LocalDate.of(year, 12, 31);
-        }
+
+        var start = month != null
+            ? LocalDate.of(year, month, 1)
+            : LocalDate.of(year, 1, 1);
+        var end = month != null
+            ? start.withDayOfMonth(start.lengthOfMonth())
+            : LocalDate.of(year, 12, 31);
+
         return (root, query, criteriaBuilder) ->
             criteriaBuilder.between(root.get("dueDate"), start, end);
     }

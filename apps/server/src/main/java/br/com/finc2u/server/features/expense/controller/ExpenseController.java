@@ -43,6 +43,7 @@ public class ExpenseController {
             .stream()
             .map(expense -> ExpenseResponse.from(expense, today))
             .toList();
+
         return ResponseEntity.ok(expenseResponse);
     }
 
@@ -78,6 +79,7 @@ public class ExpenseController {
                     .map(expense -> ExpenseResponse.from(expense, today))
                     .toList()
             ));
+
         return ResponseEntity.ok(expenseResponse);
     }
 

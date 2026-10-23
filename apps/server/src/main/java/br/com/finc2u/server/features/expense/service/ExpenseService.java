@@ -39,23 +39,22 @@ public class ExpenseService {
     @Transactional
     public Expense create(UUID userId, ExpenseCommand command) {
         var expense = command.expense();
-        expense.setUser(userService.getById(userId));
-
-        expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
-        expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
-
         var today = LocalDate.now(clock);
         var purchaseDate = command.purchaseDate() != null
             ? command.purchaseDate()
             : today;
-        assertCardUsable(expense, purchaseDate);
 
+        expense.setUser(userService.getById(userId));
+        expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
+        expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
+        assertCardUsable(expense, purchaseDate);
         expense.prepareForPersistence(purchaseDate, today);
 
         var saved = expense.getExpenseType() == ExpenseType.PARCELED
             ? saveInstallments(expense)
             : expenseRepository.save(expense);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(userId, expense.getDueDate()));
+
         return saved;
     }
 
@@ -91,23 +90,20 @@ public class ExpenseService {
     public Expense update(UUID id, ExpenseCommand command) {
         var expense = getById(id);
         var previousDueDate = expense.getDueDate();
+        var today = LocalDate.now(clock);
+        var purchaseDate = command.purchaseDate() != null
+            ? command.purchaseDate()
+            : today;
 
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
         expenseMapper.applyEditableFields(expense, command.expense());
-
-        if (command.purchaseDate() != null) {
-            assertCardUsable(expense, command.purchaseDate());
-        }
-
-        var today = LocalDate.now(clock);
-        expense.prepareForPersistence(command.purchaseDate() != null
-            ? command.purchaseDate()
-            : today, today
-        );
+        if (command.purchaseDate() != null) assertCardUsable(expense, purchaseDate);
+        expense.prepareForPersistence(purchaseDate, today);
 
         var saved = expenseRepository.save(expense);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), previousDueDate, expense.getDueDate()));
+
         return saved;
     }
 
@@ -124,7 +120,9 @@ public class ExpenseService {
     @Transactional
     public void delete(UUID id) {
         var expense = getById(id);
+
         expenseRepository.delete(expense);
+
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
         if (expense.getRecurringExpenseId() != null) {
             eventPublisher.publishEvent(new GeneratedExpenseDeletedEvent(expense.getRecurringExpenseId(), expense.getDueDate()));

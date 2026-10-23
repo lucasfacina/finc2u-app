@@ -94,6 +94,7 @@ public class Expense extends BaseModel {
             throw new InvalidRequestException(
                 "Vencimento anterior a hoje: informe se a despesa já foi paga (paymentStatus).");
         }
+
         paymentStatus = PaymentStatus.PENDING;
     }
 
