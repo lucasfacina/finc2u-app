@@ -105,7 +105,7 @@ public class CardAccountServiceTest {
         when(cardAccountRepository.save(any(CardAccount.class)))
             .thenReturn(cardAccount);
 
-        CardAccount response = cardAccountService.create(cardAccount, userId);
+        var response = cardAccountService.create(cardAccount, userId);
 
         assertNotNull(response);
         assertEquals(cardAccount.getCardName(), response.getCardName());
@@ -133,7 +133,7 @@ public class CardAccountServiceTest {
         when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, "nu"))
             .thenReturn(List.of(cardAccount));
 
-        List<CardAccount> response = cardAccountService.getByUser(userId, "  nu ");
+        var response = cardAccountService.getByUser(userId, "  nu ");
 
         assertEquals(List.of(cardAccount), response);
     }
@@ -143,7 +143,7 @@ public class CardAccountServiceTest {
         when(cardAccountRepository.findById(cardId))
             .thenReturn(Optional.of(cardAccount));
 
-        CardAccount response = cardAccountService.getById(cardId);
+        var response = cardAccountService.getById(cardId);
 
         assertNotNull(response);
         assertEquals(cardId, response.getId());
@@ -164,7 +164,7 @@ public class CardAccountServiceTest {
         when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, ""))
             .thenReturn(List.of(cardAccount));
 
-        List<CardAccount> response = cardAccountService.getByUser(userId, null);
+        var response = cardAccountService.getByUser(userId, null);
 
         assertNotNull(response);
         assertFalse(response.isEmpty());
@@ -174,7 +174,7 @@ public class CardAccountServiceTest {
 
     @Test
     void update_shouldReturnUpdatedCardAccount_whenExists() {
-        CardAccount updates = CardAccount.builder()
+        var updates = CardAccount.builder()
             .cardName("C6Bank")
             .expirationDate(LocalDate.of(2031, 8, 31))
             .build();
@@ -184,7 +184,7 @@ public class CardAccountServiceTest {
         when(cardAccountRepository.save(any(CardAccount.class)))
             .thenReturn(cardAccount);
 
-        CardAccount response = cardAccountService.update(cardId, updates);
+        var response = cardAccountService.update(cardId, updates);
 
         assertNotNull(response);
         assertEquals("C6Bank", cardAccount.getCardName());

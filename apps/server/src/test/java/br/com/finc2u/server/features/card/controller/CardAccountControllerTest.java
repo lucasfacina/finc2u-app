@@ -90,7 +90,7 @@ class CardAccountControllerTest {
 
     @Test
     void create_shouldReturnBadRequest_whenInvalidInput() throws Exception {
-        CardAccountRequest invalidRequest = new CardAccountRequest(
+        var invalidRequest = new CardAccountRequest(
             "",
             null,
             null,
