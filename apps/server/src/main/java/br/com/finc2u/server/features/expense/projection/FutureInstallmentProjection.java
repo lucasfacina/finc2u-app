@@ -13,13 +13,19 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Projeção das parcelas futuras: uma leitura derivada, fora do CRUD. Como cada parcela é uma linha real, a projeção não calcula
+ * parcelas: lê as linhas que já existem e as agrupa por mês.
+ */
 @Component
 public record FutureInstallmentProjection(ExpenseRepository expenseRepository) {
 
-    /*
-     * Parcelas futuras do usuário, agrupadas pelo mês de vencimento. Desde que a compra parcelada é materializada (uma
-     * linha por parcela), a projeção só lê as linhas reais: PARCELED e PENDING com vencimento posterior à data de
-     * referência (hoje, vinda do Clock do chamador). Nada é montado em memória.
+    /**
+     * Parcelas futuras do usuário, agrupadas pelo mês de vencimento: linhas {@code PARCELED} e {@code PENDING} com vencimento posterior à
+     * data de referência.
+     *
+     * @param referenceDate "hoje", vinda do {@code Clock} de quem chama (a projeção não lê o relógio)
+     * @return as parcelas por mês; sem parcelas futuras, mapa vazio
      */
     public Map<YearMonth, List<Expense>> getProjectionsByUser(UUID userId, LocalDate referenceDate) {
         return expenseRepository
