@@ -4,7 +4,6 @@ import br.com.finc2u.server.exception.BusinessException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
-import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,13 +21,12 @@ public class CardAccountService {
 
     @Transactional
     public CardAccount create(CardAccount cardAccount, UUID userId) {
-        User user = userService.getById(userId);
+        var user = userService.getById(userId);
 
         // A constraint unique do banco diferencia maiúsculas de minúsculas ("Nubank" × "nubank"); esta checagem não,
         // e devolve um erro de negócio claro em vez de uma violação de integridade.
-        if (cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, cardAccount.getCardName()).isPresent()) {
+        if (cardAccountRepository.findByUserIdAndCardNameIgnoreCase(userId, cardAccount.getCardName()).isPresent())
             throw new BusinessException("Cartão já cadastrado!");
-        }
 
         cardAccount.setUser(user);
 
@@ -64,7 +62,7 @@ public class CardAccountService {
 
     @Transactional
     public CardAccount update(UUID id, CardAccount cardUpdated) {
-        CardAccount cardAccount = getById(id);
+        var cardAccount = getById(id);
 
         cardAccountRepository.findByUserIdAndCardNameIgnoreCase(cardAccount.getUser().getId(), cardUpdated.getCardName())
             .filter(existing -> !existing.getId().equals(id))
@@ -82,7 +80,7 @@ public class CardAccountService {
 
     @Transactional
     public void delete(UUID id) {
-        CardAccount cardAccount = getById(id);
+        var cardAccount = getById(id);
         cardAccountRepository.delete(cardAccount);
     }
 

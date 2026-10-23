@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.card.controller;
 
 import br.com.finc2u.server.features.card.dto.CardAccountRequest;
-import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.form.CardAccountResponse;
 import br.com.finc2u.server.features.card.service.CardAccountService;
 import jakarta.validation.Valid;
@@ -22,13 +21,13 @@ public class CardAccountController {
 
     @PostMapping
     public ResponseEntity<CardAccountResponse> create(@Valid @RequestBody CardAccountRequest cardAccountRequest, @RequestParam UUID userId) {
-        CardAccount savedCardAccount = cardAccountService.create(cardAccountRequest.toEntity(), userId);
+        var savedCardAccount = cardAccountService.create(cardAccountRequest.toEntity(), userId);
         return new ResponseEntity<>(CardAccountResponse.from(savedCardAccount), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<CardAccountResponse>> getByUserId(@RequestParam UUID userId, @RequestParam(required = false) String name) {
-        List<CardAccountResponse> cardAccountResponse = cardAccountService.getByUser(userId, name)
+        var cardAccountResponse = cardAccountService.getByUser(userId, name)
             .stream()
             .map(CardAccountResponse::from)
             .toList();
@@ -37,13 +36,13 @@ public class CardAccountController {
 
     @GetMapping("/{id}")
     public ResponseEntity<CardAccountResponse> getById(@PathVariable UUID id) {
-        CardAccount cardAccount = cardAccountService.getById(id);
+        var cardAccount = cardAccountService.getById(id);
         return ResponseEntity.ok(CardAccountResponse.from(cardAccount));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CardAccountResponse> update(@PathVariable UUID id, @Valid @RequestBody CardAccountRequest cardAccountRequest) {
-        CardAccount updatedCardAccount = cardAccountService.update(id, cardAccountRequest.toEntity());
+        var updatedCardAccount = cardAccountService.update(id, cardAccountRequest.toEntity());
         return ResponseEntity.ok(CardAccountResponse.from(updatedCardAccount));
     }
 

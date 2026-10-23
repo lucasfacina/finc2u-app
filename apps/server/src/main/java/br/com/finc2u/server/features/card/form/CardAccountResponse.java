@@ -17,7 +17,7 @@ public record CardAccountResponse(
 ) {
 
     public static CardAccountResponse from(CardAccount cardAccount) {
-        String userName = cardAccount.getUser() != null
+        var userName = cardAccount.getUser() != null
             ? cardAccount.getUser().getName()
             : null;
 

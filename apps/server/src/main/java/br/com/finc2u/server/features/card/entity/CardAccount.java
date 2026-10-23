@@ -66,16 +66,16 @@ public class CardAccount extends BaseModel {
         int closingDay = this.closingDate;
         int dueDay = this.dueDate;
 
-        YearMonth closingMonth = YearMonth.from(purchaseDate);
+        var closingMonth = YearMonth.from(purchaseDate);
         if (purchaseDate.getDayOfMonth() > closingDay) {
             closingMonth = closingMonth.plusMonths(1);
         }
 
-        YearMonth dueMonth = dueDay < closingDay
+        var dueMonth = dueDay < closingDay
             ? closingMonth.plusMonths(1)
             : closingMonth;
 
-        int day = Math.min(dueDay, dueMonth.lengthOfMonth());
+        var day = Math.min(dueDay, dueMonth.lengthOfMonth());
         return dueMonth.atDay(day);
     }
 
