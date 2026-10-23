@@ -22,11 +22,13 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(@NonNull String @NonNull ... args) {
-        log.info("🚀 Iniciando processo de Database Seeding...");
         var context = new SeedContext();
+
+        log.info("🚀 Iniciando processo de Database Seeding...");
         seeders.stream()
             .sorted(Comparator.comparingInt(Seeder::order))
             .forEach(seeder -> seeder.seed(context));
+
         log.info("✅ Processo de Database Seeding finalizado com sucesso!");
     }
 

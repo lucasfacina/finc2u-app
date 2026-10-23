@@ -36,6 +36,7 @@ public class SeedContext {
             throw new IllegalStateException("O seed ainda não guardou " + type.getSimpleName()
                 + (SINGLE.equals(key) ? "" : " \"" + key + "\"") + ": confira a ordem dos seeders.");
         }
+
         return type.cast(instance);
     }
 
