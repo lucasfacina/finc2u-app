@@ -4,6 +4,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -11,7 +12,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = {ExceptionTestController.class, GlobalExceptionHandler.class})
+@Import(FixedClockTestConfig.class)
 public class GlobalExceptionHandlerTest {
+
+    // `FixedClockTestConfig.NOW` como o Jackson o serializa
+    private static final String NOW = "2026-06-15T10:30:00";
 
     @Autowired
     private MockMvc mockMvc;
@@ -24,7 +29,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(404))
             .andExpect(jsonPath("$.message").value("Recurso não encontrado."))
             .andExpect(jsonPath("$.detail").value("O recurso solicitado não foi encontrado."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 422
@@ -35,7 +40,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(422))
             .andExpect(jsonPath("$.message").value("Erro de negócio."))
             .andExpect(jsonPath("$.detail").value("Regra de negócio violada."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 400
@@ -46,7 +51,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Requisição inválida."))
             .andExpect(jsonPath("$.detail").value("A requisição não pôde ser processada."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 409
@@ -57,7 +62,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(409))
             .andExpect(jsonPath("$.message").value("Operação não permitida, existem registros dependentes vinculados a este recurso."))
             .andExpect(jsonPath("$.detail").value("Violação de integridade referencial."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 409 — unicidade: mensagem própria, sem expor o nome da constraint
@@ -99,7 +104,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.message").value("Erro interno no servidor."))
             .andExpect(jsonPath("$.detail").value("Ocorreu um erro inesperado. Tente novamente mais tarde."))
             .andExpect(content().string(Matchers.not(Matchers.containsString("tb_expense"))))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 400 — parâmetro obrigatório ausente
@@ -110,7 +115,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Parâmetro obrigatório ausente."))
             .andExpect(jsonPath("$.detail").value("O parâmetro 'userId' é obrigatório."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 404 — rota inexistente
@@ -121,7 +126,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(404))
             .andExpect(jsonPath("$.message").value("Rota não encontrada."))
             .andExpect(jsonPath("$.detail").value(Matchers.containsString("test/exceptions/rota-inexistente")))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 405 — verbo HTTP não suportado pela rota
@@ -132,7 +137,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(405))
             .andExpect(jsonPath("$.message").value("Método HTTP não suportado."))
             .andExpect(jsonPath("$.detail").value(Matchers.containsString("DELETE")))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 415 — Content-Type não suportado
@@ -145,7 +150,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(415))
             .andExpect(jsonPath("$.message").value("Tipo de conteúdo não suportado."))
             .andExpect(jsonPath("$.detail").value(Matchers.containsString("text/plain")))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 400 — enum inválido em @RequestParam
@@ -157,7 +162,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Parâmetro inválido."))
             .andExpect(jsonPath("$.detail").value(Matchers.containsString("INVALIDO")))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 400 — JSON malformado
@@ -169,7 +174,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value("Corpo da requisição inválido ou malformado."))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
     // HTTP 400
@@ -182,7 +187,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value(Matchers.containsString("valida")))
             .andExpect(jsonPath("$.detail").value(Matchers.containsString("Nome é obrigatório.")))
-            .andExpect(jsonPath("$.timestamp").exists());
+            .andExpect(jsonPath("$.timestamp").value(NOW));
     }
 
 }

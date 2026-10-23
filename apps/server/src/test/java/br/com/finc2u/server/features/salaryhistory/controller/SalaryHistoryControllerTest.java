@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.salaryhistory.controller;
 
+import br.com.finc2u.server.config.FixedClockTestConfig;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.salaryhistory.dto.SalaryHistoryRequest;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {SalaryHistoryController.class, GlobalExceptionHandler.class})
+@Import(FixedClockTestConfig.class)
 class SalaryHistoryControllerTest {
 
     @Autowired

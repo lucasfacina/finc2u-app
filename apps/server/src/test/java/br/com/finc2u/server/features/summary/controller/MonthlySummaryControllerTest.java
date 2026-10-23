@@ -1,5 +1,6 @@
 package br.com.finc2u.server.features.summary.controller;
 
+import br.com.finc2u.server.config.FixedClockTestConfig;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -31,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {MonthlySummaryController.class, GlobalExceptionHandler.class})
+@Import(FixedClockTestConfig.class)
 class MonthlySummaryControllerTest {
 
     @Autowired
