@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.recurringexpense.entity;
 
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.category.entity.Category;
+import br.com.finc2u.server.features.expense.vo.RecurrenceExpenseCommand;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -76,6 +77,14 @@ public class RecurringExpense extends BaseModel {
         return cardAccount != null
             ? cardAccount.calculateInvoiceDueDate(chargeDate)
             : chargeDate;
+    }
+
+    /*
+     * Os dados da despesa que este modelo gera no vencimento, no VO neutro que a feature expense entende (ela não conhece o
+     * modelo). O vencimento chega pronto: quem chama o obtém de dueDateIn.
+     */
+    public RecurrenceExpenseCommand toExpenseCommand(LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(getId(), description, value, dueDate, user, category, cardAccount);
     }
 
 }
