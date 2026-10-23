@@ -15,4 +15,21 @@ public record RecurringExpenseCommand(
     String categoryName,
     UUID cardAccountId
 ) {
+
+    public static RecurringExpenseCommand of(RecurringExpense recurringExpense) {
+        return new RecurringExpenseCommand(recurringExpense, null, null, null);
+    }
+
+    public RecurringExpenseCommand withCategoryId(UUID categoryId) {
+        return new RecurringExpenseCommand(recurringExpense, categoryId, categoryName, cardAccountId);
+    }
+
+    public RecurringExpenseCommand withCategoryName(String categoryName) {
+        return new RecurringExpenseCommand(recurringExpense, categoryId, categoryName, cardAccountId);
+    }
+
+    public RecurringExpenseCommand withCardAccountId(UUID cardAccountId) {
+        return new RecurringExpenseCommand(recurringExpense, categoryId, categoryName, cardAccountId);
+    }
+
 }
