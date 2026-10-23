@@ -31,14 +31,17 @@ public class SalaryHistoryService implements CurrentSalaryPort {
     @Transactional
     public SalaryHistory create(SalaryHistory history, UUID userId) {
         var user = userService.getById(userId);
+
         if (salaryHistoryRepository.existsByUserIdAndEffectiveFrom(userId, history.getEffectiveFrom())) {
             throw new BusinessException("Já existe um registro de salário com vigência em " +
                 history.getEffectiveFrom() + " para este usuário.");
         }
+
         history.setUser(user);
 
         var saved = salaryHistoryRepository.save(history);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(userId, history.getEffectiveFrom()));
+
         return saved;
     }
 
@@ -94,6 +97,7 @@ public class SalaryHistoryService implements CurrentSalaryPort {
     public SalaryHistory update(UUID id, SalaryHistory historyData) {
         var salaryHistory = getById(id);
         var previousEffectiveFrom = salaryHistory.getEffectiveFrom();
+
         salaryHistoryRepository
             .findByUserIdAndEffectiveFrom(salaryHistory.getUser().getId(), historyData.getEffectiveFrom())
             .filter(conflict -> !conflict.getId().equals(id))
@@ -101,12 +105,14 @@ public class SalaryHistoryService implements CurrentSalaryPort {
                 throw new BusinessException("Já existe um registro de salário com vigência em " +
                     historyData.getEffectiveFrom() + " para este usuário.");
             });
+
         salaryHistory.setBaseSalary(historyData.getBaseSalary());
         salaryHistory.setEffectiveFrom(historyData.getEffectiveFrom());
 
         var saved = salaryHistoryRepository.save(salaryHistory);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(
             salaryHistory.getUser().getId(), previousEffectiveFrom, salaryHistory.getEffectiveFrom()));
+
         return saved;
     }
 
