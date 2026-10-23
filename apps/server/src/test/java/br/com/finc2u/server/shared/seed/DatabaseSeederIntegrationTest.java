@@ -26,7 +26,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// Sobe o seed completo (o CommandLineRunner roda na subida do contexto) e o repete: é a "subida 2 vezes" do checklist.
+// Sobe o seed completo (o CommandLineRunner roda na subida do contexto) e o repete: a segunda subida não pode duplicar nada.
 @SpringBootTest(properties = "app.seeders.enabled=true")
 class DatabaseSeederIntegrationTest {
 
