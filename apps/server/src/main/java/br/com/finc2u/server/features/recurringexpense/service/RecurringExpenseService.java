@@ -10,6 +10,7 @@ import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpens
 import br.com.finc2u.server.features.recurringexpense.repository.RecurringExpenseSkipRepository;
 import br.com.finc2u.server.features.recurringexpense.vo.RecurringExpenseCommand;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.text.TextOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,14 +68,16 @@ public class RecurringExpenseService {
     }
 
     /**
-     * Modelos do usuário, ordenados pela descrição.
+     * Modelos do usuário, ordenados pela descrição na ordem alfabética do português ({@code TextOrder}).
      *
      * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
     @Transactional(readOnly = true)
     public List<RecurringExpense> getByUser(UUID userId) {
         userService.getById(userId);
-        return recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(userId);
+        return recurringExpenseRepository.findByUserId(userId).stream()
+            .sorted(TextOrder.by(RecurringExpense::getDescription))
+            .toList();
     }
 
     /**

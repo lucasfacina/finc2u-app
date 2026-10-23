@@ -23,7 +23,7 @@ public interface RecurringExpenseRepository extends JpaRepository<RecurringExpen
     Optional<RecurringExpense> findById(@NonNull UUID id);
 
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<RecurringExpense> findByUserIdOrderByDescriptionAsc(UUID userId);
+    List<RecurringExpense> findByUserId(UUID userId);
 
     // Trava a linha do modelo até o fim da transação (SELECT ... FOR UPDATE): quem gera as despesas dele espera aqui pela outra transação.
     @Lock(LockModeType.PESSIMISTIC_WRITE)

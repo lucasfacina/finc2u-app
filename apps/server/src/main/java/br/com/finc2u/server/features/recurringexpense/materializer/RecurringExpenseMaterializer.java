@@ -88,7 +88,7 @@ public class RecurringExpenseMaterializer {
      */
     @Transactional
     public void materializeForUser(UUID userId, YearMonth month) {
-        recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(userId).forEach(recurringExpense -> {
+        recurringExpenseRepository.findByUserId(userId).forEach(recurringExpense -> {
             materialize(recurringExpense, month.minusMonths(1));
             materialize(recurringExpense, month);
         });

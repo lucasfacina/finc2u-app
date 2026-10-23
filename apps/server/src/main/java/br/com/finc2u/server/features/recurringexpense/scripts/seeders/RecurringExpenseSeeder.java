@@ -37,7 +37,7 @@ public class RecurringExpenseSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        var existing = recurringExpenseRepository.findByUserIdOrderByDescriptionAsc(context.get(User.class).getId());
+        var existing = recurringExpenseRepository.findByUserId(context.get(User.class).getId());
         var existingDescriptions = existing.stream()
             .map(RecurringExpense::getDescription)
             .toList();
