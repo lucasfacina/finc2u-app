@@ -16,6 +16,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -88,17 +90,17 @@ class CardAccountRepositoryTest {
     }
 
     @Test
-    void findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc_shouldSearchPartiallyOnlyWithinTheUser() {
+    void findByUserIdAndCardNameContainingIgnoreCase_shouldSearchPartiallyOnlyWithinTheUser() {
         persistCard("Nubank", ana);
         persistCard("Mercado Pago", ana);
         persistCard("Inter", ana);
         persistCard("Nubank Ultravioleta", beto);
 
-        var found = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(ana.getId(), "NU");
-        var all = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(ana.getId(), "");
+        var found = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(ana.getId(), "NU");
+        var all = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(ana.getId(), "");
 
         assertEquals(List.of("Nubank"), found.stream().map(CardAccount::getCardName).toList());
-        assertEquals(List.of("Inter", "Mercado Pago", "Nubank"), all.stream().map(CardAccount::getCardName).toList());
+        assertEquals(Set.of("Inter", "Mercado Pago", "Nubank"), all.stream().map(CardAccount::getCardName).collect(Collectors.toSet()));
     }
 
     /*
@@ -113,7 +115,7 @@ class CardAccountRepositoryTest {
         persistCard("Cartão do Beto", beto);
         var statistics = resetStatistics();
 
-        var responses = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(ana.getId(), "")
+        var responses = cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(ana.getId(), "")
             .stream()
             .map(CardAccountResponse::from)
             .toList();
@@ -139,7 +141,7 @@ class CardAccountRepositoryTest {
         persistCard("Nubank", ana);
         persistCard("Inter", ana);
         var statistics = resetStatistics();
-        cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(ana.getId(), "")
+        cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(ana.getId(), "")
             .forEach(CardAccountResponse::from);
         var statementsWithFewCards = statistics.getPrepareStatementCount();
 
@@ -147,7 +149,7 @@ class CardAccountRepositoryTest {
             persistCard("Cartão " + number, ana);
         }
         resetStatistics();
-        cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(ana.getId(), "")
+        cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(ana.getId(), "")
             .forEach(CardAccountResponse::from);
 
         assertEquals(statementsWithFewCards, statistics.getPrepareStatementCount(),

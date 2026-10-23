@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -130,12 +131,25 @@ public class CardAccountServiceTest {
     void getByUser_shouldSearchByTheTrimmedName_whenNameIsInformed() {
         when(userService.getById(userId))
             .thenReturn(user);
-        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, "nu"))
+        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(userId, "nu"))
             .thenReturn(List.of(cardAccount));
 
         var response = cardAccountService.getByUser(userId, "  nu ");
 
         assertEquals(List.of(cardAccount), response);
+    }
+
+    // A ordem não vem do banco: o service ordena em português, sem depender da collation do servidor.
+    @Test
+    void getByUser_shouldSortTheNamesInPortugueseOrder_whateverTheOrderTheRepositoryReturns() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(userId, ""))
+            .thenReturn(Stream.of("Zebra", "ônibus", "Alimentação", "Água", "Ótica", "alimentação").map(name -> CardAccount.builder().cardName(name).build()).toList());
+
+        var response = cardAccountService.getByUser(userId, null);
+
+        assertEquals(List.of("Água", "alimentação", "Alimentação", "ônibus", "Ótica", "Zebra"), response.stream().map(CardAccount::getCardName).toList());
     }
 
     @Test
@@ -161,7 +175,7 @@ public class CardAccountServiceTest {
     void getByUser_shouldReturnListOfCardAccount_whenUserExists() {
         when(userService.getById(userId))
             .thenReturn(user);
-        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, ""))
+        when(cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(userId, ""))
             .thenReturn(List.of(cardAccount));
 
         var response = cardAccountService.getByUser(userId, null);
