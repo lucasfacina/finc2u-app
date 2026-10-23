@@ -47,6 +47,7 @@ public class CardSeeder implements Seeder {
             CardAccount.of("Nubank", 9, 15, YearMonth.of(2030, 12)),
             CardAccount.of("Mercado Pago", 9, 14, null)
         );
+
         cards.forEach(card -> card.setUser(user));
 
         return cards;
