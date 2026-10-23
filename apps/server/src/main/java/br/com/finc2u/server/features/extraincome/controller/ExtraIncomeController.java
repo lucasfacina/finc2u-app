@@ -1,7 +1,6 @@
 package br.com.finc2u.server.features.extraincome.controller;
 
 import br.com.finc2u.server.features.extraincome.dto.ExtraIncomeRequest;
-import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.form.ExtraIncomeResponse;
 import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import jakarta.validation.Valid;
@@ -23,32 +22,32 @@ public class ExtraIncomeController {
 
     @PostMapping
     public ResponseEntity<ExtraIncomeResponse> create(
-            @RequestParam UUID userId,
-            @Valid @RequestBody ExtraIncomeRequest extraIncomeRequest
+        @RequestParam UUID userId,
+        @Valid @RequestBody ExtraIncomeRequest extraIncomeRequest
     ) {
-        ExtraIncome savedExtraIncome = extraIncomeService.create(extraIncomeRequest.toEntity(), userId);
+        var savedExtraIncome = extraIncomeService.create(extraIncomeRequest.toEntity(), userId);
         return new ResponseEntity<>(ExtraIncomeResponse.from(savedExtraIncome), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<ExtraIncomeResponse>> getAllByUserId(@RequestParam UUID userId) {
-        List<ExtraIncomeResponse> extraIncomeResponse = extraIncomeService.getByUser(userId)
-                .stream()
-                .map(ExtraIncomeResponse::from)
-                .toList();
+        var extraIncomeResponse = extraIncomeService.getByUser(userId)
+            .stream()
+            .map(ExtraIncomeResponse::from)
+            .toList();
         return ResponseEntity.ok(extraIncomeResponse);
     }
 
     @GetMapping("/period")
     public ResponseEntity<List<ExtraIncomeResponse>> getByUserIdAndPeriod(
-            @RequestParam UUID userId,
-            @RequestParam LocalDate startDate,
-            @RequestParam LocalDate endDate
+        @RequestParam UUID userId,
+        @RequestParam LocalDate startDate,
+        @RequestParam LocalDate endDate
     ) {
-        List<ExtraIncomeResponse> response = extraIncomeService.getByUserAndPeriod(userId, startDate, endDate)
-                .stream()
-                .map(ExtraIncomeResponse::from)
-                .toList();
+        var response = extraIncomeService.getByUserAndPeriod(userId, startDate, endDate)
+            .stream()
+            .map(ExtraIncomeResponse::from)
+            .toList();
         return ResponseEntity.ok(response);
     }
 
@@ -59,10 +58,10 @@ public class ExtraIncomeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ExtraIncomeResponse> update(
-            @PathVariable UUID id,
-            @Valid @RequestBody ExtraIncomeRequest extraIncomeRequest
+        @PathVariable UUID id,
+        @Valid @RequestBody ExtraIncomeRequest extraIncomeRequest
     ) {
-        ExtraIncome updatedExtraIncome = extraIncomeService.update(id, extraIncomeRequest.toEntity());
+        var updatedExtraIncome = extraIncomeService.update(id, extraIncomeRequest.toEntity());
         return ResponseEntity.ok(ExtraIncomeResponse.from(updatedExtraIncome));
     }
 

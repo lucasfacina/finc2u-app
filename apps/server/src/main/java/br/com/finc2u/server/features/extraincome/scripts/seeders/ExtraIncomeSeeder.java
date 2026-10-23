@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -29,9 +28,9 @@ public class ExtraIncomeSeeder implements Seeder {
     @Override
     public void seed(SeedContext context) {
         // Relativo ao mês corrente (do Clock): o resumo de hoje sempre tem ganhos extras.
-        LocalDate competencia = YearMonth.now(clock).atDay(15);
+        var competencia = YearMonth.now(clock).atDay(15);
 
-        List<ExtraIncome> extraIncomes = List.of(
+        var extraIncomes = List.of(
             ExtraIncome.builder()
                 .description("Mãe")
                 .value(new BigDecimal("4470.00"))
@@ -46,9 +45,7 @@ public class ExtraIncomeSeeder implements Seeder {
                 .build()
         );
 
-        if (extraIncomeRepository.existsByUserId(context.get(User.class).getId())) {
-            return;
-        }
+        if (extraIncomeRepository.existsByUserId(context.get(User.class).getId())) return;
 
         extraIncomeRepository.saveAll(extraIncomes);
     }

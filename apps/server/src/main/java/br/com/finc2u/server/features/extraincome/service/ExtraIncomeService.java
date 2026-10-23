@@ -4,7 +4,6 @@ import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.repository.ExtraIncomeRepository;
-import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.event.PeriodDataChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,7 @@ public class ExtraIncomeService {
 
     @Transactional
     public ExtraIncome create(ExtraIncome extraIncome, UUID userId) {
-        User user = userService.getById(userId);
+        var user = userService.getById(userId);
         extraIncome.setUser(user);
 
         var saved = extraIncomeRepository.save(extraIncome);
@@ -48,16 +47,16 @@ public class ExtraIncomeService {
 
     @Transactional(readOnly = true)
     public List<ExtraIncome> getByUserAndPeriod(UUID userId, LocalDate start, LocalDate end) {
-        if (start.isAfter(end)) {
+        if (start.isAfter(end))
             throw new InvalidRequestException("A data inicial não pode ser posterior à data final.");
-        }
+
         userService.getById(userId);
         return extraIncomeRepository.findByUserIdAndDateBetween(userId, start, end);
     }
 
     @Transactional
     public ExtraIncome update(UUID id, ExtraIncome updates) {
-        ExtraIncome extraIncome = getById(id);
+        var extraIncome = getById(id);
         var previousDate = extraIncome.getDate();
         extraIncome.setDescription(updates.getDescription());
         extraIncome.setValue(updates.getValue());
@@ -70,7 +69,7 @@ public class ExtraIncomeService {
 
     @Transactional
     public void delete(UUID id) {
-        ExtraIncome extraIncome = getById(id);
+        var extraIncome = getById(id);
         extraIncomeRepository.delete(extraIncome);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(extraIncome.getUser().getId(), extraIncome.getDate()));
     }
