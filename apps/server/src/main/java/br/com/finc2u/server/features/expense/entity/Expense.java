@@ -104,7 +104,7 @@ public class Expense extends BaseModel {
      * parcelas futuras gere uma quantidade absurda de objetos (ex.: parcela atual negativa).
      */
     public void applyInstallmentRules() {
-        if (expenseType == ExpenseType.PARCELED) {
+        if (isParceled()) {
             if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS)
                 throw new BusinessException("Total de parcelas deve ser pelo menos 1 para despesas parceladas");
 
@@ -202,7 +202,24 @@ public class Expense extends BaseModel {
      * muda a despesa, e a mesma data de referência produz sempre a mesma resposta.
      */
     public boolean isOverdue(LocalDate referenceDate) {
-        return paymentStatus == PaymentStatus.PENDING && dueDate.isBefore(referenceDate);
+        return isPending() && dueDate.isBefore(referenceDate);
+    }
+
+    // O tipo e o status em forma de pergunta, para a regra ler como frase (o `isOverdue` já era assim).
+    public boolean isParceled() {
+        return expenseType == ExpenseType.PARCELED;
+    }
+
+    public boolean isFixed() {
+        return expenseType == ExpenseType.FIXED;
+    }
+
+    public boolean isPaid() {
+        return paymentStatus == PaymentStatus.PAID;
+    }
+
+    public boolean isPending() {
+        return paymentStatus == PaymentStatus.PENDING;
     }
 
 }
