@@ -34,6 +34,7 @@ public class UserService {
         var salaryEffectiveFrom = effectiveFrom != null
             ? effectiveFrom
             : YearMonth.now(clock).atDay(1);
+
         eventPublisher.publishEvent(new UserRegisteredEvent(savedUser, baseSalary, salaryEffectiveFrom));
 
         return savedUser;
