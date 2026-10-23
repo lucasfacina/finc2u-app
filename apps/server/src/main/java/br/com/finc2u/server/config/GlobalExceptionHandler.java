@@ -31,8 +31,8 @@ public class GlobalExceptionHandler {
     // HTTP 404
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException exception) {
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.NOT_FOUND;
+        var error = new ErrorResponse(
             status.value(),
             exception.getMessage(),
             "O recurso solicitado não foi encontrado.",
@@ -44,8 +44,8 @@ public class GlobalExceptionHandler {
     // HTTP 422
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException exception) {
-        HttpStatus status = HttpStatus.UNPROCESSABLE_CONTENT;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.UNPROCESSABLE_CONTENT;
+        var error = new ErrorResponse(
             status.value(),
             exception.getMessage(),
             "Regra de negócio violada.",
@@ -57,8 +57,8 @@ public class GlobalExceptionHandler {
     // HTTP 400
     @ExceptionHandler(InvalidRequestException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequestException(InvalidRequestException exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.BAD_REQUEST;
+        var error = new ErrorResponse(
             status.value(),
             exception.getMessage(),
             "A requisição não pôde ser processada.",
@@ -70,9 +70,9 @@ public class GlobalExceptionHandler {
     // HTTP 400
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        String detail = "Valor inválido '" + exception.getValue() + "' para o parâmetro '" + exception.getName() + "'.";
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.BAD_REQUEST;
+        var detail = "Valor inválido '" + exception.getValue() + "' para o parâmetro '" + exception.getName() + "'.";
+        var error = new ErrorResponse(
             status.value(),
             "Parâmetro inválido.",
             detail,
@@ -84,8 +84,8 @@ public class GlobalExceptionHandler {
     // HTTP 400
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable() {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.BAD_REQUEST;
+        var error = new ErrorResponse(
             status.value(),
             "Corpo da requisição inválido ou malformado.",
             "Verifique o formato e os tipos dos campos enviados.",
@@ -97,12 +97,12 @@ public class GlobalExceptionHandler {
     // HTTP 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        String details = exception.getBindingResult().getFieldErrors().stream()
+        var status = HttpStatus.BAD_REQUEST;
+        var details = exception.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .collect(Collectors.joining(", "));
 
-        ErrorResponse error = new ErrorResponse(
+        var error = new ErrorResponse(
             status.value(),
             "Erro de validação.",
             details,
@@ -114,9 +114,9 @@ public class GlobalExceptionHandler {
     // HTTP 409
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException exception) {
-        HttpStatus status = HttpStatus.CONFLICT;
-        boolean unique = isUniqueViolation(exception);
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.CONFLICT;
+        var unique = isUniqueViolation(exception);
+        var error = new ErrorResponse(
             status.value(),
             unique
                 ? "Já existe um registro com estes dados."
@@ -132,8 +132,8 @@ public class GlobalExceptionHandler {
     // HTTP 400
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException exception) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.BAD_REQUEST;
+        var error = new ErrorResponse(
             status.value(),
             "Parâmetro obrigatório ausente.",
             "O parâmetro '" + exception.getParameterName() + "' é obrigatório.",
@@ -145,8 +145,8 @@ public class GlobalExceptionHandler {
     // HTTP 404
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResourceFound(NoResourceFoundException exception) {
-        HttpStatus status = HttpStatus.NOT_FOUND;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.NOT_FOUND;
+        var error = new ErrorResponse(
             status.value(),
             "Rota não encontrada.",
             "Nenhum endpoint corresponde a '" + exception.getResourcePath() + "'.",
@@ -158,11 +158,11 @@ public class GlobalExceptionHandler {
     // HTTP 405
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException exception) {
-        HttpStatus status = HttpStatus.METHOD_NOT_ALLOWED;
-        String supported = exception.getSupportedMethods() != null
+        var status = HttpStatus.METHOD_NOT_ALLOWED;
+        var supported = exception.getSupportedMethods() != null
             ? String.join(", ", exception.getSupportedMethods())
             : "-";
-        ErrorResponse error = new ErrorResponse(
+        var error = new ErrorResponse(
             status.value(),
             "Método HTTP não suportado.",
             "O método '" + exception.getMethod() + "' não é suportado nesta rota. Métodos aceitos: " + supported + ".",
@@ -174,11 +174,11 @@ public class GlobalExceptionHandler {
     // HTTP 415
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException exception) {
-        HttpStatus status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
-        String supported = exception.getSupportedMediaTypes().stream()
+        var status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+        var supported = exception.getSupportedMediaTypes().stream()
             .map(MediaType::toString)
             .collect(Collectors.joining(", "));
-        ErrorResponse error = new ErrorResponse(
+        var error = new ErrorResponse(
             status.value(),
             "Tipo de conteúdo não suportado.",
             "O Content-Type '" + exception.getContentType() + "' não é suportado. Tipos aceitos: " + supported + ".",
@@ -192,8 +192,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {
         log.error("Erro inesperado ao processar a requisição.", exception);
 
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
-        ErrorResponse error = new ErrorResponse(
+        var status = HttpStatus.INTERNAL_SERVER_ERROR;
+        var error = new ErrorResponse(
             status.value(),
             "Erro interno no servidor.",
             "Ocorreu um erro inesperado. Tente novamente mais tarde.",
@@ -205,9 +205,8 @@ public class GlobalExceptionHandler {
     // Unicidade × dependência: percorre a cadeia de causas, pois o Spring pode traduzir a mesma violação de formas diferentes.
     private static boolean isUniqueViolation(DataIntegrityViolationException exception) {
         for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
-            if (cause instanceof DuplicateKeyException) {
-                return true;
-            }
+            if (cause instanceof DuplicateKeyException) return true;
+
             if (cause instanceof ConstraintViolationException violation
                 && violation.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE) {
                 return true;

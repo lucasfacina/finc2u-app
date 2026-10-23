@@ -2,6 +2,7 @@ package br.com.finc2u.server.shared.seed;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -20,12 +21,12 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     @Override
     @Transactional
-    public void run(String... args) {
+    public void run(@NonNull String @NonNull ... args) {
         log.info("🚀 Iniciando processo de Database Seeding...");
-        SeedContext context = new SeedContext();
+        var context = new SeedContext();
         seeders.stream()
-                .sorted(Comparator.comparingInt(Seeder::order))
-                .forEach(seeder -> seeder.seed(context));
+            .sorted(Comparator.comparingInt(Seeder::order))
+            .forEach(seeder -> seeder.seed(context));
         log.info("✅ Processo de Database Seeding finalizado com sucesso!");
     }
 
