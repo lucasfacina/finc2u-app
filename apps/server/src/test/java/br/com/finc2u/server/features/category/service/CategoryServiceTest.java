@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -141,12 +142,25 @@ class CategoryServiceTest {
     void getByUser_shouldReturnCategoriesOfTheUser() {
         when(userService.getById(userId))
             .thenReturn(user);
-        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+        when(categoryRepository.findByUserId(userId))
             .thenReturn(List.of(category));
 
         var response = categoryService.getByUser(userId);
 
         assertEquals(List.of(category), response);
+    }
+
+    // A ordem não vem do banco: o service ordena em português, sem depender da collation do servidor.
+    @Test
+    void getByUser_shouldSortTheNamesInPortugueseOrder_whateverTheOrderTheRepositoryReturns() {
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(categoryRepository.findByUserId(userId))
+            .thenReturn(Stream.of("Zebra", "ônibus", "Alimentação", "Água", "Ótica", "alimentação").map(Category::of).toList());
+
+        var response = categoryService.getByUser(userId);
+
+        assertEquals(List.of("Água", "alimentação", "Alimentação", "ônibus", "Ótica", "Zebra"), response.stream().map(Category::getName).toList());
     }
 
     @Test
@@ -225,7 +239,7 @@ class CategoryServiceTest {
 
     @Test
     void createDefaults_shouldCreateAllDefaultCategoriesForTheUser_whenTheUserHasNone() {
-        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+        when(categoryRepository.findByUserId(userId))
             .thenReturn(List.of());
 
         categoryService.createDefaults(user);
@@ -245,7 +259,7 @@ class CategoryServiceTest {
             .name("Pets")
             .user(user)
             .build();
-        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+        when(categoryRepository.findByUserId(userId))
             .thenReturn(List.of(existing, custom));
 
         categoryService.createDefaults(user);
@@ -264,7 +278,7 @@ class CategoryServiceTest {
                 .user(user)
                 .build())
             .toList();
-        when(categoryRepository.findByUserIdOrderByNameAsc(userId))
+        when(categoryRepository.findByUserId(userId))
             .thenReturn(existing);
 
         categoryService.createDefaults(user);

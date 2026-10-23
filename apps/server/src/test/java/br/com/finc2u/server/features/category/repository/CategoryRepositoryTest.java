@@ -11,7 +11,8 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,14 +61,14 @@ class CategoryRepositoryTest {
     }
 
     @Test
-    void findByUserIdOrderByNameAsc_shouldReturnOnlyCategoriesOfTheUser_sortedByName() {
+    void findByUserId_shouldReturnOnlyCategoriesOfTheUser() {
         persistCategory("Transporte", ana);
         persistCategory("Alimentação", ana);
         persistCategory("Lazer", beto);
 
-        var categories = categoryRepository.findByUserIdOrderByNameAsc(ana.getId());
+        var categories = categoryRepository.findByUserId(ana.getId());
 
-        assertEquals(List.of("Alimentação", "Transporte"), categories.stream().map(Category::getName).toList());
+        assertEquals(Set.of("Alimentação", "Transporte"), categories.stream().map(Category::getName).collect(Collectors.toSet()));
     }
 
     @Test
