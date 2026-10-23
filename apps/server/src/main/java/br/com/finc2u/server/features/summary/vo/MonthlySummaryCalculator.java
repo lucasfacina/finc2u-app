@@ -6,13 +6,12 @@ import br.com.finc2u.server.features.expense.entity.Expense;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.List;
 
 /*
  * O cálculo do resumo mensal, puro: só números entram e saem (sem Spring, banco ou relógio), então o mesmo MonthlySummaryInput
  * produz sempre o mesmo MonthlySummaryFigures. Quem lê os dados e grava o resultado é o MonthlySummaryService.
  * -> baseSalary      = salário vigente no período (zero antes da primeira vigência)
- * -> totalOverdue    = soma das despesas PENDING com vencimento antes da data de referência (atraso derivado, D13)
+ * -> totalOverdue    = soma das despesas PENDING com vencimento antes da data de referência (atraso derivado)
  * -> totalFixed      = soma das despesas do tipo FIXED, pagas ou não
  * -> cashBalance     = remainingAmount do mês anterior (carryover automático); zero se não houver
  * -> previousMonthMissing = true quando não há resumo do mês anterior: o cashBalance zero vem dessa falta (o cálculo
@@ -50,7 +49,7 @@ public final class MonthlySummaryCalculator {
         // Por categoria, na ordem do nome: a mesma entrada sempre dá a mesma lista.
         var totalByCategory = new LinkedHashMap<Category, BigDecimal>();
         input.expenses().forEach(expense -> totalByCategory.merge(expense.getCategory(), expense.getValue(), BigDecimal::add));
-        List<CategoryTotal> categoryTotals = totalByCategory.entrySet().stream()
+        var categoryTotals = totalByCategory.entrySet().stream()
             .map(entry -> new CategoryTotal(entry.getKey(), entry.getValue()))
             .sorted(Comparator.comparing((CategoryTotal total) -> total.category().getName()))
             .toList();

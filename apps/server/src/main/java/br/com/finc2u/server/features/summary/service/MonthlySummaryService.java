@@ -2,9 +2,7 @@ package br.com.finc2u.server.features.summary.service;
 
 
 import br.com.finc2u.server.exception.ResourceNotFoundException;
-import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.service.ExpenseService;
-import br.com.finc2u.server.features.extraincome.entity.ExtraIncome;
 import br.com.finc2u.server.features.extraincome.service.ExtraIncomeService;
 import br.com.finc2u.server.features.recurringexpense.materializer.RecurringExpenseMaterializer;
 import br.com.finc2u.server.features.salaryhistory.service.SalaryHistoryService;
@@ -16,14 +14,12 @@ import br.com.finc2u.server.features.summary.vo.MonthlySummaryCalculator;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryInput;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
-import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.service.UserService;
 import br.com.finc2u.server.shared.vo.MonthlyPeriod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -54,20 +50,20 @@ public class MonthlySummaryService {
      * agora ou recalculado. Calcula só o mês pedido: o carryover para os meses seguintes é do recalculateFrom.
      */
     private MonthlySummaryResult calculate(UUID userId, Integer month, Integer year) {
-        User user = userService.getById(userId);
-        MonthlyPeriod period = MonthlyPeriod.of(month, year);
+        var user = userService.getById(userId);
+        var period = MonthlyPeriod.of(month, year);
 
         recurringExpenseMaterializer.materializeForUser(userId, YearMonth.of(year, month));
 
-        List<Expense> expenses = expenseService.getByUserAndPeriod(userId, period.start(), period.end());
-        List<ExtraIncome> extraIncomes = extraIncomeService.getByUserAndPeriod(userId, period.start(), period.end());
+        var expenses = expenseService.getByUserAndPeriod(userId, period.start(), period.end());
+        var extraIncomes = extraIncomeService.getByUserAndPeriod(userId, period.start(), period.end());
 
-        Optional<MonthlySummary> existing = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year);
-        MonthlySummary summary = existing.orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
+        var existing = monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, month, year);
+        var summary = existing.orElseGet(() -> MonthlySummary.forPeriod(user, month, year));
 
-        BigDecimal baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
+        var baseSalary = salaryHistoryService.getBaseSalaryForPeriod(userId, period.start());
 
-        Optional<MonthlySummary> previous = findPreviousMonth(userId, period);
+        var previous = findPreviousMonth(userId, period);
         var figures = MonthlySummaryCalculator.calculate(new MonthlySummaryInput(
             expenses,
             extraIncomes,
@@ -128,7 +124,7 @@ public class MonthlySummaryService {
     // Os totais por categoria saem antes do resumo (FK); os resumos existentes dos meses seguintes perdem o carryover dele.
     @Transactional
     public void delete(UUID userId, Integer month, Integer year) {
-        MonthlySummary summary = findByPeriod(userId, month, year);
+        var summary = findByPeriod(userId, month, year);
         categoryTotalRepository.deleteBySummaryId(summary.getId());
         monthlySummaryRepository.delete(summary);
         recalculateExistingFrom(userId, YearMonth.of(year, month).plusMonths(1));
@@ -151,16 +147,15 @@ public class MonthlySummaryService {
     }
 
     private Map<UUID, List<MonthlySummaryCategoryTotal>> categoryTotalsOf(List<MonthlySummary> summaries) {
-        if (summaries.isEmpty()) {
-            return Map.of();
-        }
+        if (summaries.isEmpty()) return Map.of();
+
         return categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(summaries.stream().map(MonthlySummary::getId).toList())
             .stream()
             .collect(Collectors.groupingBy(categoryTotal -> categoryTotal.getSummary().getId()));
     }
 
     private Optional<MonthlySummary> findPreviousMonth(UUID userId, MonthlyPeriod period) {
-        MonthlyPeriod previous = period.previous();
+        var previous = period.previous();
         return monthlySummaryRepository.findByUserIdAndMonthAndYear(userId, previous.month(), previous.year());
     }
 

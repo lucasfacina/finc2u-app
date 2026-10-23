@@ -35,7 +35,7 @@ public class MonthlySummaryController {
 
     @GetMapping("/history")
     public ResponseEntity<List<MonthlySummaryResponse>> getHistoryByUserId(@RequestParam UUID userId) {
-        List<MonthlySummaryResponse> monthlySummaryResponse = monthlySummaryService.getByUser(userId).stream()
+        var monthlySummaryResponse = monthlySummaryService.getByUser(userId).stream()
             .map(detail -> MonthlySummaryResponse.from(detail.summary(), detail.categoryTotals()))
             .toList();
         return ResponseEntity.ok(monthlySummaryResponse);
