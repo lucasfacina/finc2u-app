@@ -20,7 +20,8 @@ backend do TCC: um módulo de sugestões de educação financeira por motor de r
    `./mvnw spring-boot:run`
 4. A aplicação estará disponível em `http://localhost:8080`.
 5. A documentação interativa da API (Swagger UI) fica em `http://localhost:8080/swagger-ui.html` — dá para testar
-   todos os endpoints por ela. A especificação OpenAPI está em `http://localhost:8080/v3/api-docs`.
+   todos os endpoints por ela (os 45 estão documentados, em português, com os erros que cada um pode devolver). A
+   especificação OpenAPI está em `http://localhost:8080/v3/api-docs`.
 6. O console do banco de dados H2 pode ser acessado em `http://localhost:8080/h2-console` (URL:
    `jdbc:h2:file:./data/finc2udb`, User: `sa`, Senha em branco).
 
@@ -34,6 +35,25 @@ A partir de `apps/server`:
 ```bash
 ./mvnw test
 ```
+
+A suíte inclui os **testes de arquitetura** (ArchUnit): as regras do projeto (camadas, dependências entre features,
+determinismo, documentação da API) quebram o build se alguém as violar.
+
+## Importar a planilha de gastos (desenvolvimento)
+
+Ferramenta de desenvolvimento, **só para o banco local**: carrega a planilha pessoal de gastos (`.xlsx`) pelos services
+da
+aplicação, de forma idempotente (rodar de novo não duplica). Não faz nada sem a propriedade `app.import.planilha`; a
+planilha real **nunca** vai para o Git. O usuário (`app.import.email`) precisa já existir. Exemplo, a partir de
+`apps/server`:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments="--app.import.planilha=/caminho/Planilha.xlsx --app.import.email=voce@email.com"
+```
+
+Guia completo (leitura, regras, limites e como removê-lo): `docs/guias/Finc2UApp_Guia_Importador_da_Planilha.md`.
+Propriedades opcionais: `app.import.primeiro-mes` (padrão `2025-04`), `app.import.dia-vencimento`,
+`app.import.categoria-padrao` e `app.import.regras-categoria` (arquivo local `trecho = Categoria`).
 
 ## Automação de Desenvolvimento (Nx)
 
@@ -179,6 +199,11 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   padrão** (Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Assinaturas, Outros). Se qualquer passo falhar,
   o usuário não é gravado.
 - **`PUT /users/{id}`** — `{ name, email, savingsBalance? }`. O salário **não** muda por aqui: use `/salary-history`.
+- **`DELETE /users/{id}`** — devolve 409 enquanto o usuário tiver dados dependentes; como o cadastro já cria categorias
+  e
+  salário, hoje um usuário cadastrado normalmente não pode ser removido (a eliminação em cascata, exigida pela LGPD, é
+  da
+  Fase 15).
 - **Resposta** (`UserResponse`) — `id`, `name`, `email`, `createdAt`, `baseSalary` (salário **vigente hoje**, `null` se
   ainda não há vigência iniciada) e `savingsBalance`.
 
@@ -195,7 +220,8 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 - **`CardAccountRequest`** — `{ cardName, closingDate, dueDate, expiration? }`. O nome é **único por usuário** (sem
   diferenciar maiúsculas de minúsculas; duplicado → 422). `expiration` é a validade no formato `"2030-05"` e não pode
   estar no passado (400); uma compra depois do último dia desse mês é recusada (422, "Cartão expirado em 05/2030.").
-- **`name`** filtra pelo nome do cartão (parcial, sem diferenciar maiúsculas de minúsculas); sem ele, lista todos.
+- **`name`** filtra pelo nome do cartão (parcial, sem diferenciar maiúsculas de minúsculas); sem ele, lista todos. A
+  lista vem em ordem alfabética do português.
 
 ### Categorias — `/categories`
 
@@ -208,7 +234,8 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 | DELETE | `/categories/{id}` | Deletar categoria            | `id` (path)                               |
 
 - **`CategoryRequest`** — `{ name }` (até 60 caracteres). O nome é **único por usuário** (sem diferenciar maiúsculas
-  de minúsculas; duplicado → 422). Apagar uma categoria que ainda tem despesas → 409.
+  de minúsculas; duplicado → 422). Apagar uma categoria que ainda tem despesas → 409. A lista vem em ordem alfabética do
+  português (a mesma em qualquer banco).
 
 ### Despesas — `/expenses`
 
@@ -245,6 +272,10 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   tipo → 400. `PUT`, `PATCH` e `DELETE /expenses/{id}` atuam em **uma** parcela; a compra inteira se consulta e se
   remove
   pelos endpoints de `installment-groups`.
+- **Apagar uma despesa gerada por um modelo recorrente** registra aquele mês como **pulado**: ela não volta, nem no
+  resumo nem pelo job.
+- **Resumo atualizado sozinho:** criar, alterar ou apagar uma despesa (como um ganho extra ou um salário) recalcula, na
+  mesma transação, os resumos mensais que já existem do mês afetado em diante.
 - **Filtros:** `overdue=true` devolve só as pendentes já vencidas; `month` sem `year` → 400.
 - **Projeção** (`/expenses/projections`): as parcelas futuras reais (`PENDING`, vencimento depois de hoje), agrupadas
   por
@@ -274,7 +305,8 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   (`true` em dev; desligado nos testes). Meses anteriores ao corrente nunca são gerados, e a despesa que já venceria
   **antes de hoje** também não: a assinatura vale a partir do próximo vencimento (não nasce atrasada).
 - **Editar** o modelo vale daqui para frente (as despesas já geradas não mudam). **Apagar** o modelo mantém as despesas
-  já geradas. Para parar de gerar, defina o `endMonth`.
+  já geradas. Para parar de gerar, defina o `endMonth`. Apagar uma despesa **gerada** (e não o modelo) a registra como
+  pulada: ela não volta. Duas gerações ao mesmo tempo do mesmo mês (o resumo e o job) são serializadas.
 
 ### Ganhos Extras — `/extra-incomes`
 
@@ -298,7 +330,16 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 
 - **`POST /monthly-summary`** recalcula o resumo do período e **não altera nenhuma despesa** (despesa vencida e pendente
   continua `PENDING`). Antes de somar, gera as despesas recorrentes que faltam no mês — por isso o resumo de um **mês
-  futuro** já enxerga as parcelas e as assinaturas.
+  futuro** já enxerga as parcelas e as assinaturas. Devolve **201** se criou o resumo e **200** se recalculou um
+  existente.
+- **Cascata:** o saldo de um mês é o carryover do seguinte, então o `POST` recalcula também, em ordem, os resumos que já
+  existem nos meses seguintes (não cria os que não existem), e o `DELETE` recalcula o do mês seguinte. O `GET` só lê.
+- **A resposta** (`MonthlySummaryResponse`) traz, além dos totais (`baseSalary`, `totalIncome`, `totalExpenses`,
+  `totalPaid`, `totalPending`, `totalExtras`, `cashBalance`, `savingsBalance`, `savingsYield`, `remainingAmount`):
+  `totalOverdue` (pendentes já vencidas), `totalFixed` (tipo `FIXED`), `previousMonthMissing` (`true` quando não havia
+  resumo do mês anterior: o `cashBalance` zero vem dessa falta) e `categoryTotals`
+  (`[{ categoryId, categoryName, total }]`:
+  quanto foi gasto em cada categoria, em ordem alfabética do português).
 
 ### Histórico de Salários — `/salary-history`
 
