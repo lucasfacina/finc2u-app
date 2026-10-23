@@ -368,6 +368,38 @@ public class ExpenseTest {
         assertNull(installment.getRecurringExpenseId());
     }
 
+    // ---- isParceled, isFixed, isPaid e isPending ----
+
+    @Test
+    void isParceled_shouldBeTrueOnlyForTheParceledType() {
+        assertTrue(Expense.builder().expenseType(ExpenseType.PARCELED).build().isParceled());
+        assertFalse(Expense.builder().expenseType(ExpenseType.FIXED).build().isParceled());
+        assertFalse(Expense.builder().expenseType(ExpenseType.VARIABLE).build().isParceled());
+        assertFalse(Expense.builder().build().isParceled());
+    }
+
+    @Test
+    void isFixed_shouldBeTrueOnlyForTheFixedType() {
+        assertTrue(Expense.builder().expenseType(ExpenseType.FIXED).build().isFixed());
+        assertFalse(Expense.builder().expenseType(ExpenseType.PARCELED).build().isFixed());
+        assertFalse(Expense.builder().expenseType(ExpenseType.VARIABLE).build().isFixed());
+        assertFalse(Expense.builder().build().isFixed());
+    }
+
+    @Test
+    void isPaid_shouldBeTrueOnlyForThePaidStatus() {
+        assertTrue(Expense.builder().paymentStatus(PaymentStatus.PAID).build().isPaid());
+        assertFalse(Expense.builder().paymentStatus(PaymentStatus.PENDING).build().isPaid());
+        assertFalse(Expense.builder().build().isPaid());
+    }
+
+    @Test
+    void isPending_shouldBeTrueOnlyForThePendingStatus() {
+        assertTrue(Expense.builder().paymentStatus(PaymentStatus.PENDING).build().isPending());
+        assertFalse(Expense.builder().paymentStatus(PaymentStatus.PAID).build().isPending());
+        assertFalse(Expense.builder().build().isPending());
+    }
+
     // ---- isOverdue ----
 
     @Test
