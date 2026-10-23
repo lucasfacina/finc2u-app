@@ -245,6 +245,46 @@ public class ExpenseTest {
             () -> expense.changePaymentStatus(PaymentStatus.PENDING, TODAY, TODAY));
     }
 
+    // ---- assertCardUsableOn ----
+
+    @Test
+    void assertCardUsableOn_shouldDoNothing_whenThereIsNoCard() {
+        var expense = Expense.builder()
+            .build();
+
+        assertDoesNotThrow(() -> expense.assertCardUsableOn(LocalDate.of(2099, 1, 1)));
+    }
+
+    @Test
+    void assertCardUsableOn_shouldAccept_whenCardHasNoExpiration() {
+        var expense = Expense.builder()
+            .cardAccount(CardAccount.builder().build())
+            .build();
+
+        assertDoesNotThrow(() -> expense.assertCardUsableOn(LocalDate.of(2099, 1, 1)));
+    }
+
+    @Test
+    void assertCardUsableOn_shouldAccept_whenPurchaseIsOnTheLastDayOfTheExpirationMonth() {
+        var expense = Expense.builder()
+            .cardAccount(CardAccount.builder().expirationDate(LocalDate.of(2026, 5, 31)).build())
+            .build();
+
+        assertDoesNotThrow(() -> expense.assertCardUsableOn(LocalDate.of(2026, 5, 31)));
+    }
+
+    @Test
+    void assertCardUsableOn_shouldThrowBusinessException_whenPurchaseIsAfterTheCardExpiration() {
+        var expense = Expense.builder()
+            .cardAccount(CardAccount.builder().expirationDate(LocalDate.of(2026, 5, 31)).build())
+            .build();
+
+        var exception = assertThrows(BusinessException.class,
+            () -> expense.assertCardUsableOn(LocalDate.of(2026, 6, 1)));
+
+        assertEquals("Cartão expirado em 05/2026.", exception.getMessage());
+    }
+
     // ---- isOverdue ----
 
     @Test
