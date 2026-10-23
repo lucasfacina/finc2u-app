@@ -29,6 +29,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Resumo mensal do usuário. O service só orquestra: gera as despesas recorrentes do mês, lê despesas, ganhos e salário pelos
+ * services das suas features, delega o cálculo ao {@link MonthlySummaryCalculator} (puro) e grava o resultado.
+ * <p>
+ * O {@code remainingAmount} de um mês é o {@code cashBalance} do seguinte, então uma alteração se propaga: os resumos que já
+ * existem depois do mês alterado são recalculados em ordem. Esse recálculo é disparado pelo {@code PeriodDataChangedEvent} (antes
+ * do commit) e também pelo {@code POST}/{@code DELETE} do resumo. O {@code POST} cria o resumo do mês pedido; a propagação para os
+ * meses seguintes recalcula só os que já existem e nunca cria um.
+ */
 @Service
 @RequiredArgsConstructor
 public class MonthlySummaryService {
@@ -42,12 +51,14 @@ public class MonthlySummaryService {
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
     private final Clock clock;
 
-    /*
-     * Recalcula o resumo do período e salva via upsert. Orquestra apenas: garante as despesas recorrentes do mês (um
-     * mês futuro já enxerga a assinatura), lê despesas e extras do mês pelos services das suas features, recupera ou
-     * cria o resumo e o mês anterior, delega o cálculo ao MonthlySummaryCalculator (puro) e grava o resultado. Não altera
-     * nenhuma despesa. Grava também os totais por categoria (no recálculo, os antigos saem). Devolve se o resumo foi criado
-     * agora ou recalculado. Calcula só o mês pedido: o carryover para os meses seguintes é do recalculateFrom.
+    /**
+     * Recalcula o resumo do período e salva via upsert. Garante as despesas recorrentes do mês (um mês futuro já enxerga a
+     * assinatura), lê despesas e extras do mês pelos services das suas features, recupera o resumo do mês (ou monta um novo) e o do mês anterior,
+     * delega o cálculo ao {@link MonthlySummaryCalculator} e grava o resultado. Não altera nenhuma despesa. Grava também os totais
+     * por categoria (no recálculo, os antigos saem). Calcula só o mês pedido: o carryover para os meses seguintes é do
+     * {@link #recalculateFrom}.
+     *
+     * @return o resumo e se ele foi criado agora ou recalculado
      */
     private MonthlySummaryResult calculate(UUID userId, Integer month, Integer year) {
         var user = userService.getById(userId);
@@ -87,17 +98,23 @@ public class MonthlySummaryService {
         return new MonthlySummaryResult(saved, categoryTotals, existing.isEmpty());
     }
 
-    // Um mês só, sem propagar o carryover (o recalculateFrom faz isso); a transação é deste ponto de entrada.
+    /**
+     * Calcula um mês só, sem propagar o carryover (o {@link #recalculateFrom} faz isso); a transação é deste ponto de entrada.
+     *
+     * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
+     * @throws IllegalArgumentException  se o mês não estiver entre 1 e 12
+     */
     @Transactional
     public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
         return calculate(userId, month, year);
     }
 
-    /*
+    /**
      * Calcula o mês pedido (criando o resumo se ele não existir) e, em ordem crescente, os resumos que já existem nos meses
-     * seguintes: o remainingAmount de um mês é o cashBalance do próximo, então cada um lê o anterior já atualizado. Não cria
-     * resumo de mês que não existe; se há uma lacuna entre dois meses, o seguinte a ela fica com previousMonthMissing.
-     * Devolve o resultado do mês pedido.
+     * seguintes: cada um lê o anterior já atualizado. Não cria resumo de mês que não existe; se há uma lacuna entre dois meses, o
+     * seguinte a ela fica com {@code previousMonthMissing}.
+     *
+     * @return o resultado do mês pedido
      */
     @Transactional
     public MonthlySummaryResult recalculateFrom(UUID userId, YearMonth from) {
@@ -106,7 +123,9 @@ public class MonthlySummaryService {
         return result;
     }
 
-    // O histórico lê os totais por categoria de todos os resumos numa consulta só (sem uma por resumo).
+    /**
+     * O histórico do usuário, com os totais por categoria de todos os resumos lidos numa consulta só (sem uma por resumo).
+     */
     @Transactional(readOnly = true)
     public List<MonthlySummaryDetail> getByUser(UUID userId) {
         var summaries = monthlySummaryRepository.findByUserId(userId);
@@ -116,13 +135,26 @@ public class MonthlySummaryService {
             .toList();
     }
 
+    /**
+     * O resumo de um mês, só leitura (quem calcula é o {@code POST}).
+     *
+     * @throws ResourceNotFoundException se não houver resumo para o período
+     *                                   (lançada por {@code MonthlySummaryService#findByPeriod})
+     */
     @Transactional(readOnly = true)
     public MonthlySummaryDetail getByUserAndPeriod(UUID userId, Integer month, Integer year) {
         var summary = findByPeriod(userId, month, year);
         return new MonthlySummaryDetail(summary, categoryTotalsOf(List.of(summary)).getOrDefault(summary.getId(), List.of()));
     }
 
-    // Os totais por categoria saem antes do resumo (FK); os resumos existentes dos meses seguintes perdem o carryover dele.
+    /**
+     * Apaga o resumo do mês. Os totais por categoria saem antes (chave estrangeira) e os resumos que já existem nos meses
+     * seguintes são recalculados: o do mês imediato, se existir, perde o carryover dele e fica com
+     * {@code previousMonthMissing}, e a mudança segue para os demais.
+     *
+     * @throws ResourceNotFoundException se não houver resumo para o período
+     *                                   (lançada por {@code MonthlySummaryService#findByPeriod})
+     */
     @Transactional
     public void delete(UUID userId, Integer month, Integer year) {
         var summary = findByPeriod(userId, month, year);
@@ -131,10 +163,10 @@ public class MonthlySummaryService {
         recalculateExistingFrom(userId, YearMonth.of(year, month).plusMonths(1));
     }
 
-    /*
-     * Recalcula, em ordem crescente, só os resumos que já existem do mês informado em diante (inclusive); nunca cria um. É o
-     * que o aviso de alteração de dados chama: quem não tem resumo não faz nada. A consulta antes de cada cálculo grava o
-     * que o mês anterior mudou.
+    /**
+     * Recalcula, em ordem crescente, só os resumos que já existem do mês informado em diante (inclusive); nunca cria um. É o que o
+     * aviso de alteração de dados chama: quem não tem resumo não faz nada. A consulta antes de cada cálculo grava o que o mês
+     * anterior mudou.
      */
     @Transactional
     public void recalculateExistingFrom(UUID userId, YearMonth first) {
