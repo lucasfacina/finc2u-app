@@ -2,7 +2,6 @@ package br.com.finc2u.server.features.user.controller;
 
 import br.com.finc2u.server.features.user.dto.UserRequest;
 import br.com.finc2u.server.features.user.dto.UserUpdateRequest;
-import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.features.user.form.UserResponse;
 import br.com.finc2u.server.features.user.projection.UserProfileProjection;
 import br.com.finc2u.server.features.user.service.UserService;
@@ -25,7 +24,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> create(@Valid @RequestBody UserRequest userRequest) {
-        User savedUser = userService.create(userRequest.toEntity(), userRequest.baseSalary(), userRequest.effectiveFrom());
+        var savedUser = userService.create(userRequest.toEntity(), userRequest.baseSalary(), userRequest.effectiveFrom());
         return new ResponseEntity<>(userProfileProjection.toProfile(savedUser), HttpStatus.CREATED);
     }
 
@@ -41,7 +40,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> update(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
-        User updatedUser = userService.update(id, userUpdateRequest.toEntity());
+        var updatedUser = userService.update(id, userUpdateRequest.toEntity());
         return ResponseEntity.ok(userProfileProjection.toProfile(updatedUser));
     }
 

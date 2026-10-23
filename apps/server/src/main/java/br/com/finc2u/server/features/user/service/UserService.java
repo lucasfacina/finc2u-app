@@ -27,9 +27,8 @@ public class UserService {
 
     @Transactional
     public User create(User user, BigDecimal baseSalary, LocalDate effectiveFrom) {
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(user.getEmail()).isPresent())
             throw new BusinessException("E-mail já cadastrado!");
-        }
 
         var savedUser = userRepository.save(user);
         var salaryEffectiveFrom = effectiveFrom != null
@@ -53,7 +52,7 @@ public class UserService {
 
     @Transactional
     public User update(UUID id, User userUpdated) {
-        User user = getById(id);
+        var user = getById(id);
 
         if (!user.getEmail().equals(userUpdated.getEmail()) &&
             userRepository.findByEmail(userUpdated.getEmail()).isPresent()) {
@@ -70,7 +69,7 @@ public class UserService {
 
     @Transactional
     public void delete(UUID id) {
-        User user = getById(id);
+        var user = getById(id);
         userRepository.delete(user);
     }
 
