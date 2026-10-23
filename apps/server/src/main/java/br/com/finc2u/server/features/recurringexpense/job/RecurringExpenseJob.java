@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
 import java.time.Clock;
 import java.time.YearMonth;
 
-/*
- * Gera, mês a mês, as despesas dos modelos recorrentes ativos (mês corrente e seguinte), para a assinatura aparecer sem
- * que ninguém abra o resumo. Só é criado com app.scheduling.enabled=true. É um gatilho fino: a regra de quais meses
- * gerar e a idempotência são do RecurringExpenseMaterializer, então rodar de novo (ou rodar depois de uma falha) não duplica.
+/**
+ * Gera, mês a mês, as despesas dos modelos recorrentes ativos (mês corrente e seguinte), para a assinatura aparecer sem que
+ * ninguém abra o resumo. Só é criado com {@code app.scheduling.enabled=true}. É um gatilho fino: a regra de quais meses gerar e a
+ * idempotência são do {@link RecurringExpenseMaterializer}, então rodar de novo (ou rodar depois de uma falha) não duplica.
  */
 @Slf4j
 @Component
@@ -26,7 +26,10 @@ public class RecurringExpenseJob {
     private final RecurringExpenseMaterializer recurringExpenseMaterializer;
     private final Clock clock;
 
-    // Dia 1 de cada mês, às 03:00, no fuso do Clock.
+    /**
+     * Roda no dia 1 de cada mês, às 03:00, no fuso do {@link Clock}. Um modelo com erro não derruba os demais: a falha vai para o log e o
+     * job segue. Também registra no log quantos modelos ativos processou.
+     */
     @Scheduled(cron = "0 0 3 1 * *", zone = "#{@clock.zone.id}")
     public void materializeActiveRecurringExpenses() {
         var recurringExpenses = recurringExpenseService.getActiveIn(YearMonth.now(clock));

@@ -19,13 +19,16 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 
-/*
- * Transforma o modelo recorrente em despesas reais, uma por mês (FIXED, PENDING). É idempotente: chamar de novo para o
- * mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco). Só gera de "este mês" em diante: os
- * meses passados não são recriados, senão apareceriam como despesas atrasadas que ninguém lançou. Um vencimento que o usuário
- * apagou de propósito (mês pulado) também não volta, nem no resumo nem pelo job. E o que já venceu não nasce atrasado: a
- * assinatura vale a partir do próximo vencimento. Duas gerações simultâneas do mesmo modelo são serializadas por um lock na
- * linha dele (a segunda espera e então vê a despesa já criada).
+/**
+ * Transforma o modelo recorrente em despesas reais, uma por mês ({@code FIXED}, {@code PENDING}).
+ * <ul>
+ *   <li><b>Idempotente:</b> chamar de novo para o mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco).</li>
+ *   <li><b>Só de "este mês" em diante:</b> os meses passados não são recriados, senão apareceriam como despesas atrasadas que
+ *       ninguém lançou. E o que já venceu não nasce atrasado: a assinatura vale a partir do próximo vencimento.</li>
+ *   <li><b>Mês pulado não volta:</b> um vencimento que o usuário apagou de propósito não é recriado, nem no resumo nem pelo job.</li>
+ *   <li><b>Seguro em paralelo:</b> duas gerações simultâneas do mesmo modelo são serializadas por um lock na linha dele (a segunda
+ *       espera e então vê a despesa já criada).</li>
+ * </ul>
  */
 @Component
 @RequiredArgsConstructor
@@ -37,8 +40,12 @@ public class RecurringExpenseMaterializer {
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
-    // Devolve a despesa criada, ou vazio quando não havia o que criar (fora da vigência, mês passado, vencimento já passado, mês pulado
-    // ou já existente).
+    /**
+     * Gera a despesa do modelo no mês, se couber. Não avisa o resumo mensal (quem chama é que decide).
+     *
+     * @return a despesa criada, ou vazio quando não havia o que criar: fora da vigência, mês passado, vencimento já passado, mês
+     * pulado ou já existente
+     */
     @Transactional
     public Optional<Expense> materialize(RecurringExpense recurringExpense, YearMonth month) {
         if (!recurringExpense.isActiveIn(month) || month.isBefore(YearMonth.now(clock))) return Optional.empty();
@@ -56,11 +63,11 @@ public class RecurringExpenseMaterializer {
         return expenseService.createFromRecurrence(commandFor(recurringExpense, dueDate));
     }
 
-    /*
-     * Mês corrente e seguinte: a assinatura já aparece no mês que vem sem esperar o job. É o ponto que o cadastro do modelo e o
-     * job usam, e o único que avisa o resumo mensal (PeriodDataChangedEvent): as despesas criadas mudam os resumos que já
-     * existem a partir do vencimento mais antigo delas. Rodar de novo, sem criar nada, não avisa. O materialize e o
-     * materializeForUser não avisam: o segundo roda dentro do cálculo do resumo (avisar de lá seria recursão).
+    /**
+     * Gera as despesas do mês corrente e do seguinte: a assinatura já aparece no mês que vem sem esperar o job. É o ponto que o cadastro
+     * do modelo e o job usam, e o único que avisa o resumo mensal ({@link PeriodDataChangedEvent}): as despesas criadas mudam os
+     * resumos que já existem a partir do vencimento mais antigo delas. Rodar de novo sem criar nada não avisa. {@link #materialize} e
+     * {@link #materializeForUser} não avisam: o segundo roda dentro do cálculo do resumo (avisar de lá seria recursão).
      */
     @Transactional
     public void materializeUpcoming(RecurringExpense recurringExpense) {
@@ -76,9 +83,9 @@ public class RecurringExpenseMaterializer {
         }
     }
 
-    /*
-     * Garante, para todos os modelos do usuário, as despesas que o resumo do mês enxerga. A do mês anterior entra junto:
-     * com cartão, a compra do mês anterior pode vencer neste mês (a fatura fecha antes do vencimento).
+    /**
+     * Garante, para todos os modelos do usuário, as despesas que o resumo do mês enxerga. A do mês anterior entra junto: com
+     * cartão, a compra do mês anterior pode vencer neste mês (a fatura fecha antes do vencimento).
      */
     @Transactional
     public void materializeForUser(UUID userId, YearMonth month) {
