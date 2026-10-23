@@ -124,7 +124,7 @@ public class GlobalExceptionHandlerTest {
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
-    // HTTP 405 — método HTTP não suportado pela rota
+    // HTTP 405 — verbo HTTP não suportado pela rota
     @Test
     void shouldHandleHttpRequestMethodNotSupportedException() throws Exception {
         mockMvc.perform(delete("/test/exceptions/business"))

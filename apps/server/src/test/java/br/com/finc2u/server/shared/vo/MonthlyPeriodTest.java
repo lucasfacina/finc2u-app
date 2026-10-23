@@ -21,7 +21,7 @@ class MonthlyPeriodTest {
 
     @Test
     void of_shouldCreate_whenMonthIsValid() {
-        MonthlyPeriod period = MonthlyPeriod.of(6, 2026);
+        var period = MonthlyPeriod.of(6, 2026);
         assertEquals(6, period.month());
         assertEquals(2026, period.year());
     }
@@ -48,14 +48,14 @@ class MonthlyPeriodTest {
 
     @Test
     void previous_shouldReturnPriorMonth() {
-        MonthlyPeriod prev = MonthlyPeriod.of(6, 2026).previous();
+        var prev = MonthlyPeriod.of(6, 2026).previous();
         assertEquals(5, prev.month());
         assertEquals(2026, prev.year());
     }
 
     @Test
     void previous_fromJanuary_shouldReturnDecemberOfPreviousYear() {
-        MonthlyPeriod prev = MonthlyPeriod.of(1, 2026).previous();
+        var prev = MonthlyPeriod.of(1, 2026).previous();
         assertEquals(12, prev.month());
         assertEquals(2025, prev.year());
     }
