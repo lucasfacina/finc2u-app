@@ -177,6 +177,27 @@ public class Expense extends BaseModel {
     }
 
     /*
+     * A parcela da mesma compra que vence `monthsAfter` meses depois desta. Copia os dados da compra (descrição, valor,
+     * tipo, total de parcelas, grupo, dono, cartão e categoria), numera a parcela a partir da atual e calcula o vencimento
+     * sobre o desta, nunca encadeado (31/jan → 28/fev → 31/mar, e não 28/mar). Nasce PENDING, sem paidAt e sem id.
+     */
+    public Expense installmentAfter(int monthsAfter) {
+        return Expense.builder()
+            .description(description)
+            .value(value)
+            .dueDate(dueDate.plusMonths(monthsAfter))
+            .expenseType(expenseType)
+            .paymentStatus(PaymentStatus.PENDING)
+            .currentInstallment(currentInstallment + monthsAfter)
+            .totalInstallment(totalInstallment)
+            .installmentGroupId(installmentGroupId)
+            .user(user)
+            .cardAccount(cardAccount)
+            .category(category)
+            .build();
+    }
+
+    /*
      * Atraso derivado: PENDING com vencimento anterior à data de referência. Não é coluna nem status: nenhum job
      * muda a despesa, e a mesma data de referência produz sempre a mesma resposta.
      */
