@@ -79,6 +79,7 @@ public class MonthlySummaryService {
         if (existing.isPresent()) {
             categoryTotalRepository.deleteBySummaryId(saved.getId());
         }
+
         var categoryTotals = categoryTotalRepository.saveAll(figures.categoryTotals().stream()
             .map(total -> MonthlySummaryCategoryTotal.of(saved, total.category(), total.total()))
             .toList());

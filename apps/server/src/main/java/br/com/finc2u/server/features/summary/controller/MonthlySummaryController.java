@@ -26,6 +26,7 @@ public class MonthlySummaryController {
             monthlySummaryRequest.userId(),
             YearMonth.of(monthlySummaryRequest.year(), monthlySummaryRequest.month())
         );
+
         return new ResponseEntity<>(MonthlySummaryResponse.from(result.summary(), result.categoryTotals()),
             result.created()
                 ? HttpStatus.CREATED
