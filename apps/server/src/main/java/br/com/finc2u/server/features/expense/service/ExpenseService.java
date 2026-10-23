@@ -76,7 +76,7 @@ public class ExpenseService {
         expense.setUser(userService.getById(userId));
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
-        assertCardUsable(expense, purchaseDate);
+        expense.assertCardUsableOn(purchaseDate);
         expense.prepareForPersistence(purchaseDate, today);
 
         var saved = expense.getExpenseType() == ExpenseType.PARCELED
@@ -159,7 +159,7 @@ public class ExpenseService {
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
         expenseMapper.applyEditableFields(expense, command.expense());
-        if (command.purchaseDate() != null) assertCardUsable(expense, purchaseDate);
+        if (command.purchaseDate() != null) expense.assertCardUsableOn(purchaseDate);
         expense.prepareForPersistence(purchaseDate, today);
 
         var saved = expenseRepository.save(expense);
@@ -271,13 +271,6 @@ public class ExpenseService {
         first.setInstallmentGroupId(UUID.randomUUID());
         expenseRepository.saveAll(InstallmentSchedule.from(first).installments());
         return first;
-    }
-
-    // Valida se o cartão da despesa é utilizável na data da compra. Se não houver cartão, não faz nada (a despesa pode ser em dinheiro).
-    private void assertCardUsable(Expense expense, LocalDate purchaseDate) {
-        if (expense.getCardAccount() != null) {
-            expense.getCardAccount().assertUsableOn(purchaseDate);
-        }
     }
 
 }
