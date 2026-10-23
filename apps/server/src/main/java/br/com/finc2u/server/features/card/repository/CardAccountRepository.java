@@ -17,7 +17,7 @@ public interface CardAccountRepository extends JpaRepository<CardAccount, UUID> 
 
     // Alimenta o CardAccountResponse, que lê o nome do dono (LAZY): o usuário vem no graph.
     @EntityGraph(attributePaths = {"user"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<CardAccount> findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(UUID userId, String cardName);
+    List<CardAccount> findByUserIdAndCardNameContainingIgnoreCase(UUID userId, String cardName);
 
     @NonNull
     @EntityGraph(attributePaths = {"user"}, type = EntityGraph.EntityGraphType.LOAD)

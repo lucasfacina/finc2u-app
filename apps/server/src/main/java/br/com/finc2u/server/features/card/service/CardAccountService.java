@@ -5,6 +5,7 @@ import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.text.TextOrder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,7 +79,7 @@ public class CardAccountService {
     }
 
     /**
-     * Cartões do usuário, ordenados pelo nome. {@code name} é uma busca parcial opcional (sem ele, devolve todos).
+     * Cartões do usuário, ordenados pelo nome na ordem alfabética do português ({@code TextOrder}). {@code name} é uma busca parcial opcional (sem ele, devolve todos).
      *
      * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
@@ -88,7 +89,9 @@ public class CardAccountService {
         var searchTerm = name == null
             ? ""
             : name.trim();
-        return cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCaseOrderByCardNameAsc(userId, searchTerm);
+        return cardAccountRepository.findByUserIdAndCardNameContainingIgnoreCase(userId, searchTerm).stream()
+            .sorted(TextOrder.by(CardAccount::getCardName))
+            .toList();
     }
 
     /**
