@@ -32,14 +32,14 @@ public class ExpenseController {
 
     @PostMapping
     public ResponseEntity<ExpenseResponse> create(@RequestParam UUID userId, @Valid @RequestBody ExpenseRequest expenseRequest) {
-        Expense savedExpense = expenseService.create(userId, expenseRequest.toCommand());
+        var savedExpense = expenseService.create(userId, expenseRequest.toCommand());
         return new ResponseEntity<>(toResponse(savedExpense), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<List<ExpenseResponse>> getAllByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
-        List<ExpenseResponse> expenseResponse = expenseService.getByUser(userId)
+        var expenseResponse = expenseService.getByUser(userId)
             .stream()
             .map(expense -> ExpenseResponse.from(expense, today))
             .toList();
@@ -49,13 +49,13 @@ public class ExpenseController {
     @GetMapping("/filters")
     public ResponseEntity<List<ExpenseResponse>> getByFilters(@RequestParam UUID userId, @Valid ExpenseFilterRequest filter) {
         var today = LocalDate.now(clock);
-        List<Expense> expenses = expenseService.getWithFilters(userId, filter.toFilter());
+        var expenses = expenseService.getWithFilters(userId, filter.toFilter());
         return ResponseEntity.ok(expenses.stream().map(expense -> ExpenseResponse.from(expense, today)).toList());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ExpenseResponse> getById(@PathVariable UUID id) {
-        Expense expense = expenseService.getById(id);
+        var expense = expenseService.getById(id);
         return ResponseEntity.ok(toResponse(expense));
     }
 
@@ -70,7 +70,7 @@ public class ExpenseController {
     @GetMapping("/projections")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
-        Map<YearMonth, List<ExpenseResponse>> expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId, today)
+        var expenseResponse = futureInstallmentProjection.getProjectionsByUser(userId, today)
             .entrySet().stream()
             .collect(Collectors.toMap(
                 Map.Entry::getKey, entry -> entry.getValue()
@@ -83,14 +83,14 @@ public class ExpenseController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ExpenseResponse> update(@PathVariable UUID id, @Valid @RequestBody ExpenseRequest expenseRequest) {
-        Expense updatedExpense = expenseService.update(id, expenseRequest.toCommand());
+        var updatedExpense = expenseService.update(id, expenseRequest.toCommand());
         return ResponseEntity.ok(toResponse(updatedExpense));
     }
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ExpenseResponse> updateStatus(@PathVariable UUID id, @RequestParam PaymentStatus status,
                                                         @RequestParam(required = false) LocalDate paidAt) {
-        Expense updatedExpenseStatus = expenseService.updateStatus(id, status, paidAt);
+        var updatedExpenseStatus = expenseService.updateStatus(id, status, paidAt);
         return ResponseEntity.ok(toResponse(updatedExpenseStatus));
     }
 

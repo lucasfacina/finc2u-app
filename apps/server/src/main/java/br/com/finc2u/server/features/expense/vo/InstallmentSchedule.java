@@ -23,12 +23,11 @@ public record InstallmentSchedule(List<Expense> installments) {
     }
 
     public static InstallmentSchedule from(Expense first) {
-        if (first.getExpenseType() != ExpenseType.PARCELED) {
+        if (first.getExpenseType() != ExpenseType.PARCELED)
             throw new IllegalArgumentException("Só despesas PARCELED geram parcelas.");
-        }
-        if (first.getInstallmentGroupId() == null) {
+
+        if (first.getInstallmentGroupId() == null)
             throw new IllegalArgumentException("A compra parcelada precisa de um installmentGroupId.");
-        }
 
         var installments = new ArrayList<Expense>();
         installments.add(first);

@@ -74,9 +74,9 @@ public class ExpenseService {
     // Despesas com vencimento entre as duas datas (inclusive): é a leitura que o resumo mensal usa, no lugar do repositório.
     @Transactional(readOnly = true)
     public List<Expense> getByUserAndPeriod(UUID userId, LocalDate start, LocalDate end) {
-        if (start.isAfter(end)) {
+        if (start.isAfter(end))
             throw new InvalidRequestException("A data inicial não pode ser posterior à data final.");
-        }
+
         userService.getById(userId);
         return expenseRepository.findByUserIdAndDueDateBetween(userId, start, end);
     }
@@ -113,7 +113,7 @@ public class ExpenseService {
 
     @Transactional
     public Expense updateStatus(UUID id, PaymentStatus status, LocalDate paidAt) {
-        Expense expense = getById(id);
+        var expense = getById(id);
         expense.changePaymentStatus(status, paidAt, LocalDate.now(clock));
 
         var saved = expenseRepository.save(expense);
@@ -123,7 +123,7 @@ public class ExpenseService {
 
     @Transactional
     public void delete(UUID id) {
-        Expense expense = getById(id);
+        var expense = getById(id);
         expenseRepository.delete(expense);
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
         if (expense.getRecurringExpenseId() != null) {
@@ -134,9 +134,9 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public List<Expense> getByInstallmentGroup(UUID groupId) {
         var installments = expenseRepository.findByInstallmentGroupIdOrderByCurrentInstallment(groupId);
-        if (installments.isEmpty()) {
+        if (installments.isEmpty())
             throw new ResourceNotFoundException("Compra parcelada não encontrada com o grupo: " + groupId);
-        }
+
         return installments;
     }
 
@@ -156,9 +156,8 @@ public class ExpenseService {
      */
     @Transactional
     public Optional<Expense> createFromRecurrence(RecurrenceExpenseCommand command) {
-        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(command.recurringExpenseId(), command.dueDate())) {
+        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(command.recurringExpenseId(), command.dueDate()))
             return Optional.empty();
-        }
 
         return Optional.of(expenseRepository.save(Expense.builder()
             .description(command.description())

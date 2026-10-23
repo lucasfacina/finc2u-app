@@ -61,7 +61,7 @@ public class Expense extends BaseModel {
     private Category category;
 
     // Id do modelo recorrente que gerou a despesa (nulo nas demais). Só o id, sem associação: a feature recurringexpense depende
-    // de expense, e o contrário fecharia um ciclo. O JPA não cria a FK; ela entra à mão na V1 do Flyway (Fase 14).
+    // de expense, e o contrário fecharia um ciclo. O JPA não cria a FK; ela entra à mão na V1 do Flyway.
     private UUID recurringExpenseId;
 
     /*
@@ -72,17 +72,13 @@ public class Expense extends BaseModel {
      * - Sem cartão e sem dueDate: erro (despesa avulsa exige vencimento manual).
      */
     public void resolveDueDate(LocalDate purchaseDate) {
-        if (dueDate != null) {
-            return;
-        }
+        if (dueDate != null) return;
 
-        if (cardAccount == null) {
+        if (cardAccount == null)
             throw new BusinessException("Data de vencimento é obrigatória para despesas sem cartão.");
-        }
 
-        if (cardAccount.getClosingDate() == null || cardAccount.getDueDate() == null) {
+        if (cardAccount.getClosingDate() == null || cardAccount.getDueDate() == null)
             throw new BusinessException("Cartão não possui datas de fechamento/vencimento configuradas.");
-        }
 
         this.dueDate = cardAccount.calculateInvoiceDueDate(purchaseDate);
     }
@@ -92,9 +88,7 @@ public class Expense extends BaseModel {
      * de referência, que é hoje), o sistema não adivinha: o cliente precisa dizer se a despesa já foi paga.
      */
     public void resolveDefaultPaymentStatus(LocalDate referenceDate) {
-        if (paymentStatus != null) {
-            return;
-        }
+        if (paymentStatus != null) return;
 
         if (dueDate.isBefore(referenceDate)) {
             throw new InvalidRequestException(
@@ -110,9 +104,9 @@ public class Expense extends BaseModel {
      */
     public void applyInstallmentRules() {
         if (expenseType == ExpenseType.PARCELED) {
-            if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS) {
+            if (totalInstallment == null || totalInstallment < BusinessConstants.MIN_INSTALLMENTS)
                 throw new BusinessException("Total de parcelas deve ser pelo menos 1 para despesas parceladas");
-            }
+
             if (totalInstallment > BusinessConstants.MAX_INSTALLMENTS) {
                 throw new BusinessException(
                     "Total de parcelas (" + totalInstallment + ") não pode ser maior que " + BusinessConstants.MAX_INSTALLMENTS + "."
@@ -121,9 +115,9 @@ public class Expense extends BaseModel {
             if (currentInstallment == null) {
                 currentInstallment = BusinessConstants.DEFAULT_FIRST_INSTALLMENT;
             }
-            if (currentInstallment < BusinessConstants.DEFAULT_FIRST_INSTALLMENT) {
+            if (currentInstallment < BusinessConstants.DEFAULT_FIRST_INSTALLMENT)
                 throw new BusinessException("Parcela atual (" + currentInstallment + ") deve ser pelo menos 1.");
-            }
+
             if (currentInstallment > totalInstallment) {
                 throw new BusinessException(
                     "Parcela atual (" + currentInstallment + ") não pode ser maior que o total (" + totalInstallment + ")."
@@ -161,15 +155,13 @@ public class Expense extends BaseModel {
 
     // O paidAt só vale com PAID e nunca é posterior à data de referência (hoje).
     private static void assertPaidAtConsistent(PaymentStatus status, LocalDate paidAt, LocalDate referenceDate) {
-        if (paidAt == null) {
-            return;
-        }
-        if (status != PaymentStatus.PAID) {
+        if (paidAt == null) return;
+
+        if (status != PaymentStatus.PAID)
             throw new BusinessException("A data do pagamento só pode ser informada para despesa paga.");
-        }
-        if (paidAt.isAfter(referenceDate)) {
+
+        if (paidAt.isAfter(referenceDate))
             throw new BusinessException("A data do pagamento não pode ser posterior a hoje.");
-        }
     }
 
     /*

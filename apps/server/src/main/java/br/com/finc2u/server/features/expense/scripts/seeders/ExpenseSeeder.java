@@ -40,9 +40,7 @@ public class ExpenseSeeder implements Seeder {
 
     @Override
     public void seed(SeedContext context) {
-        if (expenseRepository.existsByUserId(context.get(User.class).getId())) {
-            return;
-        }
+        if (expenseRepository.existsByUserId(context.get(User.class).getId())) return;
 
         var today = LocalDate.now(clock);
         var month = YearMonth.from(today);
