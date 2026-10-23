@@ -2,9 +2,9 @@ package br.com.finc2u.server.features.summary.vo;
 
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.expense.entity.Expense;
+import br.com.finc2u.server.shared.text.TextOrder;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 
 /**
@@ -60,7 +60,7 @@ public final class MonthlySummaryCalculator {
         input.expenses().forEach(expense -> totalByCategory.merge(expense.getCategory(), expense.getValue(), BigDecimal::add));
         var categoryTotals = totalByCategory.entrySet().stream()
             .map(entry -> new CategoryTotal(entry.getKey(), entry.getValue()))
-            .sorted(Comparator.comparing((CategoryTotal total) -> total.category().getName()))
+            .sorted(TextOrder.by(total -> total.category().getName()))
             .toList();
 
         return new MonthlySummaryFigures(

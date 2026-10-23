@@ -15,6 +15,7 @@ import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryInput;
 import br.com.finc2u.server.features.summary.vo.MonthlySummaryResult;
 import br.com.finc2u.server.features.user.service.UserService;
+import br.com.finc2u.server.shared.text.TextOrder;
 import br.com.finc2u.server.shared.vo.MonthlyPeriod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -182,8 +183,9 @@ public class MonthlySummaryService {
     private Map<UUID, List<MonthlySummaryCategoryTotal>> categoryTotalsOf(List<MonthlySummary> summaries) {
         if (summaries.isEmpty()) return Map.of();
 
-        return categoryTotalRepository.findBySummaryIdInOrderByCategoryNameAsc(summaries.stream().map(MonthlySummary::getId).toList())
+        return categoryTotalRepository.findBySummaryIdIn(summaries.stream().map(MonthlySummary::getId).toList())
             .stream()
+            .sorted(TextOrder.by(categoryTotal -> categoryTotal.getCategory().getName()))
             .collect(Collectors.groupingBy(categoryTotal -> categoryTotal.getSummary().getId()));
     }
 

@@ -17,7 +17,7 @@ public interface MonthlySummaryCategoryTotalRepository extends JpaRepository<Mon
 
     // Os totais de vários resumos de uma vez (o histórico não faz uma consulta por resumo); a categoria vem no graph.
     @EntityGraph(attributePaths = {"category"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<MonthlySummaryCategoryTotal> findBySummaryIdInOrderByCategoryNameAsc(Collection<UUID> summaryIds);
+    List<MonthlySummaryCategoryTotal> findBySummaryIdIn(Collection<UUID> summaryIds);
 
     // No recálculo os totais antigos saem e entram os novos; ao apagar o resumo, os filhos saem antes (FK).
     @Modifying
