@@ -74,6 +74,7 @@ public class CategoryService {
     @Transactional
     public void createDefaults(User user) {
         var existingNames = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+
         categoryRepository.findByUserIdOrderByNameAsc(user.getId())
             .forEach(category -> existingNames.add(category.getName()));
 
