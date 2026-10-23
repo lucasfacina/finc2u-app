@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.summary.form;
 
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
 import br.com.finc2u.server.features.summary.entity.MonthlySummaryCategoryTotal;
+import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -118,6 +119,10 @@ public record MonthlySummaryResponse(
     LocalDateTime updatedAt
 
 ) {
+
+    public static MonthlySummaryResponse from(MonthlySummaryDetail detail) {
+        return from(detail.summary(), detail.categoryTotals());
+    }
 
     public static MonthlySummaryResponse from(MonthlySummary summary, List<MonthlySummaryCategoryTotal> categoryTotals) {
         return new MonthlySummaryResponse(

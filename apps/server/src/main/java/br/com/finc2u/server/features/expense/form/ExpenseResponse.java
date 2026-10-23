@@ -9,7 +9,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Schema(description = "Despesa do usuário. Em compra parcelada, cada parcela é uma despesa.")
 public record ExpenseResponse(
@@ -111,6 +115,17 @@ public record ExpenseResponse(
                 : null,
             CategoryResponse.from(expense.getCategory())
         );
+    }
+
+    public static List<ExpenseResponse> listOf(List<Expense> expenses, LocalDate referenceDate) {
+        return expenses.stream()
+            .map(expense -> from(expense, referenceDate))
+            .toList();
+    }
+
+    public static Map<YearMonth, List<ExpenseResponse>> byMonth(Map<YearMonth, List<Expense>> expensesByMonth, LocalDate referenceDate) {
+        return expensesByMonth.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> listOf(entry.getValue(), referenceDate)));
     }
 
 }
