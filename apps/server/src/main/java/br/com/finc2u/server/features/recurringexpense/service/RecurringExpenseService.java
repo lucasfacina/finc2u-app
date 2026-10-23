@@ -35,11 +35,13 @@ public class RecurringExpenseService {
     @Transactional
     public RecurringExpense create(RecurringExpenseCommand command, UUID userId) {
         var recurringExpense = command.recurringExpense();
+
         recurringExpense.setUser(userService.getById(userId));
         applyReferences(recurringExpense, command);
 
         var saved = recurringExpenseRepository.save(recurringExpense);
         recurringExpenseMaterializer.materializeUpcoming(saved);
+
         return saved;
     }
 
@@ -65,6 +67,7 @@ public class RecurringExpenseService {
     public RecurringExpense update(UUID id, RecurringExpenseCommand command) {
         var recurringExpense = getById(id);
         var updates = command.recurringExpense();
+
         recurringExpense.setDescription(updates.getDescription());
         recurringExpense.setValue(updates.getValue());
         recurringExpense.setDayOfMonth(updates.getDayOfMonth());
@@ -100,6 +103,7 @@ public class RecurringExpenseService {
 
     private void applyReferences(RecurringExpense recurringExpense, RecurringExpenseCommand command) {
         var ownerId = recurringExpense.getUser().getId();
+
         recurringExpense.setCategory(command.categoryId() != null
             ? categoryService.getByIdAndUser(command.categoryId(), ownerId)
             : categoryService.getOrCreateByName(ownerId, command.categoryName()));

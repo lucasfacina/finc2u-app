@@ -41,10 +41,10 @@ public class RecurringExpenseSeeder implements Seeder {
         var existingDescriptions = existing.stream()
             .map(RecurringExpense::getDescription)
             .toList();
-
         var missing = seedModels(context).stream()
             .filter(model -> !existingDescriptions.contains(model.getDescription()))
             .toList();
+
         recurringExpenseRepository.saveAll(missing);
 
         Stream.concat(existing.stream(), missing.stream())
@@ -68,7 +68,9 @@ public class RecurringExpenseSeeder implements Seeder {
         gympass.setCardAccount(context.get(CardAccount.class, "Mercado Pago"));
 
         var models = List.of(netflix, vivo, gympass);
+
         models.forEach(model -> model.setUser(context.get(User.class)));
+
         return models;
     }
 

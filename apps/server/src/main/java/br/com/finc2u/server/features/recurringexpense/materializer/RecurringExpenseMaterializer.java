@@ -66,6 +66,7 @@ public class RecurringExpenseMaterializer {
     public void materializeUpcoming(RecurringExpense recurringExpense) {
         var currentMonth = YearMonth.now(clock);
         var created = new ArrayList<Expense>();
+
         materialize(recurringExpense, currentMonth).ifPresent(created::add);
         materialize(recurringExpense, currentMonth.plusMonths(1)).ifPresent(created::add);
 
