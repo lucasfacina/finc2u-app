@@ -289,6 +289,92 @@ public class ExpenseTest {
         assertEquals("Cartão expirado em 05/2026.", exception.getMessage());
     }
 
+    // ---- assertEditKeepsTheInstallments ----
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldAccept_whenTheInstallmentKeepsTypeAndNumbering() {
+        var installment = installmentOfGroup();
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(5)
+            .totalInstallment(10)
+            .build();
+
+        assertDoesNotThrow(() -> installment.assertEditKeepsTheInstallments(edited));
+    }
+
+    // Omitir os três campos no PUT quer dizer "não mexer": não é divergência.
+    @Test
+    void assertEditKeepsTheInstallments_shouldAccept_whenTheEditOmitsTheTypeAndTheNumbering() {
+        var installment = installmentOfGroup();
+
+        assertDoesNotThrow(() -> installment.assertEditKeepsTheInstallments(Expense.builder().build()));
+    }
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldThrow_whenTheInstallmentChangesType() {
+        var installment = installmentOfGroup();
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+
+        assertThrows(BusinessException.class, () -> installment.assertEditKeepsTheInstallments(edited));
+    }
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldThrow_whenTheInstallmentChangesTheTotal() {
+        var installment = installmentOfGroup();
+        var edited = Expense.builder()
+            .totalInstallment(8)
+            .build();
+
+        assertThrows(BusinessException.class, () -> installment.assertEditKeepsTheInstallments(edited));
+    }
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldThrow_whenTheInstallmentChangesTheCurrentNumber() {
+        var installment = installmentOfGroup();
+        var edited = Expense.builder()
+            .currentInstallment(1)
+            .build();
+
+        assertThrows(BusinessException.class, () -> installment.assertEditKeepsTheInstallments(edited));
+    }
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldThrow_whenAStandaloneExpenseBecomesParceled() {
+        var standalone = Expense.builder()
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(3)
+            .build();
+
+        assertThrows(BusinessException.class, () -> standalone.assertEditKeepsTheInstallments(edited));
+    }
+
+    @Test
+    void assertEditKeepsTheInstallments_shouldAccept_whenAStandaloneExpenseSwitchesBetweenFixedAndVariable() {
+        var standalone = Expense.builder()
+            .expenseType(ExpenseType.VARIABLE)
+            .build();
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.FIXED)
+            .build();
+
+        assertDoesNotThrow(() -> standalone.assertEditKeepsTheInstallments(edited));
+    }
+
+    private Expense installmentOfGroup() {
+        return Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(5)
+            .totalInstallment(10)
+            .installmentGroupId(UUID.randomUUID())
+            .build();
+    }
+
     // ---- installmentAfter ----
 
     @Test
