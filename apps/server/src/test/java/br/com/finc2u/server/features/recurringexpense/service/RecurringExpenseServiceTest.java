@@ -254,34 +254,34 @@ class RecurringExpenseServiceTest {
         verifyNoInteractions(expenseService, recurringExpenseSkipRepository);
     }
 
-    // ---- mês pulado: o usuário apagou a despesa que o modelo gerou nesse vencimento ----
+    // ---- mês pulado: o usuário apagou a despesa que o modelo gerou nesse mês ----
 
     @Test
-    void skipMonth_shouldRecordTheDueDateOfTheModel() {
-        var dueDate = LocalDate.of(2026, 10, 25);
+    void skipMonth_shouldRecordTheMonthOfTheModel() {
+        var month = YearMonth.of(2026, 10);
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.of(saved));
-        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpenseId, dueDate))
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpenseId, month.atDay(1)))
             .thenReturn(false);
 
-        recurringExpenseService.skipMonth(recurringExpenseId, dueDate);
+        recurringExpenseService.skipMonth(recurringExpenseId, month);
 
         var captor = org.mockito.ArgumentCaptor.forClass(RecurringExpenseSkip.class);
         verify(recurringExpenseSkipRepository).save(captor.capture());
         assertSame(saved, captor.getValue().getRecurringExpense());
-        assertEquals(dueDate, captor.getValue().getDueDate());
+        assertEquals(LocalDate.of(2026, 10, 1), captor.getValue().getRecurrenceMonth());
     }
 
-    // Pular de novo o mesmo vencimento (a despesa voltou e foi apagada outra vez) não duplica o pulo.
+    // Pular de novo o mesmo mês (a despesa voltou e foi apagada outra vez) não duplica o pulo.
     @Test
-    void skipMonth_shouldNotRecordTwice_whenTheDueDateIsAlreadySkipped() {
-        var dueDate = LocalDate.of(2026, 10, 25);
+    void skipMonth_shouldNotRecordTwice_whenTheMonthIsAlreadySkipped() {
+        var month = YearMonth.of(2026, 10);
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.of(saved));
-        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpenseId, dueDate))
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpenseId, month.atDay(1)))
             .thenReturn(true);
 
-        recurringExpenseService.skipMonth(recurringExpenseId, dueDate);
+        recurringExpenseService.skipMonth(recurringExpenseId, month);
 
         verify(recurringExpenseSkipRepository, never()).save(any(RecurringExpenseSkip.class));
     }
@@ -292,7 +292,7 @@ class RecurringExpenseServiceTest {
         when(recurringExpenseRepository.findById(recurringExpenseId))
             .thenReturn(Optional.empty());
 
-        assertDoesNotThrow(() -> recurringExpenseService.skipMonth(recurringExpenseId, LocalDate.of(2026, 10, 25)));
+        assertDoesNotThrow(() -> recurringExpenseService.skipMonth(recurringExpenseId, YearMonth.of(2026, 10)));
 
         verifyNoInteractions(recurringExpenseSkipRepository);
     }
