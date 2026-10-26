@@ -8,9 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -58,6 +56,21 @@ class ExpenseResponseTest {
         assertEquals(Set.of(july, august), responses.keySet());
         assertEquals(List.of("Notebook 2/3", "Celular 1/2"), responses.get(july).stream().map(ExpenseResponse::description).toList());
         assertEquals(List.of("Notebook 3/3"), responses.get(august).stream().map(ExpenseResponse::description).toList());
+    }
+
+    // A ordem das chaves é a dos meses, qualquer que seja a do mapa de entrada: a mesma entrada sempre dá o mesmo JSON.
+    @Test
+    void byMonth_shouldReturnTheMonthsInAscendingOrder_whateverTheOrderOfTheInput() {
+        var scrambled = new LinkedHashMap<YearMonth, List<Expense>>();
+        scrambled.put(YearMonth.of(2026, 12), List.of(expense("Dezembro", LocalDate.of(2026, 12, 10))));
+        scrambled.put(YearMonth.of(2026, 8), List.of(expense("Agosto", LocalDate.of(2026, 8, 10))));
+        scrambled.put(YearMonth.of(2027, 1), List.of(expense("Janeiro", LocalDate.of(2027, 1, 10))));
+        scrambled.put(YearMonth.of(2026, 10), List.of(expense("Outubro", LocalDate.of(2026, 10, 10))));
+
+        var responses = ExpenseResponse.byMonth(scrambled, TODAY);
+
+        assertEquals(List.of(YearMonth.of(2026, 8), YearMonth.of(2026, 10), YearMonth.of(2026, 12), YearMonth.of(2027, 1)),
+            new ArrayList<>(responses.keySet()));
     }
 
     @Test
