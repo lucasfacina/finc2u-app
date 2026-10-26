@@ -305,7 +305,7 @@ class SummaryCascadeEndToEndIntegrationTest {
 
     private void calculateInOrder(UUID userId, int... months) {
         for (var month : months) {
-            monthlySummaryService.calculateOrRecalculate(userId, month, YEAR);
+            monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, month));
         }
     }
 

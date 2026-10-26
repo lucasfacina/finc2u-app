@@ -114,7 +114,7 @@ class UserOwnedResponsesIntegrationTest {
         var userId = registerUser("dono.resumo@email.com");
         var period = YearMonth.of(2026, 10);
 
-        var calculated = monthlySummaryService.calculateOrRecalculate(userId, period.getMonthValue(), period.getYear()).summary();
+        var calculated = monthlySummaryService.recalculateFrom(userId, YearMonth.of(period.getYear(), period.getMonthValue())).summary();
         var history = monthlySummaryService.getByUser(userId);
 
         assertEquals(userId, MonthlySummaryResponse.from(calculated, List.of()).userId());

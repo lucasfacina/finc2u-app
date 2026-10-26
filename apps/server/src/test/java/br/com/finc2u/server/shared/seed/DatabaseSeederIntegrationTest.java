@@ -76,7 +76,7 @@ class DatabaseSeederIntegrationTest {
 
     @Test
     void seed_shouldGiveTheCurrentMonthExpensesAndExtraIncomes() {
-        var summary = monthlySummaryService.calculateOrRecalculate(user.getId(), 10, 2026).summary();
+        var summary = monthlySummaryService.recalculateFrom(user.getId(), YearMonth.of(2026, 10)).summary();
 
         assertTrue(summary.getTotalExpenses().signum() > 0);
         assertTrue(summary.getTotalExtras().signum() > 0);

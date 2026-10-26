@@ -126,7 +126,7 @@ class RecurringExpenseJobIntegrationTest {
     @Test
     void job_shouldRecalculateTheExistingSummariesOfTheMonthsItGenerates() {
         var userId = registerUser("job.resumo@email.com");
-        monthlySummaryService.calculateOrRecalculate(userId, 10, 2026);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 10));
         saveModel(userId, "Spotify", YearMonth.of(2026, 8), null);
 
         recurringExpenseJob.materializeActiveRecurringExpenses();

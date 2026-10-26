@@ -22,6 +22,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
@@ -83,9 +84,9 @@ class ParceledPurchaseIntegrationTest {
         var userId = registerUser("parcelas.resumo@email.com");
         expenseService.create(userId, purchase(userId, 4, 10));
 
-        var july = monthlySummaryService.calculateOrRecalculate(userId, 7, 2026).summary();
-        var december = monthlySummaryService.calculateOrRecalculate(userId, 12, 2026).summary();
-        var january = monthlySummaryService.calculateOrRecalculate(userId, 1, 2027).summary();
+        var july = monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 7)).summary();
+        var december = monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 12)).summary();
+        var january = monthlySummaryService.recalculateFrom(userId, YearMonth.of(2027, 1)).summary();
 
         assertEquals(0, BigDecimal.valueOf(100).compareTo(july.getTotalExpenses()));
         assertEquals(0, BigDecimal.valueOf(100).compareTo(december.getTotalExpenses()));

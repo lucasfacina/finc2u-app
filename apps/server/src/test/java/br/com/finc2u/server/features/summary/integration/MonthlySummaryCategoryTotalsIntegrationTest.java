@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,7 +54,7 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
         expense(userId, "Feira", 50, 3, "Alimentação");
         expense(userId, "Cinema", 70, 3, "Lazer");
 
-        var result = monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        var result = monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
 
         assertEquals(Map.of("Alimentação", 350, "Lazer", 70), totalsByName(result.categoryTotals()));
     }
@@ -62,11 +63,11 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
     void recalculate_shouldReplaceTheOldTotals_withoutDuplicatingOrViolatingTheUnique() {
         var userId = registerUser("totais.recalcular@email.com");
         expense(userId, "Mercado", 300, 3, "Alimentação");
-        monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
         expense(userId, "Cinema", 70, 3, "Lazer");
         expense(userId, "Feira", 50, 3, "Alimentação");
 
-        var result = monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        var result = monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
         var stored = monthlySummaryService.getByUserAndPeriod(userId, 3, YEAR).categoryTotals();
 
         assertFalse(result.created());
@@ -79,10 +80,10 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
         var userId = registerUser("totais.remover@email.com");
         var cinema = expense(userId, "Cinema", 70, 3, "Lazer");
         expense(userId, "Mercado", 300, 3, "Alimentação");
-        monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
         expenseService.delete(cinema.getId());
 
-        monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
         var stored = monthlySummaryService.getByUserAndPeriod(userId, 3, YEAR).categoryTotals();
 
         assertEquals(Map.of("Alimentação", 300), totalsByName(stored));
@@ -93,8 +94,8 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
         var userId = registerUser("totais.historico@email.com");
         expense(userId, "Mercado", 300, 3, "Alimentação");
         expense(userId, "Cinema", 70, 4, "Lazer");
-        monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
-        monthlySummaryService.calculateOrRecalculate(userId, 4, YEAR);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 4));
 
         var history = monthlySummaryService.getByUser(userId);
 
@@ -108,7 +109,7 @@ class MonthlySummaryCategoryTotalsIntegrationTest {
     void delete_shouldRemoveTheSummaryTogetherWithItsCategoryTotals_andKeepTheCategories() {
         var userId = registerUser("totais.apagar@email.com");
         expense(userId, "Mercado", 300, 3, "Alimentação");
-        monthlySummaryService.calculateOrRecalculate(userId, 3, YEAR);
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(YEAR, 3));
 
         monthlySummaryService.delete(userId, 3, YEAR);
 
