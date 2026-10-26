@@ -3,6 +3,7 @@ package br.com.finc2u.server.features.card.controller;
 import br.com.finc2u.server.config.FixedClockTestConfig;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.card.dto.CardAccountRequest;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.service.CardAccountService;
@@ -109,7 +110,7 @@ class CardAccountControllerTest {
 
     @Test
     void create_shouldAcceptAndReturnTheExpirationAsYearMonth() throws Exception {
-        var expiration = YearMonth.now().plusYears(4);
+        var expiration = YearMonth.of(2030, 5);
         cardAccount.setExpirationDate(expiration.atEndOfMonth());
         when(cardAccountService.create(any(CardAccount.class), eq(userId)))
             .thenReturn(cardAccount);
@@ -127,17 +128,17 @@ class CardAccountControllerTest {
     }
 
     @Test
-    void create_shouldReturnBadRequest_whenExpirationIsInThePast() throws Exception {
-        var pastExpiration = YearMonth.now().minusMonths(1);
+    void create_shouldReturnBadRequest_whenTheServiceRejectsAnExpirationInThePast() throws Exception {
+        when(cardAccountService.create(any(CardAccount.class), eq(userId)))
+            .thenThrow(new InvalidRequestException("A validade do cartão não pode estar no passado."));
 
         mockMvc.perform(post("/card-accounts")
                 .param("userId", userId.toString())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"cardName\":\"Nubank\",\"closingDate\":5,\"dueDate\":15,\"expiration\":\"" + pastExpiration + "\"}"))
+                .content("{\"cardName\":\"Nubank\",\"closingDate\":5,\"dueDate\":15,\"expiration\":\"2020-01\"}"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.status").value(400));
-
-        verifyNoInteractions(cardAccountService);
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value("A validade do cartão não pode estar no passado."));
     }
 
     @Test
