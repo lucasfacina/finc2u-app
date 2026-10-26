@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -70,6 +71,7 @@ class MonthlySummaryControllerTest {
             .previousMonthMissing(true)
             .savingsBalance(BigDecimal.valueOf(1000))
             .remainingAmount(BigDecimal.valueOf(2500))
+            .referenceDate(LocalDate.of(2026, 6, 15))
             .build();
 
         var groceries = Category.builder()
@@ -93,6 +95,7 @@ class MonthlySummaryControllerTest {
             .andExpect(jsonPath("$.year").value(YEAR))
             .andExpect(jsonPath("$.totalExpenses").value(800))
             .andExpect(jsonPath("$.totalOverdue").value(120))
+            .andExpect(jsonPath("$.referenceDate").value("2026-06-15"))
             .andExpect(jsonPath("$.totalFixed").value(60))
             .andExpect(jsonPath("$.previousMonthMissing").value(true))
             .andExpect(jsonPath("$.categoryTotals[0].categoryName").value("Alimentação"));
