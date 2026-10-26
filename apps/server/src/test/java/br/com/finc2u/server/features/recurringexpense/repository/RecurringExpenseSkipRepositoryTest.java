@@ -13,7 +13,6 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.YearMonth;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,8 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @DataJpaTest
 class RecurringExpenseSkipRepositoryTest {
 
-    private static final LocalDate OCTOBER = LocalDate.of(2026, 10, 25);
-    private static final LocalDate NOVEMBER = LocalDate.of(2026, 11, 25);
+    private static final YearMonth OCTOBER = YearMonth.of(2026, 10);
+    private static final YearMonth NOVEMBER = YearMonth.of(2026, 11);
 
     @Autowired
     private RecurringExpenseSkipRepository skipRepository;
@@ -52,17 +51,17 @@ class RecurringExpenseSkipRepositoryTest {
     }
 
     @Test
-    void existsByRecurringExpenseIdAndDueDate_shouldMatchOnlyTheSameModelAndDueDate() {
+    void existsByRecurringExpenseIdAndRecurrenceMonth_shouldMatchOnlyTheSameModelAndMonth() {
         skipRepository.saveAndFlush(RecurringExpenseSkip.of(spotify, OCTOBER));
 
-        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(spotify.getId(), OCTOBER));
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(spotify.getId(), NOVEMBER));
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(netflix.getId(), OCTOBER));
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(spotify.getId(), OCTOBER.atDay(1)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(spotify.getId(), NOVEMBER.atDay(1)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(netflix.getId(), OCTOBER.atDay(1)));
     }
 
-    // O mesmo vencimento do mesmo modelo só pode ser pulado uma vez; outro mês ou outro modelo não conflita.
+    // O mesmo mês do mesmo modelo só pode ser pulado uma vez; outro mês ou outro modelo não conflita.
     @Test
-    void save_shouldFailWithUniqueViolation_whenTheModelAlreadyHasThatDueDateSkipped() {
+    void save_shouldFailWithUniqueViolation_whenTheModelAlreadyHasThatMonthSkipped() {
         skipRepository.saveAndFlush(RecurringExpenseSkip.of(spotify, OCTOBER));
 
         assertThrows(DataIntegrityViolationException.class,
@@ -70,7 +69,7 @@ class RecurringExpenseSkipRepositoryTest {
     }
 
     @Test
-    void save_shouldAccept_whenTheDueDateOrTheModelIsDifferent() {
+    void save_shouldAccept_whenTheMonthOrTheModelIsDifferent() {
         skipRepository.saveAndFlush(RecurringExpenseSkip.of(spotify, OCTOBER));
 
         assertDoesNotThrow(() -> {
@@ -88,9 +87,9 @@ class RecurringExpenseSkipRepositoryTest {
         skipRepository.deleteByRecurringExpenseId(spotify.getId());
         entityManager.clear();
 
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(spotify.getId(), OCTOBER));
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(spotify.getId(), NOVEMBER));
-        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(netflix.getId(), OCTOBER));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(spotify.getId(), OCTOBER.atDay(1)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(spotify.getId(), NOVEMBER.atDay(1)));
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(netflix.getId(), OCTOBER.atDay(1)));
     }
 
     private RecurringExpense persistModel(String description, User user, Category category) {
