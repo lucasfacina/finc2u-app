@@ -380,7 +380,7 @@ class RecurringExpenseMaterializerTest {
 
         var inOrder = inOrder(recurringExpenseRepository, recurringExpenseSkipRepository, expenseService);
         inOrder.verify(recurringExpenseRepository).findByIdForUpdate(recurringExpense.getId());
-        inOrder.verify(recurringExpenseSkipRepository).existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), LocalDate.of(2026, 10, 25));
+        inOrder.verify(recurringExpenseSkipRepository).existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), LocalDate.of(2026, 10, 1));
         inOrder.verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 10, 25)));
     }
 
@@ -397,11 +397,11 @@ class RecurringExpenseMaterializerTest {
         verifyNoInteractions(recurringExpenseRepository);
     }
 
-    // ---- mês pulado: o usuário apagou a despesa deste vencimento de propósito, e ela não volta ----
+    // ---- mês pulado: o usuário apagou a despesa deste mês de propósito, e ela não volta ----
 
     @Test
-    void materialize_shouldNotCreateAnything_whenTheDueDateWasSkipped() {
-        skipped(LocalDate.of(2026, 10, 25));
+    void materialize_shouldNotCreateAnything_whenTheMonthWasSkipped() {
+        skipped(YearMonth.of(2026, 10));
 
         var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
 
@@ -409,15 +409,15 @@ class RecurringExpenseMaterializerTest {
         verifyNoInteractions(expenseService);
     }
 
-    // Com cartão o vencimento segue a fatura: o pulo é conferido na data real do vencimento, não no dia do modelo.
+    // Com cartão o vencimento cai no mês seguinte, mas o pulo é do mês do modelo: é nele que se confere.
     @Test
-    void materialize_shouldCheckTheSkipOnTheInvoiceDueDate_whenThereIsACard() {
+    void materialize_shouldCheckTheSkipOnTheMonthOfTheModel_evenWhenTheInvoiceFallsInTheNextMonth() {
         recurringExpense.setCardAccount(CardAccount.builder()
             .cardName("Nubank")
             .closingDate(3)
             .dueDate(10)
             .build());
-        skipped(LocalDate.of(2026, 11, 10));
+        skipped(CURRENT_MONTH);
 
         var created = materializer.materialize(recurringExpense, CURRENT_MONTH);
 
@@ -426,8 +426,8 @@ class RecurringExpenseMaterializerTest {
     }
 
     @Test
-    void materialize_shouldStillCreateTheOtherMonths_whenOnlyOneDueDateWasSkipped() {
-        skipped(LocalDate.of(2026, 10, 25));
+    void materialize_shouldStillCreateTheOtherMonths_whenOnlyOneMonthWasSkipped() {
+        skipped(YearMonth.of(2026, 10));
 
         materializer.materializeUpcoming(recurringExpense);
 
@@ -438,7 +438,7 @@ class RecurringExpenseMaterializerTest {
     // O mês corrente foi pulado e o seguinte é criado: o aviso ao resumo parte do mês do que foi de fato criado.
     @Test
     void materializeUpcoming_shouldPublishFromTheNextMonth_whenTheCurrentOneWasSkipped() {
-        skipped(LocalDate.of(2026, 10, 25));
+        skipped(YearMonth.of(2026, 10));
         createdOn(LocalDate.of(2026, 11, 25));
 
         materializer.materializeUpcoming(recurringExpense);
@@ -448,8 +448,8 @@ class RecurringExpenseMaterializerTest {
 
     @Test
     void materializeUpcoming_shouldNotPublish_whenBothMonthsWereSkipped() {
-        skipped(LocalDate.of(2026, 10, 25));
-        skipped(LocalDate.of(2026, 11, 25));
+        skipped(YearMonth.of(2026, 10));
+        skipped(YearMonth.of(2026, 11));
 
         materializer.materializeUpcoming(recurringExpense);
 
@@ -460,17 +460,17 @@ class RecurringExpenseMaterializerTest {
     void materializeForUser_shouldNotRecreateTheSkippedMonth() {
         when(recurringExpenseRepository.findByUserId(user.getId()))
             .thenReturn(List.of(recurringExpense));
-        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), LocalDate.of(2026, 10, 25)))
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), LocalDate.of(2026, 10, 1)))
             .thenReturn(false);
-        skipped(LocalDate.of(2026, 11, 25));
+        skipped(YearMonth.of(2026, 11));
 
         materializer.materializeForUser(user.getId(), YearMonth.of(2026, 11));
 
         verify(expenseService, never()).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 25)));
     }
 
-    private void skipped(LocalDate dueDate) {
-        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+    private void skipped(YearMonth month) {
+        when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), month.atDay(1)))
             .thenReturn(true);
     }
 
