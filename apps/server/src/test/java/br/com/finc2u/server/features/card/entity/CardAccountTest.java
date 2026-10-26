@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.card.entity;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -117,6 +118,33 @@ public class CardAccountTest {
             () -> card.assertUsableOn(LocalDate.of(2030, 6, 1)));
 
         assertEquals("Cartão expirado em 05/2030.", exception.getMessage());
+    }
+
+    // ---- assertExpirationNotInThePast ----
+
+    @Test
+    void assertExpirationNotInThePast_shouldAccept_whenThereIsNoExpiration() {
+        var card = CardAccount.of("Nubank", 5, 15, null);
+
+        assertDoesNotThrow(() -> card.assertExpirationNotInThePast(LocalDate.of(2026, 6, 15)));
+    }
+
+    // O mês corrente vale, inclusive no último dia dele.
+    @Test
+    void assertExpirationNotInThePast_shouldAccept_whenTheExpirationIsInTheCurrentMonthOrLater() {
+        var current = CardAccount.of("Nubank", 5, 15, YearMonth.of(2026, 6));
+        var later = CardAccount.of("Nubank", 5, 15, YearMonth.of(2030, 1));
+
+        assertDoesNotThrow(() -> current.assertExpirationNotInThePast(LocalDate.of(2026, 6, 15)));
+        assertDoesNotThrow(() -> current.assertExpirationNotInThePast(LocalDate.of(2026, 6, 30)));
+        assertDoesNotThrow(() -> later.assertExpirationNotInThePast(LocalDate.of(2026, 6, 15)));
+    }
+
+    @Test
+    void assertExpirationNotInThePast_shouldThrowInvalidRequest_whenTheExpirationMonthAlreadyPassed() {
+        var card = CardAccount.of("Nubank", 5, 15, YearMonth.of(2026, 5));
+
+        assertThrows(InvalidRequestException.class, () -> card.assertExpirationNotInThePast(LocalDate.of(2026, 6, 1)));
     }
 
 }
