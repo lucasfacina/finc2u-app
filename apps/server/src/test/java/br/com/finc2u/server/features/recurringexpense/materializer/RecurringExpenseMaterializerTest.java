@@ -221,6 +221,24 @@ class RecurringExpenseMaterializerTest {
         verifyNoMoreInteractions(expenseService);
     }
 
+    // O repository devolve sem ordem: duas transações que travam os mesmos modelos precisam travar sempre na mesma ordem (a do id),
+    // senão uma espera a outra e vice-versa.
+    @Test
+    void materializeForUser_shouldLockTheModelsInTheOrderOfTheirIds_whateverOrderTheRepositoryReturns() {
+        var first = modelWithId("00000000-0000-0000-0000-000000000001", "Aluguel");
+        var second = modelWithId("00000000-0000-0000-0000-000000000002", "Spotify");
+        var third = modelWithId("00000000-0000-0000-0000-000000000003", "Netflix");
+        when(recurringExpenseRepository.findByUserId(user.getId()))
+            .thenReturn(List.of(third, first, second));
+
+        materializer.materializeForUser(user.getId(), YearMonth.of(2026, 12));
+
+        var inOrder = inOrder(recurringExpenseRepository);
+        inOrder.verify(recurringExpenseRepository, times(2)).findByIdForUpdate(first.getId());
+        inOrder.verify(recurringExpenseRepository, times(2)).findByIdForUpdate(second.getId());
+        inOrder.verify(recurringExpenseRepository, times(2)).findByIdForUpdate(third.getId());
+    }
+
     @Test
     void materializeForUser_shouldNotCreateThePastMonths_whenTheSummaryIsOfThePast() {
         when(recurringExpenseRepository.findByUserId(user.getId()))
@@ -472,6 +490,14 @@ class RecurringExpenseMaterializerTest {
     private void skipped(YearMonth month) {
         when(recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), month.atDay(1)))
             .thenReturn(true);
+    }
+
+    private RecurringExpense modelWithId(String id, String description) {
+        var model = RecurringExpense.of(description, BigDecimal.TEN, 25, YearMonth.of(2026, 8), null);
+        model.setId(UUID.fromString(id));
+        model.setUser(user);
+        model.setCategory(category);
+        return model;
     }
 
     // O VO que o materializer entrega ao ExpenseService, campo a campo: o expense não conhece o modelo, só estes dados.
