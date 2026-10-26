@@ -39,6 +39,9 @@ A partir de `apps/server`:
 A suíte inclui os **testes de arquitetura** (ArchUnit): as regras do projeto (camadas, dependências entre features,
 determinismo, documentação da API) quebram o build se alguém as violar.
 
+O mesmo comando gera o **relatório de cobertura** (JaCoCo) em `apps/server/target/site/jacoco/index.html`. É só um
+relatório, sem limite mínimo: serve para ver o que mudou, não é meta.
+
 ## Importar a planilha de gastos (desenvolvimento)
 
 Ferramenta de desenvolvimento, **só para o banco local**: carrega a planilha pessoal de gastos (`.xlsx`) pelos services
@@ -219,7 +222,8 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 
 - **`CardAccountRequest`** — `{ cardName, closingDate, dueDate, expiration? }`. O nome é **único por usuário** (sem
   diferenciar maiúsculas de minúsculas; duplicado → 422). `expiration` é a validade no formato `"2030-05"` e não pode
-  estar no passado (400); uma compra depois do último dia desse mês é recusada (422, "Cartão expirado em 05/2030.").
+  estar no passado (400; o mês corrente vale); no `PUT` só é conferida se **mudou**, então renomear um cartão já vencido
+  continua possível. Uma compra depois do último dia desse mês é recusada (422, "Cartão expirado em 05/2030.").
 - **`name`** filtra pelo nome do cartão (parcial, sem diferenciar maiúsculas de minúsculas); sem ele, lista todos. A
   lista vem em ordem alfabética do português.
 
@@ -281,7 +285,9 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
 - **Filtros:** `overdue=true` devolve só as pendentes já vencidas; `month` sem `year` → 400.
 - **Projeção** (`/expenses/projections`): as parcelas futuras reais (`PENDING`, vencimento depois de hoje), agrupadas
   por
-  mês; cada item tem id próprio e a descrição original — exiba "2/3" com `currentInstallment`/`totalInstallment`.
+  mês, **em ordem crescente**; cada item tem id próprio e a descrição original — exiba "2/3" com
+  `currentInstallment`/`totalInstallment`. Usuário inexistente → 404 (como em `/salary-history` e
+  `/monthly-summary/history`).
 - A resposta (`ExpenseResponse`) traz `overdue`, `paidAt`, `installmentGroupId`, `cardName` e `category`
   (`{ id, name }`).
 
@@ -300,15 +306,20 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   `dayOfMonth` vai de 1 a 31 (em mês mais curto, a despesa vence no último dia); `startMonth` e `endMonth` usam o
   formato
   `"2026-10"`, e o término não pode ser anterior ao início (400). Categoria e cartão precisam ser do dono (404).
-- O modelo **não é uma despesa**: ele gera **uma despesa por mês** (`FIXED`, `PENDING`), sem duplicar. Com cartão, o
+- O modelo **não é uma despesa**: ele gera **uma despesa por mês** (`FIXED`, `PENDING`), sem duplicar. A despesa guarda
+  o
+  mês em que foi gerada: remarcar o vencimento dela, ou mudar o `dayOfMonth` do modelo, **não** gera outra no mesmo mês.
+  Com cartão, o
   vencimento segue a fatura em que a compra (no `dayOfMonth`) cai.
 - **Quando as despesas são geradas:** ao criar o modelo (mês corrente e seguinte), ao calcular o resumo de um mês
   (`POST /monthly-summary`) e por um **job mensal** (dia 1, 03:00), ligado por `app.scheduling.enabled`
   (`true` em dev; desligado nos testes). Meses anteriores ao corrente nunca são gerados, e a despesa que já venceria
   **antes de hoje** também não: a assinatura vale a partir do próximo vencimento (não nasce atrasada).
 - **Editar** o modelo vale daqui para frente (as despesas já geradas não mudam). **Apagar** o modelo mantém as despesas
-  já geradas. Para parar de gerar, defina o `endMonth`. Apagar uma despesa **gerada** (e não o modelo) a registra como
-  pulada: ela não volta. Duas gerações ao mesmo tempo do mesmo mês (o resumo e o job) são serializadas.
+  já geradas. Para parar de gerar, defina o `endMonth`. Apagar uma despesa **gerada** (e não o modelo) registra aquele
+  **mês** como
+  pulado, mesmo que o vencimento dela tivesse sido remarcado: ela não volta. Duas gerações ao mesmo tempo do mesmo mês
+  (o resumo e o job) são serializadas.
 
 ### Ganhos Extras — `/extra-incomes`
 
