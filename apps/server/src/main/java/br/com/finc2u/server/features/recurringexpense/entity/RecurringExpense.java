@@ -80,11 +80,11 @@ public class RecurringExpense extends BaseModel {
     }
 
     /*
-     * Os dados da despesa que este modelo gera no vencimento, no VO neutro que a feature expense entende (ela não conhece o
-     * modelo). O vencimento chega pronto: quem chama o obtém de dueDateIn.
+     * Os dados da despesa que este modelo gera no mês, no VO neutro que a feature expense entende (ela não conhece o modelo).
+     * O vencimento chega pronto: quem chama o obtém de dueDateIn do mesmo mês.
      */
-    public RecurrenceExpenseCommand toExpenseCommand(LocalDate dueDate) {
-        return new RecurrenceExpenseCommand(getId(), description, value, dueDate, user, category, cardAccount);
+    public RecurrenceExpenseCommand toExpenseCommand(YearMonth month, LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(getId(), month, description, value, dueDate, user, category, cardAccount);
     }
 
 }

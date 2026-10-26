@@ -59,7 +59,7 @@ public class RecurringExpenseMaterializer {
         if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
             return Optional.empty();
 
-        return expenseService.createFromRecurrence(recurringExpense.toExpenseCommand(dueDate));
+        return expenseService.createFromRecurrence(recurringExpense.toExpenseCommand(month, dueDate));
     }
 
     /**

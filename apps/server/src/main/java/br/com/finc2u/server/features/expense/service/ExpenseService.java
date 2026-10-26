@@ -233,7 +233,8 @@ public class ExpenseService {
 
     /**
      * Cria a despesa do modelo recorrente no vencimento: {@code FIXED} e {@code PENDING}, com os dados do modelo. Idempotente: se o
-     * modelo já tem despesa nesse vencimento, não cria nada. O cartão não é revalidado (a validade vale na data da compra). Não
+     * modelo já tem despesa nesse vencimento, não cria nada. Grava também o mês do modelo em que ela foi gerada ({@code recurrenceMonth},
+     * o dia 1 dele). O cartão não é revalidado (a validade vale na data da compra). Não
      * publica o {@code PeriodDataChangedEvent}: o aviso é de quem chama (o {@code RecurringExpenseMaterializer}), que dentro do
      * cálculo do resumo não avisa, porque seria recursão.
      *
@@ -254,6 +255,7 @@ public class ExpenseService {
             .cardAccount(command.cardAccount())
             .category(command.category())
             .recurringExpenseId(command.recurringExpenseId())
+            .recurrenceMonth(command.recurrenceMonth().atDay(1))
             .build()));
     }
 

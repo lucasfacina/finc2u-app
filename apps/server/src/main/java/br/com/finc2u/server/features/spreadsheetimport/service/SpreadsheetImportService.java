@@ -141,14 +141,15 @@ public class SpreadsheetImportService {
             }
 
             for (var entry : span.entries()) {
-                var dueDate = model.dueDateIn(chargeMonth(entry.paymentMonth(), card));
-                var created = expenseService.createFromRecurrence(new RecurrenceExpenseCommand(model.getId(), span.description(),
+                var month = chargeMonth(entry.paymentMonth(), card);
+                var dueDate = model.dueDateIn(month);
+                var created = expenseService.createFromRecurrence(new RecurrenceExpenseCommand(model.getId(), month, span.description(),
                     entry.value(), dueDate, model.getUser(), model.getCategory(), model.getCardAccount()));
 
                 tally.expenses += created.isPresent()
                     ? 1
                     : 0;
-                instances.add(new PendingInstance(model.getId(), dueDate, entry.paid()));
+                instances.add(new PendingInstance(model.getId(), month, entry.paid()));
             }
         }
 
@@ -156,10 +157,10 @@ public class SpreadsheetImportService {
         var byInstance = new HashMap<String, Expense>();
         expenseService.getByUser(context.userId()).stream()
             .filter(expense -> expense.getRecurringExpenseId() != null)
-            .forEach(expense -> byInstance.put(expense.getRecurringExpenseId() + "|" + expense.getDueDate(), expense));
+            .forEach(expense -> byInstance.put(expense.getRecurringExpenseId() + "|" + expense.getRecurrenceMonth(), expense));
 
         for (var instance : instances) {
-            var expense = byInstance.get(instance.modelId + "|" + instance.dueDate);
+            var expense = byInstance.get(instance.modelId + "|" + instance.month.atDay(1));
             if (expense == null) continue;
 
             reconcile(expense, expense.getValue(), instance.paid);
@@ -417,7 +418,7 @@ public class SpreadsheetImportService {
         return titled.toString();
     }
 
-    private record PendingInstance(UUID modelId, LocalDate dueDate, boolean paid) {
+    private record PendingInstance(UUID modelId, YearMonth month, boolean paid) {
     }
 
     private record Context(UUID userId, Map<String, CardAccount> cards, ImportOptions options, YearMonth lastMonth) {
