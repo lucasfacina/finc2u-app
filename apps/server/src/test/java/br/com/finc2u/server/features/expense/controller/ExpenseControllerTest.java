@@ -202,6 +202,15 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void getProjections_shouldReturnNotFound_whenTheUserDoesNotExist() throws Exception {
+        when(futureInstallmentProjection.getProjectionsByUser(userId, TODAY))
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        mockMvc.perform(get("/expenses/projections").param("userId", userId.toString()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void create_shouldReturnBadRequest_whenStatusIsMissingAndDueDateIsInThePast() throws Exception {
         when(expenseService.create(eq(userId), any(ExpenseCommand.class)))
             .thenThrow(new InvalidRequestException("Vencimento anterior a hoje: informe se a despesa já foi paga."));
