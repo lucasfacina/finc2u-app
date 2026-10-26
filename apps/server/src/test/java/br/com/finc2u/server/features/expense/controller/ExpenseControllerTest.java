@@ -33,13 +33,13 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -199,6 +199,23 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/expenses/projections").param("userId", userId.toString()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$['2026-06'][0].overdue").value(true));
+    }
+
+    // A ordem no JSON é a dos meses: novembro vem antes de dezembro, seja qual for a ordem em que o mapa chega do service.
+    @Test
+    void getProjections_shouldWriteTheMonthsInAscendingOrder() throws Exception {
+        var november = YearMonth.of(2026, 11);
+        var december = YearMonth.of(2026, 12);
+        var projections = new LinkedHashMap<YearMonth, List<Expense>>();
+        projections.put(december, List.of(expense));
+        projections.put(november, List.of(expense));
+        when(futureInstallmentProjection.getProjectionsByUser(userId, TODAY)).thenReturn(projections);
+
+        var body = mockMvc.perform(get("/expenses/projections").param("userId", userId.toString()))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        assertTrue(body.indexOf("2026-11") < body.indexOf("2026-12"), "novembro deve vir antes de dezembro: " + body);
     }
 
     @Test
