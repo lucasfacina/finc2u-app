@@ -1,9 +1,11 @@
 package br.com.finc2u.server.features.expense.projection;
 
+import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.expense.entity.Expense;
 import br.com.finc2u.server.features.expense.enums.ExpenseType;
 import br.com.finc2u.server.features.expense.enums.PaymentStatus;
 import br.com.finc2u.server.features.expense.repository.ExpenseRepository;
+import br.com.finc2u.server.features.user.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class FutureInstallmentProjectionTest {
@@ -28,12 +29,15 @@ class FutureInstallmentProjectionTest {
     @Mock
     private ExpenseRepository expenseRepository;
 
+    @Mock
+    private UserService userService;
+
     private FutureInstallmentProjection projection;
     private UUID userId;
 
     @BeforeEach
     void setUp() {
-        projection = new FutureInstallmentProjection(expenseRepository);
+        projection = new FutureInstallmentProjection(expenseRepository, userService);
         userId = UUID.randomUUID();
     }
 
@@ -46,6 +50,15 @@ class FutureInstallmentProjectionTest {
 
         verify(expenseRepository).findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
             userId, ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY);
+    }
+
+    @Test
+    void getProjectionsByUser_shouldThrowResourceNotFound_andReadNothing_whenTheUserDoesNotExist() {
+        doThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId)).when(userService).getById(userId);
+
+        assertThrows(ResourceNotFoundException.class, () -> projection.getProjectionsByUser(userId, TODAY));
+
+        verifyNoInteractions(expenseRepository);
     }
 
     @Test
