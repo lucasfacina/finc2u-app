@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -186,8 +187,8 @@ public class ExpenseService {
     }
 
     /**
-     * Apaga uma despesa (uma parcela, se for parcelada). Se ela foi gerada por um modelo recorrente, publica também o
-     * {@link GeneratedExpenseDeletedEvent}: o modelo passa a pular esse vencimento e não a recria.
+     * Apaga uma despesa (uma parcela, se for parcelada). Se ela foi gerada por um modelo recorrente (guarda o modelo e o mês de geração), publica também o
+     * {@link GeneratedExpenseDeletedEvent}: o modelo passa a pular o mês da despesa (o de geração, não o do vencimento atual) e não a recria.
      *
      * @throws ResourceNotFoundException se a despesa não existir (lançada por {@code ExpenseService#getById})
      */
@@ -198,8 +199,8 @@ public class ExpenseService {
         expenseRepository.delete(expense);
 
         eventPublisher.publishEvent(PeriodDataChangedEvent.earliestOf(expense.getUser().getId(), expense.getDueDate()));
-        if (expense.getRecurringExpenseId() != null) {
-            eventPublisher.publishEvent(new GeneratedExpenseDeletedEvent(expense.getRecurringExpenseId(), expense.getDueDate()));
+        if (expense.getRecurringExpenseId() != null && expense.getRecurrenceMonth() != null) {
+            eventPublisher.publishEvent(new GeneratedExpenseDeletedEvent(expense.getRecurringExpenseId(), YearMonth.from(expense.getRecurrenceMonth())));
         }
     }
 

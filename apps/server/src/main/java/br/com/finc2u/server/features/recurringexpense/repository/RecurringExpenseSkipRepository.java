@@ -13,7 +13,7 @@ import java.util.UUID;
 @Repository
 public interface RecurringExpenseSkipRepository extends JpaRepository<RecurringExpenseSkip, UUID> {
 
-    boolean existsByRecurringExpenseIdAndDueDate(UUID recurringExpenseId, LocalDate dueDate);
+    boolean existsByRecurringExpenseIdAndRecurrenceMonth(UUID recurringExpenseId, LocalDate recurrenceMonth);
 
     // Os pulos saem antes do modelo (FK): apagar o modelo apaga os pulos dele.
     @Modifying

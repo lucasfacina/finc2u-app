@@ -15,7 +15,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
@@ -120,14 +119,14 @@ public class RecurringExpenseService {
     }
 
     /**
-     * Registra o vencimento como pulado: o usuário apagou a despesa que o modelo gerou nele, e o modelo não a recria. Idempotente
-     * (pular de novo o mesmo vencimento não duplica) e tolerante: um modelo que já não existe não tem o que pular.
+     * Registra o mês como pulado: o usuário apagou a despesa que o modelo gerou nele, e o modelo não a recria. Idempotente
+     * (pular de novo o mesmo mês não duplica) e tolerante: um modelo que já não existe não tem o que pular.
      */
     @Transactional
-    public void skipMonth(UUID recurringExpenseId, LocalDate dueDate) {
+    public void skipMonth(UUID recurringExpenseId, YearMonth month) {
         recurringExpenseRepository.findById(recurringExpenseId).ifPresent(recurringExpense -> {
-            if (!recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpenseId, dueDate)) {
-                recurringExpenseSkipRepository.save(RecurringExpenseSkip.of(recurringExpense, dueDate));
+            if (!recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpenseId, month.atDay(1))) {
+                recurringExpenseSkipRepository.save(RecurringExpenseSkip.of(recurringExpense, month));
             }
         });
     }

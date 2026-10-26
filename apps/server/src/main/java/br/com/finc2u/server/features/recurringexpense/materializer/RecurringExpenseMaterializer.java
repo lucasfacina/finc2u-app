@@ -24,7 +24,7 @@ import java.util.UUID;
  *   <li><b>Idempotente:</b> chamar de novo para o mesmo mês não duplica nada (a unique de modelo + mês garante no banco).</li>
  *   <li><b>Só de "este mês" em diante:</b> os meses passados não são recriados, senão apareceriam como despesas atrasadas que
  *       ninguém lançou. E o que já venceu não nasce atrasado: a assinatura vale a partir do próximo vencimento.</li>
- *   <li><b>Mês pulado não volta:</b> um vencimento que o usuário apagou de propósito não é recriado, nem no resumo nem pelo job.</li>
+ *   <li><b>Mês pulado não volta:</b> um mês cuja despesa o usuário apagou de propósito não é recriado, nem no resumo nem pelo job.</li>
  *   <li><b>Seguro em paralelo:</b> duas gerações simultâneas do mesmo modelo são serializadas por um lock na linha dele (a segunda
  *       espera e então vê a despesa já criada).</li>
  * </ul>
@@ -56,7 +56,7 @@ public class RecurringExpenseMaterializer {
         // já enxerga o que a primeira criou, em vez de estourar a unique de modelo + mês no commit.
         recurringExpenseRepository.findByIdForUpdate(recurringExpense.getId());
 
-        if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+        if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), month.atDay(1)))
             return Optional.empty();
 
         return expenseService.createFromRecurrence(recurringExpense.toExpenseCommand(month, dueDate));
