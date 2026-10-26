@@ -271,7 +271,9 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   futuras nascem `PENDING`), e **devolve só a parcela informada**. Parcela atual maior que o total, ou parcelas em outro
   tipo → 400. `PUT`, `PATCH` e `DELETE /expenses/{id}` atuam em **uma** parcela; a compra inteira se consulta e se
   remove
-  pelos endpoints de `installment-groups`.
+  pelos endpoints de `installment-groups`. No `PUT` de uma parcela, o **tipo, a parcela atual e o total não mudam**
+  (outro valor → 422; omitir mantém): descrição, valor, vencimento, status e `paidAt` seguem editáveis. Também dá 422
+  mandar `PARCELED` num `PUT` de despesa avulsa: o parcelamento nasce no `POST`.
 - **Apagar uma despesa gerada por um modelo recorrente** registra aquele mês como **pulado**: ela não volta, nem no
   resumo nem pelo job.
 - **Resumo atualizado sozinho:** criar, alterar ou apagar uma despesa (como um ganho extra ou um salário) recalcula, na
