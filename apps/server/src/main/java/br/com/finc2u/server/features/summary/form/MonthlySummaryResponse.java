@@ -6,6 +6,7 @@ import br.com.finc2u.server.features.summary.vo.MonthlySummaryDetail;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -62,7 +63,7 @@ public record MonthlySummaryResponse(
     BigDecimal totalPending,
 
     @Schema(
-        description = "Soma das despesas pendentes com vencimento anterior à data do cálculo.",
+        description = "Soma das despesas pendentes com vencimento anterior a referenceDate (o atraso é medido nessa data; ele não se atualiza sozinho com o passar dos dias).",
         example = "0.00"
     )
     BigDecimal totalOverdue,
@@ -109,6 +110,13 @@ public record MonthlySummaryResponse(
     )
     BigDecimal remainingAmount,
 
+    @Schema(
+        description = "Data em que o resumo foi calculado (o \"hoje\" do cálculo). O totalOverdue vale em relação a ela. " +
+            "Nulo em resumos calculados antes deste campo existir, até o próximo recálculo.",
+        example = "2026-10-15"
+    )
+    LocalDate referenceDate,
+
     @Schema(description = "Quanto foi gasto em cada categoria (pago + pendente), ordenado pelo nome.")
     List<CategoryTotalResponse> categoryTotals,
 
@@ -142,6 +150,7 @@ public record MonthlySummaryResponse(
             summary.getSavingsBalance(),
             summary.getSavingsYield(),
             summary.getRemainingAmount(),
+            summary.getReferenceDate(),
             categoryTotals.stream().map(CategoryTotalResponse::from).toList(),
             summary.getUpdatedAt()
         );
