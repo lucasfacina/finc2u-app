@@ -122,6 +122,16 @@ class SalaryHistoryControllerTest {
     }
 
     @Test
+    void getByUserId_shouldReturnNotFound_whenTheUserDoesNotExist() throws Exception {
+        when(salaryHistoryService.getByUser(userId))
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        mockMvc.perform(get("/salary-history")
+                .param("userId", userId.toString()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
     void getById_shouldReturnOk() throws Exception {
         when(salaryHistoryService.getById(historyId))
             .thenReturn(history);
