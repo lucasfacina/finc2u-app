@@ -15,6 +15,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -84,11 +85,16 @@ public class RecurringExpenseMaterializer {
 
     /**
      * Garante, para todos os modelos do usuário, as despesas que o resumo do mês enxerga. A do mês anterior entra junto: com
-     * cartão, a compra do mês anterior pode vencer neste mês (a fatura fecha antes do vencimento).
+     * cartão, a compra do mês anterior pode vencer neste mês (a fatura fecha antes do vencimento). Percorre os modelos pela ordem
+     * do {@code id}: o repository devolve sem ordem, e duas transações que travam os mesmos modelos em ordens diferentes poderiam
+     * esperar uma pela outra (deadlock).
      */
     @Transactional
     public void materializeForUser(UUID userId, YearMonth month) {
-        recurringExpenseRepository.findByUserId(userId).forEach(recurringExpense -> {
+        var recurringExpenses = new ArrayList<>(recurringExpenseRepository.findByUserId(userId));
+        recurringExpenses.sort(Comparator.comparing(RecurringExpense::getId));
+
+        recurringExpenses.forEach(recurringExpense -> {
             materialize(recurringExpense, month.minusMonths(1));
             materialize(recurringExpense, month);
         });
