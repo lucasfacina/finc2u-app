@@ -54,6 +54,12 @@ class FeatureArchitectureTest {
         .orShould().dependOnClassesThat().areAssignableTo(java.time.Clock.class)
         .because("a mesma entrada precisa dar sempre a mesma saída: \"hoje\" vem do `Clock` dos services e chega por parâmetro");
 
+    @ArchTest
+    static final ArchRule requestsDoNotUseDateConstraintsThatReadTheSystemClock = noClasses()
+        .that().resideInAPackage("..dto..")
+        .should().dependOnClassesThat().haveNameMatching("jakarta\\.validation\\.constraints\\.(Future|FutureOrPresent|Past|PastOrPresent)")
+        .because("essas constraints leem o relógio do sistema e escapam do `Clock`: a regra de data vai para a entidade ou o service, que recebem \"hoje\" por parâmetro");
+
     private static ArchCondition<JavaClass> notUseTheRepositoryOfAnotherFeature() {
         return new ArchCondition<>("not depend on a repository of another feature") {
             @Override
