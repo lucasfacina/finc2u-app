@@ -8,7 +8,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -25,23 +25,23 @@ class RecurringExpenseSkipListenerTest {
     private RecurringExpenseSkipListener listener;
 
     @Test
-    void onGeneratedExpenseDeleted_shouldSkipTheDueDateOfTheModel() {
+    void onGeneratedExpenseDeleted_shouldSkipTheMonthOfTheModel() {
         var modelId = UUID.randomUUID();
-        var dueDate = LocalDate.of(2026, 10, 25);
+        var month = YearMonth.of(2026, 10);
 
-        listener.onGeneratedExpenseDeleted(new GeneratedExpenseDeletedEvent(modelId, dueDate));
+        listener.onGeneratedExpenseDeleted(new GeneratedExpenseDeletedEvent(modelId, month));
 
-        verify(recurringExpenseService).skipMonth(modelId, dueDate);
+        verify(recurringExpenseService).skipMonth(modelId, month);
     }
 
     @Test
     void onGeneratedExpenseDeleted_shouldPropagateFailure_soTheDeletionIsRolledBack() {
         var modelId = UUID.randomUUID();
-        var dueDate = LocalDate.of(2026, 10, 25);
-        doThrow(new IllegalStateException("falha ao registrar o pulo")).when(recurringExpenseService).skipMonth(modelId, dueDate);
+        var month = YearMonth.of(2026, 10);
+        doThrow(new IllegalStateException("falha ao registrar o pulo")).when(recurringExpenseService).skipMonth(modelId, month);
 
         assertThrows(IllegalStateException.class,
-            () -> listener.onGeneratedExpenseDeleted(new GeneratedExpenseDeletedEvent(modelId, dueDate)));
+            () -> listener.onGeneratedExpenseDeleted(new GeneratedExpenseDeletedEvent(modelId, month)));
     }
 
 }
