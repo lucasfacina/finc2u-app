@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.card.service;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
@@ -11,9 +12,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,11 +31,17 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class CardAccountServiceTest {
 
+    private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+
     @Mock
     private CardAccountRepository cardAccountRepository;
 
     @Mock
     private UserService userService;
+
+    @Spy
+    @SuppressWarnings("unused") // injetado no service pelo @InjectMocks
+    private Clock clock = Clock.fixed(TODAY.atStartOfDay(ZoneId.systemDefault()).toInstant(), ZoneId.systemDefault());
 
     @InjectMocks
     private CardAccountService cardAccountService;
@@ -112,6 +123,27 @@ public class CardAccountServiceTest {
         assertEquals(cardAccount.getCardName(), response.getCardName());
         assertEquals(user, response.getUser());
         verify(cardAccountRepository, times(1)).save(any(CardAccount.class));
+    }
+
+    @Test
+    void create_shouldThrowInvalidRequest_andTouchNothing_whenTheExpirationMonthAlreadyPassed() {
+        var expired = CardAccount.of("Nubank", 5, 15, YearMonth.of(2026, 5));
+
+        assertThrows(InvalidRequestException.class, () -> cardAccountService.create(expired, userId));
+
+        verifyNoInteractions(userService, cardAccountRepository);
+    }
+
+    // O mês de hoje vale: o cartão que vence neste mês ainda pode ser cadastrado.
+    @Test
+    void create_shouldAccept_whenTheExpirationIsTheCurrentMonth() {
+        var thisMonth = CardAccount.of("Nubank", 5, 15, YearMonth.of(2026, 6));
+        when(userService.getById(userId))
+            .thenReturn(user);
+        when(cardAccountRepository.save(thisMonth))
+            .thenReturn(thisMonth);
+
+        assertDoesNotThrow(() -> cardAccountService.create(thisMonth, userId));
     }
 
     // "Mesmo nome em outro usuário é aceito" é garantido pela consulta escopada por usuário (CardAccountRepositoryTest).
@@ -204,6 +236,31 @@ public class CardAccountServiceTest {
         assertEquals("C6Bank", cardAccount.getCardName());
         assertEquals(LocalDate.of(2031, 8, 31), cardAccount.getExpirationDate());
         verify(cardAccountRepository, times(1)).save(cardAccount);
+    }
+
+    @Test
+    void update_shouldThrowInvalidRequest_andNotSave_whenTheNewExpirationMonthAlreadyPassed() {
+        when(cardAccountRepository.findById(cardId))
+            .thenReturn(Optional.of(cardAccount));
+
+        assertThrows(InvalidRequestException.class,
+            () -> cardAccountService.update(cardId, CardAccount.of("Nubank", 5, 15, YearMonth.of(2026, 5))));
+
+        verify(cardAccountRepository, never()).save(any(CardAccount.class));
+    }
+
+    // Só renomear um cartão que já venceu não obriga a trocar a validade: ela não mudou, então não é conferida.
+    @Test
+    void update_shouldAccept_whenTheExpirationDidNotChange_evenIfItIsAlreadyInThePast() {
+        cardAccount.setExpirationDate(LocalDate.of(2026, 1, 31));
+        when(cardAccountRepository.findById(cardId))
+            .thenReturn(Optional.of(cardAccount));
+        when(cardAccountRepository.save(cardAccount))
+            .thenReturn(cardAccount);
+
+        assertDoesNotThrow(() -> cardAccountService.update(cardId, CardAccount.of("Nubank Roxinho", 5, 15, YearMonth.of(2026, 1))));
+
+        assertEquals("Nubank Roxinho", cardAccount.getCardName());
     }
 
     @Test
