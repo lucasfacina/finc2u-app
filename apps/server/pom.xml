@@ -26,6 +26,8 @@
     <asm.version>9.11.1</asm.version>
     <poi.version>6.0.0</poi.version>
     <archunit.version>1.5.1</archunit.version>
+    <jacoco.version>0.8.15</jacoco.version>
+    <argLine/>
   </properties>
 
   <!--
@@ -172,6 +174,7 @@
         <configuration>
           <!--suppress UnresolvedMavenProperty -->
           <argLine>
+            @{argLine}
             -Xshare:off
             -javaagent:${org.mockito:mockito-core:jar}
             --enable-native-access=ALL-UNNAMED
@@ -179,6 +182,26 @@
             -Dnet.bytebuddy.experimental=true
           </argLine>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
