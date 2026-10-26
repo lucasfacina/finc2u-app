@@ -781,19 +781,33 @@ class ExpenseServiceTest {
         verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
     }
 
-    // Apagar a despesa que um modelo recorrente gerou avisa qual vencimento do modelo foi apagado (o modelo registra o pulo).
+    // Apagar a despesa que um modelo recorrente gerou avisa qual mês do modelo foi apagado (o modelo registra o pulo). O mês é o de geração,
+    // não o do vencimento atual, que o usuário pode ter editado.
     @Test
     void delete_shouldPublishTheDeletedGeneratedExpense_whenItCameFromARecurringModel() {
         var modelId = UUID.randomUUID();
-        expense.setDueDate(LocalDate.of(2026, 7, 25));
+        expense.setDueDate(LocalDate.of(2026, 8, 5));
         expense.setRecurringExpenseId(modelId);
+        expense.setRecurrenceMonth(LocalDate.of(2026, 7, 1));
         when(expenseRepository.findById(expenseId))
             .thenReturn(Optional.of(expense));
 
         expenseService.delete(expenseId);
 
-        verify(eventPublisher).publishEvent(new GeneratedExpenseDeletedEvent(modelId, LocalDate.of(2026, 7, 25)));
-        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 7)));
+        verify(eventPublisher).publishEvent(new GeneratedExpenseDeletedEvent(modelId, YearMonth.of(2026, 7)));
+        verify(eventPublisher).publishEvent(new PeriodDataChangedEvent(userId, YearMonth.of(2026, 8)));
+    }
+
+    // Uma linha sem o mês de geração não tem o que pular.
+    @Test
+    void delete_shouldNotPublishTheDeletedGeneratedExpense_whenItHasNoRecurrenceMonth() {
+        expense.setRecurringExpenseId(UUID.randomUUID());
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        expenseService.delete(expenseId);
+
+        verify(eventPublisher, never()).publishEvent(any(GeneratedExpenseDeletedEvent.class));
     }
 
     @Test
