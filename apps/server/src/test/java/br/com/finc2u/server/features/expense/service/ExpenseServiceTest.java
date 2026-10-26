@@ -496,7 +496,7 @@ class ExpenseServiceTest {
         recurringExpense.setCategory(category);
         recurringExpense.setCardAccount(cardAccount);
         var dueDate = LocalDate.of(2026, 10, 25);
-        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+        when(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), LocalDate.of(2026, 10, 1)))
             .thenReturn(false);
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -516,13 +516,13 @@ class ExpenseServiceTest {
         assertEquals(LocalDate.of(2026, 10, 1), created.getRecurrenceMonth());
     }
 
-    // Rodar duas vezes não duplica: a despesa do modelo naquele vencimento já existe.
+    // Rodar duas vezes não duplica: a despesa do modelo naquele mês já existe.
     @Test
-    void createFromRecurrence_shouldReturnEmptyAndNotSave_whenTheModelAlreadyHasTheExpenseOnTheDueDate() {
+    void createFromRecurrence_shouldReturnEmptyAndNotSave_whenTheModelAlreadyHasTheExpenseInTheMonth() {
         var recurringExpense = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), 25, YearMonth.of(2026, 8), null);
         recurringExpense.setId(UUID.randomUUID());
         var dueDate = LocalDate.of(2026, 10, 25);
-        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+        when(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), LocalDate.of(2026, 10, 1)))
             .thenReturn(true);
 
         var created = expenseService.createFromRecurrence(recurrenceCommand(recurringExpense, dueDate));
@@ -838,7 +838,7 @@ class ExpenseServiceTest {
         recurringExpense.setUser(user);
         recurringExpense.setCategory(Category.builder().name("Assinaturas").build());
         var dueDate = LocalDate.of(2026, 10, 25);
-        when(expenseRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
+        when(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(recurringExpense.getId(), LocalDate.of(2026, 10, 1)))
             .thenReturn(false);
         when(expenseRepository.save(any(Expense.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
