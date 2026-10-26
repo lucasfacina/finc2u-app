@@ -133,7 +133,7 @@ class RecurringExpenseMaterializerTest {
 
         materializer.materialize(recurringExpense, CURRENT_MONTH);
 
-        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, LocalDate.of(2026, 11, 10)));
+        verify(expenseService).createFromRecurrence(commandFor(recurringExpense, CURRENT_MONTH, LocalDate.of(2026, 11, 10)));
     }
 
     @Test
@@ -264,8 +264,8 @@ class RecurringExpenseMaterializerTest {
             .closingDate(3)
             .dueDate(10)
             .build());
-        createdOn(LocalDate.of(2026, 11, 10));
-        createdOn(LocalDate.of(2026, 12, 10));
+        createdOn(CURRENT_MONTH, LocalDate.of(2026, 11, 10));
+        createdOn(CURRENT_MONTH.plusMonths(1), LocalDate.of(2026, 12, 10));
 
         materializer.materializeUpcoming(recurringExpense);
 
@@ -476,12 +476,20 @@ class RecurringExpenseMaterializerTest {
 
     // O VO que o materializer entrega ao ExpenseService, campo a campo: o expense não conhece o modelo, só estes dados.
     private RecurrenceExpenseCommand commandFor(RecurringExpense model, LocalDate dueDate) {
-        return new RecurrenceExpenseCommand(model.getId(), model.getDescription(), model.getValue(), dueDate, model.getUser(),
+        return commandFor(model, YearMonth.from(dueDate), dueDate);
+    }
+
+    private RecurrenceExpenseCommand commandFor(RecurringExpense model, YearMonth month, LocalDate dueDate) {
+        return new RecurrenceExpenseCommand(model.getId(), month, model.getDescription(), model.getValue(), dueDate, model.getUser(),
             model.getCategory(), model.getCardAccount());
     }
 
     private void createdOn(LocalDate dueDate) {
-        when(expenseService.createFromRecurrence(commandFor(recurringExpense, dueDate)))
+        createdOn(YearMonth.from(dueDate), dueDate);
+    }
+
+    private void createdOn(YearMonth month, LocalDate dueDate) {
+        when(expenseService.createFromRecurrence(commandFor(recurringExpense, month, dueDate)))
             .thenReturn(Optional.of(Expense.builder().dueDate(dueDate).build()));
     }
 
