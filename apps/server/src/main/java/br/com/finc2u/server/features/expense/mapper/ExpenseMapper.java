@@ -54,17 +54,21 @@ public class ExpenseMapper {
     }
 
     /**
-     * Copia da despesa transitória para a gerenciada só os campos que o usuário edita: descrição, valor, vencimento, tipo, status,
-     * data do pagamento e parcelas. Não copia o dono, o cartão e a categoria (têm as próprias operações acima) nem o grupo da compra
-     * parcelada e o vínculo com o modelo recorrente, que o usuário não altera.
+     * Copia da despesa transitória para a gerenciada só os campos que o usuário edita: descrição, valor, vencimento, status, data do
+     * pagamento e, numa despesa fora de um grupo de parcelas, também o tipo e as parcelas. Numa parcela (com grupo) o tipo e a
+     * numeração são a identidade dela e não são copiados. Não copia o dono, o cartão e a categoria (têm as próprias operações acima)
+     * nem o grupo da compra parcelada e o vínculo com o modelo recorrente, que o usuário não altera.
      */
     public void applyEditableFields(Expense target, Expense source) {
         target.setDescription(source.getDescription());
         target.setValue(source.getValue());
         target.setDueDate(source.getDueDate());
-        target.setExpenseType(source.getExpenseType());
         target.setPaymentStatus(source.getPaymentStatus());
         target.setPaidAt(source.getPaidAt());
+
+        if (target.getInstallmentGroupId() != null) return;
+
+        target.setExpenseType(source.getExpenseType());
         target.setCurrentInstallment(source.getCurrentInstallment());
         target.setTotalInstallment(source.getTotalInstallment());
     }

@@ -145,7 +145,8 @@ public class ExpenseService {
      * @throws ResourceNotFoundException despesa, cartão ou categoria inexistente
      *                                   (lançada por {@code ExpenseMapper#applyCardAccount},
      *                                   {@code ExpenseMapper#applyCategory} e {@code ExpenseService#getById})
-     * @throws BusinessException         cartão expirado ou regra da própria despesa violada
+     * @throws BusinessException         cartão expirado, regra da própria despesa violada ou edição que muda o tipo ou a numeração de uma
+     *                                   parcela (ou que torna parcelada uma despesa avulsa)
      * @throws InvalidRequestException   vencimento anterior a hoje sem informar o status de pagamento
      */
     @Transactional
@@ -157,6 +158,7 @@ public class ExpenseService {
             ? command.purchaseDate()
             : today;
 
+        expense.assertEditKeepsTheInstallments(command.expense());
         expenseMapper.applyCardAccount(expense, command.cardAccountId(), command.cardName());
         expenseMapper.applyCategory(expense, command.categoryId(), command.categoryName());
         expenseMapper.applyEditableFields(expense, command.expense());

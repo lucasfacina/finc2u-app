@@ -137,7 +137,7 @@ public class ExpenseController {
     )
     @ApiResponse(responseCode = "200", description = "Despesa alterada.")
     @ApiResponse(responseCode = "404", description = "Despesa, cartão ou categoria não encontrado.")
-    @ApiResponse(responseCode = "422", description = "Cartão expirado ou regra da despesa violada.")
+    @ApiResponse(responseCode = "422", description = "Cartão expirado, regra da despesa violada ou edição que muda o tipo ou a numeração de uma parcela.")
     public ResponseEntity<ExpenseResponse> update(@PathVariable UUID id, @Valid @RequestBody ExpenseRequest expenseRequest) {
         var updatedExpense = expenseService.update(id, expenseRequest.toCommand());
         return ResponseEntity.ok(toResponse(updatedExpense));
