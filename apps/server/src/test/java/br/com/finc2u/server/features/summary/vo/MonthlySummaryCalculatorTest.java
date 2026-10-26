@@ -227,6 +227,14 @@ class MonthlySummaryCalculatorTest {
         assertMoney(140, figures.totalOverdue());
     }
 
+    // O resumo guarda a data com que o totalOverdue foi calculado: a de saída é a que entrou, sem ler o relógio.
+    @Test
+    void calculate_shouldReturnTheReferenceDateItReceived() {
+        var figures = MonthlySummaryCalculator.calculate(input(List.of(), List.of(), 3000, 0, null, null));
+
+        assertEquals(REFERENCE_DATE, figures.referenceDate());
+    }
+
     // Vence hoje não é atraso: o atraso é estritamente anterior à data de referência.
     @Test
     void calculate_shouldNotCountAnExpenseDueOnTheReferenceDate_asOverdue() {
