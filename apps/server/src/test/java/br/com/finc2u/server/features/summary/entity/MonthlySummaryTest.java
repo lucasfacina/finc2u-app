@@ -5,6 +5,7 @@ import br.com.finc2u.server.features.user.entity.User;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +49,7 @@ class MonthlySummaryTest {
             BigDecimal.valueOf(1500),
             BigDecimal.valueOf(300),
             BigDecimal.valueOf(2700),
+            LocalDate.of(2026, 6, 15),
             List.of()
         ));
 
@@ -64,6 +66,7 @@ class MonthlySummaryTest {
         assertEquals(0, BigDecimal.valueOf(1500).compareTo(summary.getSavingsBalance()));
         assertEquals(0, BigDecimal.valueOf(300).compareTo(summary.getSavingsYield()));
         assertEquals(0, BigDecimal.valueOf(2700).compareTo(summary.getRemainingAmount()));
+        assertEquals(LocalDate.of(2026, 6, 15), summary.getReferenceDate());
         assertEquals(6, summary.getMonth());
         assertEquals(2026, summary.getYear());
         assertSame(user, summary.getUser());
