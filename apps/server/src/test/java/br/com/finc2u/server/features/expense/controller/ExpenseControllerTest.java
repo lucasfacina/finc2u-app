@@ -638,6 +638,17 @@ class ExpenseControllerTest {
     }
 
     @Test
+    void update_shouldReturnUnprocessableContent_whenTheEditChangesTheNumberingOfAnInstallment() throws Exception {
+        when(expenseService.update(eq(expenseId), any(ExpenseCommand.class)))
+            .thenThrow(new BusinessException("Uma parcela não muda de tipo nem de numeração: apague a compra e lance de novo."));
+
+        mockMvc.perform(put("/expenses/{id}", expenseId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isUnprocessableContent());
+    }
+
+    @Test
     void updateStatus_shouldReturnOk_andLetTheServiceDefaultPaidAt() throws Exception {
         expense.setPaymentStatus(PaymentStatus.PAID);
         expense.setPaidAt(TODAY);
