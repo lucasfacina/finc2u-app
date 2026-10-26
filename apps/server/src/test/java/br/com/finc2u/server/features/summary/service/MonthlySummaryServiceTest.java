@@ -188,6 +188,16 @@ class MonthlySummaryServiceTest {
         assertEquals(0, BigDecimal.valueOf(120).compareTo(summary.getTotalOverdue()));
     }
 
+    // O resumo guarda o "hoje" do Clock com que foi calculado.
+    @Test
+    void calculateOrRecalculate_shouldStoreTheClockDateAsTheReferenceDate() {
+        stubRepositories(List.of(), List.of(), null, null);
+
+        var summary = monthlySummaryService.calculateOrRecalculate(userId, MONTH, YEAR).summary();
+
+        assertEquals(TODAY, summary.getReferenceDate());
+    }
+
     @Test
     void calculateOrRecalculate_shouldSumTheFixedExpenses() {
         var fixed = expenseOf(BigDecimal.valueOf(20.90), PaymentStatus.PAID, TODAY.plusDays(2));
