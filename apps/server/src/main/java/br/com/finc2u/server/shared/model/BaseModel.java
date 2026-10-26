@@ -35,7 +35,7 @@ public abstract class BaseModel {
         if (object == null) return false;
         if (Hibernate.getClass(this) != Hibernate.getClass(object)) return false;
         var other = (BaseModel) object;
-        return id != null && Objects.equals(id, other.id);
+        return id != null && Objects.equals(id, other.getId());
     }
 
     @Override
