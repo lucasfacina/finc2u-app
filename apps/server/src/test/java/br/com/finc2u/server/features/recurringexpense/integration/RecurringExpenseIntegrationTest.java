@@ -147,7 +147,7 @@ class RecurringExpenseIntegrationTest {
     /*
      * Duas transações geram o mesmo mês do mesmo modelo ao mesmo tempo (o resumo e o job, por exemplo). A primeira cria a despesa e segura a
      * transação aberta; a segunda tenta gerar enquanto isso. Sem o lock na linha do modelo, a segunda não vê a despesa ainda não gravada,
-     * tenta criar outra e estoura a unique (modelo + vencimento) quando a primeira confirma. Com o lock, ela espera, vê a despesa pronta
+     * tenta criar outra e estoura a unique (modelo + mês) quando a primeira confirma. Com o lock, ela espera, vê a despesa pronta
      * e não cria nada: uma despesa só e nenhuma exceção.
      */
     @Test
@@ -196,7 +196,50 @@ class RecurringExpenseIntegrationTest {
             .compareTo(monthlySummaryService.getByUserAndPeriod(userId, 11, 2026).summary().getTotalExpenses()));
     }
 
-    // O usuário apagou a despesa de outubro que a assinatura gerou: o vencimento fica registrado como pulado.
+    // O usuário remarcou o vencimento da despesa que a assinatura gerou em outubro: recalcular o resumo não gera outra no mesmo mês.
+    @Test
+    void editGeneratedExpenseDueDate_shouldNotGenerateAnotherOneInTheSameMonth() {
+        var userId = registerUser("recorrente.edita.vencimento@email.com");
+        recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        var october = instancesOf(userId).getFirst();
+
+        expenseService.update(october.getId(), editedWithDueDate(userId, october, LocalDate.of(2026, 10, 30)));
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 10));
+
+        assertEquals(List.of(LocalDate.of(2026, 10, 30), LocalDate.of(2026, 11, 25)),
+            instancesOf(userId).stream().map(Expense::getDueDate).toList());
+    }
+
+    // Mudar o dia do modelo vale daqui para frente: o que já foi gerado fica como está, sem uma segunda despesa no mesmo mês, e o mês ainda
+    // não gerado já usa o dia novo.
+    @Test
+    void editModelDayOfMonth_shouldKeepTheMonthsAlreadyGenerated_andUseTheNewDayFromThenOn() {
+        var userId = registerUser("recorrente.edita.dia@email.com");
+        var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+
+        recurringExpenseService.update(model.getId(), subscription(userId, YearMonth.of(2026, 8), null, 28));
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 10));
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 12));
+
+        assertEquals(List.of(LocalDate.of(2026, 10, 25), LocalDate.of(2026, 11, 25), LocalDate.of(2026, 12, 28)),
+            instancesOf(userId).stream().map(Expense::getDueDate).toList());
+    }
+
+    // O pulo é do mês de geração: apagar a despesa de outubro depois de remarcá-la para novembro impede que o resumo de outubro a recrie.
+    @Test
+    void deleteGeneratedExpenseMovedToAnotherMonth_shouldNotComeBackWhenTheSummaryIsRecalculated() {
+        var userId = registerUser("recorrente.pulo.remarcada@email.com");
+        recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
+        var october = instancesOf(userId).getFirst();
+        expenseService.update(october.getId(), editedWithDueDate(userId, october, LocalDate.of(2026, 11, 5)));
+
+        expenseService.delete(october.getId());
+        monthlySummaryService.recalculateFrom(userId, YearMonth.of(2026, 10));
+
+        assertEquals(List.of(LocalDate.of(2026, 11, 25)), instancesOf(userId).stream().map(Expense::getDueDate).toList());
+    }
+
+    // O usuário apagou a despesa de outubro que a assinatura gerou: o mês fica registrado como pulado.
     @Test
     void deleteGeneratedExpense_shouldRecordTheSkippedMonth() {
         var userId = registerUser("recorrente.pulo@email.com");
@@ -205,8 +248,8 @@ class RecurringExpenseIntegrationTest {
 
         expenseService.delete(october.getId());
 
-        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 11, 25)));
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), LocalDate.of(2026, 10, 1)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), LocalDate.of(2026, 11, 1)));
     }
 
     // A despesa apagada não volta quando o resumo é recalculado: nem o do próprio mês, nem o do mês seguinte (que olha o anterior).
@@ -240,7 +283,7 @@ class RecurringExpenseIntegrationTest {
 
         expenseService.delete(saved.getId());
 
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), LocalDate.of(2026, 10, 1)));
     }
 
     // Apagar o modelo apaga os pulos dele (a FK recusaria o contrário).
@@ -249,11 +292,11 @@ class RecurringExpenseIntegrationTest {
         var userId = registerUser("recorrente.pulo.apagar@email.com");
         var model = recurringExpenseService.create(subscription(userId, YearMonth.of(2026, 8), null), userId);
         expenseService.delete(instancesOf(userId).getFirst().getId());
-        assertTrue(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+        assertTrue(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), LocalDate.of(2026, 10, 1)));
 
         recurringExpenseService.delete(model.getId());
 
-        assertFalse(skipRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 25)));
+        assertFalse(skipRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), LocalDate.of(2026, 10, 1)));
         assertTrue(recurringExpenseService.getByUser(userId).isEmpty());
     }
 
@@ -306,6 +349,18 @@ class RecurringExpenseIntegrationTest {
         var model = RecurringExpense.of("Spotify", BigDecimal.valueOf(21.90), dayOfMonth, startMonth, endMonth);
         var categoryId = categoryService.getByUser(userId).getFirst().getId();
         return RecurringExpenseCommand.of(model).withCategoryId(categoryId);
+    }
+
+    // O que o usuário manda no PUT de uma despesa: os mesmos dados da gerada, só com outro vencimento.
+    private ExpenseCommand editedWithDueDate(UUID userId, Expense expense, LocalDate dueDate) {
+        var edited = Expense.builder()
+            .description(expense.getDescription())
+            .value(expense.getValue())
+            .dueDate(dueDate)
+            .expenseType(expense.getExpenseType())
+            .paymentStatus(expense.getPaymentStatus())
+            .build();
+        return ExpenseCommand.of(edited).withCategoryId(categoryService.getByUser(userId).getFirst().getId());
     }
 
     private List<Expense> instancesOf(UUID userId) {
