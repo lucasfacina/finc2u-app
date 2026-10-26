@@ -199,8 +199,8 @@ class SpreadsheetMonthlySummaryValidationTest {
 
         assertEquals(sheetMonths.size(), responses.size());
         assertTrue(responses.stream().noneMatch(response -> response.categoryTotals().isEmpty()));
-        // Uma consulta para os resumos e outra para os totais por categoria de todos eles (a categoria vem junto), seja qual for o número de meses.
-        assertEquals(2, statistics.getPrepareStatementCount(), "consultas do histórico de " + responses.size() + " meses");
+        // Uma consulta para o usuário, outra para os resumos e outra para os totais por categoria de todos eles (a categoria vem junto), seja qual for o número de meses.
+        assertEquals(3, statistics.getPrepareStatementCount(), "consultas do histórico de " + responses.size() + " meses");
     }
 
     @Test
