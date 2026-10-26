@@ -461,6 +461,15 @@ class MonthlySummaryServiceTest {
     }
 
     @Test
+    void getByUser_shouldThrowResourceNotFound_andReadNothing_whenTheUserDoesNotExist() {
+        when(userService.getById(userId)).thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        assertThrows(ResourceNotFoundException.class, () -> monthlySummaryService.getByUser(userId));
+
+        verifyNoInteractions(monthlySummaryRepository, categoryTotalRepository);
+    }
+
+    @Test
     void getByUser_shouldSortTheCategoryTotalsOfEachSummaryInPortugueseOrder() {
         var may = summaryOf(5);
         var june = summaryOf(6);
