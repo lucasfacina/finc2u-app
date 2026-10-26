@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -123,9 +124,10 @@ public record ExpenseResponse(
             .toList();
     }
 
+    // Os meses saem em ordem crescente, qualquer que seja a ordem do mapa de entrada: a mesma entrada sempre dá o mesmo JSON.
     public static Map<YearMonth, List<ExpenseResponse>> byMonth(Map<YearMonth, List<Expense>> expensesByMonth, LocalDate referenceDate) {
         return expensesByMonth.entrySet().stream()
-            .collect(Collectors.toMap(Map.Entry::getKey, entry -> listOf(entry.getValue(), referenceDate)));
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> listOf(entry.getValue(), referenceDate), (first, second) -> first, TreeMap::new));
     }
 
 }

@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,7 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository, U
      * data de referência.
      *
      * @param referenceDate "hoje", vinda do {@code Clock} de quem chama (a projeção não lê o relógio)
-     * @return as parcelas por mês; sem parcelas futuras, mapa vazio
+     * @return as parcelas por mês, com os meses em ordem crescente; sem parcelas futuras, mapa vazio
      * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
     public Map<YearMonth, List<Expense>> getProjectionsByUser(UUID userId, LocalDate referenceDate) {
@@ -37,7 +38,7 @@ public record FutureInstallmentProjection(ExpenseRepository expenseRepository, U
             .findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
                 userId, ExpenseType.PARCELED, PaymentStatus.PENDING, referenceDate)
             .stream()
-            .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getDueDate())));
+            .collect(Collectors.groupingBy(expense -> YearMonth.from(expense.getDueDate()), TreeMap::new, Collectors.toList()));
     }
 
 }
