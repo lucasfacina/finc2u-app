@@ -54,6 +54,8 @@ public class MonthlySummaryController {
         summary = "Lista o histórico de resumos do usuário",
         description = "Todos os resumos do usuário, com os totais por categoria."
     )
+    @ApiResponse(responseCode = "200", description = "Histórico de resumos do usuário.")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado.")
     public ResponseEntity<List<MonthlySummaryResponse>> getHistoryByUserId(@RequestParam UUID userId) {
         var monthlySummaryResponse = monthlySummaryService.getByUser(userId).stream()
             .map(MonthlySummaryResponse::from)

@@ -115,9 +115,13 @@ public class MonthlySummaryService {
 
     /**
      * O histórico do usuário, com os totais por categoria de todos os resumos lidos numa consulta só (sem uma por resumo).
+     *
+     * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
     @Transactional(readOnly = true)
     public List<MonthlySummaryDetail> getByUser(UUID userId) {
+        userService.getById(userId);
+
         var summaries = monthlySummaryRepository.findByUserId(userId);
         var categoryTotalsBySummary = categoryTotalsOf(summaries);
         return summaries.stream()

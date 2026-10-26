@@ -121,6 +121,8 @@ public class ExpenseController {
         description = "Parcelas PARCELED e PENDING com vencimento depois de hoje, agrupadas por mês (chave no formato " +
             "AAAA-MM)."
     )
+    @ApiResponse(responseCode = "200", description = "Parcelas futuras do usuário, por mês.")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado.")
     public ResponseEntity<Map<YearMonth, List<ExpenseResponse>>> getProjectionsByUserId(@RequestParam UUID userId) {
         var today = LocalDate.now(clock);
         var projections = futureInstallmentProjection.getProjectionsByUser(userId, today);

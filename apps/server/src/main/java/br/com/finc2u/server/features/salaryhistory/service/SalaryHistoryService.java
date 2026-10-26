@@ -70,11 +70,13 @@ public class SalaryHistoryService implements CurrentSalaryPort {
     }
 
     /**
-     * Vigências do usuário, da mais recente para a mais antiga. Sem nenhuma, devolve lista vazia (inclusive para um usuário que não
-     * existe: aqui não há checagem).
+     * Vigências do usuário, da mais recente para a mais antiga. Sem nenhuma, devolve lista vazia.
+     *
+     * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      */
     @Transactional(readOnly = true)
     public List<SalaryHistory> getByUser(UUID userId) {
+        userService.getById(userId);
         return salaryHistoryRepository.findByUserIdOrderByEffectiveFromDesc(userId);
     }
 

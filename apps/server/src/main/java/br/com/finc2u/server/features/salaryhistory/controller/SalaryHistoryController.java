@@ -45,6 +45,8 @@ public class SalaryHistoryController {
         summary = "Lista as vigências de salário do usuário",
         description = "Da mais recente para a mais antiga. Sem nenhuma, devolve lista vazia."
     )
+    @ApiResponse(responseCode = "200", description = "Vigências do usuário.")
+    @ApiResponse(responseCode = "404", description = "Usuário não encontrado.")
     public ResponseEntity<List<SalaryHistoryResponse>> getByUserId(@RequestParam UUID userId) {
         var extraIncomeResponse = salaryHistoryService.getByUser(userId)
             .stream()
