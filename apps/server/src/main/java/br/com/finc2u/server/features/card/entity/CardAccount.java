@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.card.entity;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.features.user.entity.User;
 import br.com.finc2u.server.shared.model.BaseModel;
 import jakarta.persistence.*;
@@ -43,6 +44,15 @@ public class CardAccount extends BaseModel {
                 ? expiration.atEndOfMonth()
                 : null)
             .build();
+    }
+
+    /*
+     * Ao cadastrar ou mudar a validade, ela não pode estar num mês passado (o mês corrente vale). A data de referência, que é hoje,
+     * chega pronta: a entidade não lê o relógio. Sem validade, não há o que conferir.
+     */
+    public void assertExpirationNotInThePast(LocalDate referenceDate) {
+        if (expirationDate != null && expirationDate.isBefore(referenceDate))
+            throw new InvalidRequestException("A validade do cartão não pode estar no passado.");
     }
 
     /*

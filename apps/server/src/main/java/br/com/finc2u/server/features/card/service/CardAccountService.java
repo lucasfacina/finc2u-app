@@ -1,6 +1,7 @@
 package br.com.finc2u.server.features.card.service;
 
 import br.com.finc2u.server.exception.BusinessException;
+import br.com.finc2u.server.exception.InvalidRequestException;
 import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import br.com.finc2u.server.features.card.repository.CardAccountRepository;
@@ -10,7 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -23,15 +27,19 @@ public class CardAccountService {
 
     private final CardAccountRepository cardAccountRepository;
     private final UserService userService;
+    private final Clock clock;
 
     /**
      * Cadastra o cartão do usuário.
      *
+     * @throws InvalidRequestException   se a validade informada está num mês passado (o mês de hoje vale)
      * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
      * @throws BusinessException         se o usuário já tem um cartão com esse nome
      */
     @Transactional
     public CardAccount create(CardAccount cardAccount, UUID userId) {
+        cardAccount.assertExpirationNotInThePast(LocalDate.now(clock));
+
         var user = userService.getById(userId);
 
         // A constraint unique do banco diferencia maiúsculas de minúsculas ("Nubank" × "nubank"); esta checagem não,
@@ -95,14 +103,19 @@ public class CardAccountService {
     }
 
     /**
-     * Altera nome, fechamento, vencimento e validade do cartão. As despesas já lançadas não mudam.
+     * Altera nome, fechamento, vencimento e validade do cartão. As despesas já lançadas não mudam. A validade só é conferida se mudou:
+     * renomear um cartão que já venceu continua possível.
      *
      * @throws ResourceNotFoundException se o cartão não existir (lançada por {@code CardAccountService#getById})
+     * @throws InvalidRequestException   se a nova validade está num mês passado (o mês de hoje vale)
      * @throws BusinessException         se outro cartão do mesmo usuário já tem o nome
      */
     @Transactional
     public CardAccount update(UUID id, CardAccount cardUpdated) {
         var cardAccount = getById(id);
+
+        if (!Objects.equals(cardAccount.getExpirationDate(), cardUpdated.getExpirationDate()))
+            cardUpdated.assertExpirationNotInThePast(LocalDate.now(clock));
 
         cardAccountRepository.findByUserIdAndCardNameIgnoreCase(cardAccount.getUser().getId(), cardUpdated.getCardName())
             .filter(existing -> !existing.getId().equals(id))

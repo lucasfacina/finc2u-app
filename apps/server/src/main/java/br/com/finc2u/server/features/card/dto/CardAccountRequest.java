@@ -2,7 +2,10 @@ package br.com.finc2u.server.features.card.dto;
 
 import br.com.finc2u.server.features.card.entity.CardAccount;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.time.YearMonth;
 
@@ -34,9 +37,8 @@ public record CardAccountRequest(
     )
     Integer dueDate,
 
-    @FutureOrPresent(message = "A validade do cartão não pode estar no passado.")
     @Schema(
-        description = "Validade do cartão (AAAA-MM), opcional. Compra depois dela é recusada.",
+        description = "Validade do cartão (AAAA-MM), opcional; o mês corrente vale, um mês passado é recusado (400). Compra depois dela é recusada.",
         example = "2030-05"
     )
     YearMonth expiration
