@@ -39,12 +39,12 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID>, JpaSpec
     @EntityGraph(attributePaths = {"cardAccount", "category"}, type = EntityGraph.EntityGraphType.LOAD)
     List<Expense> findByInstallmentGroupIdOrderByCurrentInstallment(UUID installmentGroupId);
 
-    // Idempotência da recorrência: a despesa de um modelo num vencimento existe uma vez só (unique no banco).
-    boolean existsByRecurringExpenseIdAndDueDate(UUID recurringExpenseId, LocalDate dueDate);
+    // Idempotência da recorrência: a despesa de um modelo num mês existe uma vez só (unique no banco), qualquer que seja o vencimento.
+    boolean existsByRecurringExpenseIdAndRecurrenceMonth(UUID recurringExpenseId, LocalDate recurrenceMonth);
 
-    // Apagar o modelo recorrente não apaga as despesas que ele gerou: elas ficam sem modelo.
+    // Apagar o modelo recorrente não apaga as despesas que ele gerou: elas ficam sem modelo (e sem o mês, que só faz sentido com ele).
     @Modifying
-    @Query("update Expense e set e.recurringExpenseId = null where e.recurringExpenseId = :recurringExpenseId")
+    @Query("update Expense e set e.recurringExpenseId = null, e.recurrenceMonth = null where e.recurringExpenseId = :recurringExpenseId")
     void detachFromRecurringExpense(@Param("recurringExpenseId") UUID recurringExpenseId);
 
     // Alimenta a projeção de parcelas futuras: o ExpenseResponse lê cartão e categoria (esta é LAZY), então ambos vêm no graph.

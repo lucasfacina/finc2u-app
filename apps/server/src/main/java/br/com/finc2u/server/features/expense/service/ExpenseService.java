@@ -233,16 +233,17 @@ public class ExpenseService {
 
     /**
      * Cria a despesa do modelo recorrente no vencimento: {@code FIXED} e {@code PENDING}, com os dados do modelo. Idempotente: se o
-     * modelo já tem despesa nesse vencimento, não cria nada. Grava também o mês do modelo em que ela foi gerada ({@code recurrenceMonth},
+     * modelo já tem despesa nesse mês, não cria nada, mesmo que o vencimento dela tenha sido editado. Grava também o mês do modelo em que ela foi gerada ({@code recurrenceMonth},
      * o dia 1 dele). O cartão não é revalidado (a validade vale na data da compra). Não
      * publica o {@code PeriodDataChangedEvent}: o aviso é de quem chama (o {@code RecurringExpenseMaterializer}), que dentro do
      * cálculo do resumo não avisa, porque seria recursão.
      *
-     * @return a despesa criada, ou vazio se o vencimento já tinha uma
+     * @return a despesa criada, ou vazio se o mês já tinha uma
      */
     @Transactional
     public Optional<Expense> createFromRecurrence(RecurrenceExpenseCommand command) {
-        if (expenseRepository.existsByRecurringExpenseIdAndDueDate(command.recurringExpenseId(), command.dueDate()))
+        var recurrenceMonth = command.recurrenceMonth().atDay(1);
+        if (expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(command.recurringExpenseId(), recurrenceMonth))
             return Optional.empty();
 
         return Optional.of(expenseRepository.save(Expense.builder()
@@ -255,7 +256,7 @@ public class ExpenseService {
             .cardAccount(command.cardAccount())
             .category(command.category())
             .recurringExpenseId(command.recurringExpenseId())
-            .recurrenceMonth(command.recurrenceMonth().atDay(1))
+            .recurrenceMonth(recurrenceMonth)
             .build()));
     }
 

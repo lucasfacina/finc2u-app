@@ -19,7 +19,7 @@ import java.util.UUID;
 @Entity
 @Table(
     name = "tb_expense",
-    uniqueConstraints = @UniqueConstraint(name = "uk_expense_recurring_due_date", columnNames = {"recurring_expense_id", "due_date"})
+    uniqueConstraints = @UniqueConstraint(name = "uk_expense_recurring_month", columnNames = {"recurring_expense_id", "recurrence_month"})
 )
 @Getter
 @Setter

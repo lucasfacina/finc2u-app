@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * Transforma o modelo recorrente em despesas reais, uma por mês ({@code FIXED}, {@code PENDING}).
  * <ul>
- *   <li><b>Idempotente:</b> chamar de novo para o mesmo mês não duplica nada (a unique de modelo + vencimento garante no banco).</li>
+ *   <li><b>Idempotente:</b> chamar de novo para o mesmo mês não duplica nada (a unique de modelo + mês garante no banco).</li>
  *   <li><b>Só de "este mês" em diante:</b> os meses passados não são recriados, senão apareceriam como despesas atrasadas que
  *       ninguém lançou. E o que já venceu não nasce atrasado: a assinatura vale a partir do próximo vencimento.</li>
  *   <li><b>Mês pulado não volta:</b> um vencimento que o usuário apagou de propósito não é recriado, nem no resumo nem pelo job.</li>
@@ -53,7 +53,7 @@ public class RecurringExpenseMaterializer {
         if (dueDate.isBefore(LocalDate.now(clock))) return Optional.empty();
 
         // Serializa a geração do mesmo modelo: duas transações (o resumo e o job, por exemplo) esperam aqui uma pela outra, e a segunda
-        // já enxerga o que a primeira criou, em vez de estourar a unique de modelo + vencimento no commit.
+        // já enxerga o que a primeira criou, em vez de estourar a unique de modelo + mês no commit.
         recurringExpenseRepository.findByIdForUpdate(recurringExpense.getId());
 
         if (recurringExpenseSkipRepository.existsByRecurringExpenseIdAndDueDate(recurringExpense.getId(), dueDate))
