@@ -338,7 +338,9 @@ identificar o usuário, simulando o contexto de autenticação que será impleme
   existem nos meses seguintes (não cria os que não existem), e o `DELETE` recalcula o do mês seguinte. O `GET` só lê.
 - **A resposta** (`MonthlySummaryResponse`) traz, além dos totais (`baseSalary`, `totalIncome`, `totalExpenses`,
   `totalPaid`, `totalPending`, `totalExtras`, `cashBalance`, `savingsBalance`, `savingsYield`, `remainingAmount`):
-  `totalOverdue` (pendentes já vencidas), `totalFixed` (tipo `FIXED`), `previousMonthMissing` (`true` quando não havia
+  `totalOverdue` (pendentes vencidas **em relação a `referenceDate`**, a data em que o resumo foi calculado: o valor não
+  se atualiza sozinho com o passar dos dias), `referenceDate`, `totalFixed` (tipo `FIXED`), `previousMonthMissing`
+  (`true` quando não havia
   resumo do mês anterior: o `cashBalance` zero vem dessa falta) e `categoryTotals`
   (`[{ categoryId, categoryName, total }]`:
   quanto foi gasto em cada categoria, em ordem alfabética do português).
