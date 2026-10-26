@@ -184,6 +184,9 @@ class OpenApiDocsIntegrationTest {
         assertTrue(endpoint("post", "/users").hasResponse("422"));
         assertTrue(endpoint("post", "/salary-history").hasResponse("422"));
         assertTrue(endpoint("get", "/monthly-summary/{userId}/{year}/{month}").hasResponse("404"));
+        assertTrue(endpoint("get", "/salary-history").hasResponse("404"), "listar vigências confere o usuário");
+        assertTrue(endpoint("get", "/monthly-summary/history").hasResponse("404"), "o histórico confere o usuário");
+        assertTrue(endpoint("get", "/expenses/projections").hasResponse("404"), "a projeção confere o usuário");
 
         // apagar o que tem dependentes é recusado pelo banco (409)
         assertTrue(endpoint("delete", "/categories/{id}").hasResponse("409"));
@@ -192,9 +195,6 @@ class OpenApiDocsIntegrationTest {
 
         // o código nunca lança estes: documentá-los seria inventar
         assertFalse(endpoint("post", "/extra-incomes").hasResponse("422"), "ExtraIncomeService não tem regra de negócio");
-        assertFalse(endpoint("get", "/salary-history").hasResponse("404"), "listar vigências não confere o usuário");
-        assertFalse(endpoint("get", "/monthly-summary/history").hasResponse("404"), "o histórico não confere o usuário");
-        assertFalse(endpoint("get", "/expenses/projections").hasResponse("404"), "a projeção não confere o usuário");
         assertFalse(endpoint("delete", "/expenses/{id}").hasResponse("409"), "apagar despesa não tem dependentes");
         assertFalse(endpoint("get", "/users").hasResponse("400"), "listar usuários não recebe entrada");
     }
