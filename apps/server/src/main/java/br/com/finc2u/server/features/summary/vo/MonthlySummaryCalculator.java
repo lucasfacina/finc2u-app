@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
  *   <li>{@code totalIncome}: {@code baseSalary + totalExtras + cashBalance}</li>
  *   <li>{@code remainingAmount}: {@code totalIncome − totalExpenses} (quanto sobra ao fim do mês, descontando pago + pendente)</li>
  *   <li>{@code savingsYield}: poupança atual − poupança do mês anterior; zero se não houver anterior</li>
+ *   <li>{@code referenceDate}: a própria data de referência recebida, devolvida para o resumo guardar a que "hoje" o {@code totalOverdue} se refere</li>
  *   <li>{@code savingsBalance}: saldo da poupança do usuário no momento do cálculo (retrato)</li>
  *   <li>{@code categoryTotals}: quanto foi gasto em cada categoria (pago + pendente), ordenado pelo nome da categoria</li>
  * </ul>
@@ -77,6 +78,7 @@ public final class MonthlySummaryCalculator {
             input.savingsBalance(),
             savingsYield,
             totalIncome.subtract(totals.totalExpenses()),
+            input.referenceDate(),
             categoryTotals
         );
     }

@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Entity
 @Table(
@@ -40,6 +41,8 @@ public class MonthlySummary extends BaseModel {
     private BigDecimal savingsBalance;
     private BigDecimal savingsYield;
     private BigDecimal remainingAmount;
+    // O "hoje" do cálculo: o totalOverdue vale em relação a esta data. Nula nos resumos anteriores à coluna, até o próximo recálculo.
+    private LocalDate referenceDate;
 
     // LAZY: o MonthlySummaryResponse lê só o id do dono (o id de um proxy não gera consulta).
     @ManyToOne(fetch = FetchType.LAZY)
@@ -70,6 +73,7 @@ public class MonthlySummary extends BaseModel {
         this.savingsBalance = figures.savingsBalance();
         this.savingsYield = figures.savingsYield();
         this.remainingAmount = figures.remainingAmount();
+        this.referenceDate = figures.referenceDate();
     }
 
 }
