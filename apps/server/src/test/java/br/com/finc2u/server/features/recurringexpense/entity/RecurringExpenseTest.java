@@ -97,11 +97,13 @@ class RecurringExpenseTest {
         recurringExpense.setUser(User.builder().name("Ana").build());
         recurringExpense.setCategory(Category.of("Assinaturas"));
         recurringExpense.setCardAccount(cardOf(9, 15));
+        var month = YearMonth.of(2026, 11);
         var dueDate = LocalDate.of(2026, 12, 20);
 
-        var command = recurringExpense.toExpenseCommand(dueDate);
+        var command = recurringExpense.toExpenseCommand(month, dueDate);
 
         assertEquals(recurringExpense.getId(), command.recurringExpenseId());
+        assertEquals(month, command.recurrenceMonth(), "o mês é o informado, não o do vencimento");
         assertEquals("Spotify", command.description());
         assertEquals(BigDecimal.valueOf(21.90), command.value());
         assertEquals(dueDate, command.dueDate(), "o vencimento é o informado, não o calculado pelo modelo");
@@ -114,7 +116,7 @@ class RecurringExpenseTest {
     void toExpenseCommand_shouldHaveNoCard_whenTheModelHasNoCard() {
         var recurringExpense = modelOf(5, YearMonth.of(2026, 10), null);
 
-        var command = recurringExpense.toExpenseCommand(LocalDate.of(2026, 10, 5));
+        var command = recurringExpense.toExpenseCommand(YearMonth.of(2026, 10), LocalDate.of(2026, 10, 5));
 
         assertNull(command.cardAccount());
     }
