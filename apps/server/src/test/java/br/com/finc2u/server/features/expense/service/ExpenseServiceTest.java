@@ -462,6 +462,42 @@ class ExpenseServiceTest {
         verify(expenseRepository, never()).save(any(Expense.class));
     }
 
+    // A regra da parcela roda antes de qualquer escrita: nada é resolvido (nem categoria criada por nome), gravado ou avisado.
+    @Test
+    void update_shouldThrowBusinessExceptionAndTouchNothing_whenAnInstallmentChangesItsNumbering() {
+        expense.setInstallmentGroupId(UUID.randomUUID());
+        expense.setExpenseType(ExpenseType.PARCELED);
+        expense.setCurrentInstallment(5);
+        expense.setTotalInstallment(10);
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .currentInstallment(1)
+            .totalInstallment(10)
+            .build();
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        assertThrows(BusinessException.class, () -> expenseService.update(expenseId, command(edited, cardAccountId, null)));
+
+        verifyNoInteractions(expenseMapper, eventPublisher);
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
+    @Test
+    void update_shouldThrowBusinessExceptionAndTouchNothing_whenAStandaloneExpenseBecomesParceled() {
+        var edited = Expense.builder()
+            .expenseType(ExpenseType.PARCELED)
+            .totalInstallment(3)
+            .build();
+        when(expenseRepository.findById(expenseId))
+            .thenReturn(Optional.of(expense));
+
+        assertThrows(BusinessException.class, () -> expenseService.update(expenseId, command(edited, cardAccountId, null)));
+
+        verifyNoInteractions(expenseMapper, eventPublisher);
+        verify(expenseRepository, never()).save(any(Expense.class));
+    }
+
     @Test
     void update_shouldNotSave_whenCardOrCategoryDoesNotBelongToTheUser() {
         when(expenseRepository.findById(expenseId))
