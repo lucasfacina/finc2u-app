@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,6 +77,22 @@ class FutureInstallmentProjectionTest {
         assertEquals(List.of(august), result.get(YearMonth.of(2026, 8)));
         assertSame(july, result.get(YearMonth.of(2026, 7)).getFirst());
         assertEquals("Notebook", result.get(YearMonth.of(2026, 8)).getFirst().getDescription());
+    }
+
+    // O repository ordena por vencimento, mas a ordem das chaves não pode depender disso (nem do mapa que agrupa): sempre crescente.
+    @Test
+    void getProjectionsByUser_shouldReturnTheMonthsInAscendingOrder_whateverTheOrderOfTheRows() {
+        var december = installment("Notebook", 5, LocalDate.of(2026, 12, 10));
+        var august = installment("Notebook", 1, LocalDate.of(2026, 8, 10));
+        var january = installment("Notebook", 6, LocalDate.of(2027, 1, 10));
+        var october = installment("Notebook", 3, LocalDate.of(2026, 10, 10));
+        when(expenseRepository.findByUserIdAndExpenseTypeAndPaymentStatusAndDueDateAfterOrderByDueDate(
+            userId, ExpenseType.PARCELED, PaymentStatus.PENDING, TODAY)).thenReturn(List.of(december, august, january, october));
+
+        var result = projection.getProjectionsByUser(userId, TODAY);
+
+        assertEquals(List.of(YearMonth.of(2026, 8), YearMonth.of(2026, 10), YearMonth.of(2026, 12), YearMonth.of(2027, 1)),
+            new ArrayList<>(result.keySet()));
     }
 
     private Expense installment(String description, int number, LocalDate dueDate) {
