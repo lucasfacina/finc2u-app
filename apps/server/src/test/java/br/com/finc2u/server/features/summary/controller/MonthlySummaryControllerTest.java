@@ -2,6 +2,7 @@ package br.com.finc2u.server.features.summary.controller;
 
 import br.com.finc2u.server.config.FixedClockTestConfig;
 import br.com.finc2u.server.config.GlobalExceptionHandler;
+import br.com.finc2u.server.exception.ResourceNotFoundException;
 import br.com.finc2u.server.features.category.entity.Category;
 import br.com.finc2u.server.features.summary.dto.MonthlySummaryRequest;
 import br.com.finc2u.server.features.summary.entity.MonthlySummary;
@@ -159,6 +160,16 @@ class MonthlySummaryControllerTest {
             .andExpect(jsonPath("$[0].totalExpenses").value(800))
             .andExpect(jsonPath("$[0].categoryTotals[0].categoryName").value("Alimentação"))
             .andExpect(jsonPath("$[0].categoryTotals[0].total").value(300));
+    }
+
+    @Test
+    void getHistoryByUserId_shouldReturnNotFound_whenTheUserDoesNotExist() throws Exception {
+        when(monthlySummaryService.getByUser(userId))
+            .thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        mockMvc.perform(get("/monthly-summary/history")
+                .param("userId", userId.toString()))
+            .andExpect(status().isNotFound());
     }
 
     @Test
