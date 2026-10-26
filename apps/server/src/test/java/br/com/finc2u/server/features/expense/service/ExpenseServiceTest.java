@@ -513,6 +513,7 @@ class ExpenseServiceTest {
         assertSame(category, created.getCategory());
         assertSame(cardAccount, created.getCardAccount());
         assertEquals(recurringExpense.getId(), created.getRecurringExpenseId());
+        assertEquals(LocalDate.of(2026, 10, 1), created.getRecurrenceMonth());
     }
 
     // Rodar duas vezes não duplica: a despesa do modelo naquele vencimento já existe.
@@ -867,8 +868,8 @@ class ExpenseServiceTest {
 
     // Monta o VO como o materializer faz: a feature expense recebe os dados do modelo, não o modelo.
     private RecurrenceExpenseCommand recurrenceCommand(RecurringExpense model, LocalDate dueDate) {
-        return new RecurrenceExpenseCommand(model.getId(), model.getDescription(), model.getValue(), dueDate, model.getUser(),
-            model.getCategory(), model.getCardAccount());
+        return new RecurrenceExpenseCommand(model.getId(), YearMonth.from(dueDate), model.getDescription(), model.getValue(), dueDate,
+            model.getUser(), model.getCategory(), model.getCardAccount());
     }
 
     private ExpenseCommand command(Expense expense, UUID cardAccountId, LocalDate purchaseDate) {
