@@ -242,4 +242,40 @@ public class ExpenseMapperTest {
         assertSame(card, target.getCardAccount());
     }
 
+    // Numa parcela, o tipo e a numeração são a identidade dela: o PUT muda o resto, e o que ele não manda não zera a numeração.
+    @Test
+    void applyEditableFields_shouldKeepTheTypeAndTheNumbering_whenTheTargetIsAnInstallmentOfAGroup() {
+        var groupId = UUID.randomUUID();
+        var target = Expense.builder()
+            .description("Notebook 5/10")
+            .value(BigDecimal.valueOf(100))
+            .dueDate(LocalDate.of(2026, 11, 5))
+            .expenseType(ExpenseType.PARCELED)
+            .paymentStatus(PaymentStatus.PENDING)
+            .currentInstallment(5)
+            .totalInstallment(10)
+            .installmentGroupId(groupId)
+            .build();
+        var source = Expense.builder()
+            .description("Notebook (parcela remarcada)")
+            .value(BigDecimal.valueOf(120))
+            .dueDate(LocalDate.of(2026, 11, 20))
+            .expenseType(ExpenseType.VARIABLE)
+            .paymentStatus(PaymentStatus.PAID)
+            .paidAt(LocalDate.of(2026, 11, 20))
+            .build();
+
+        expenseMapper.applyEditableFields(target, source);
+
+        assertEquals("Notebook (parcela remarcada)", target.getDescription());
+        assertEquals(0, BigDecimal.valueOf(120).compareTo(target.getValue()));
+        assertEquals(LocalDate.of(2026, 11, 20), target.getDueDate());
+        assertEquals(PaymentStatus.PAID, target.getPaymentStatus());
+        assertEquals(LocalDate.of(2026, 11, 20), target.getPaidAt());
+        assertEquals(ExpenseType.PARCELED, target.getExpenseType());
+        assertEquals(5, target.getCurrentInstallment());
+        assertEquals(10, target.getTotalInstallment());
+        assertEquals(groupId, target.getInstallmentGroupId());
+    }
+
 }
