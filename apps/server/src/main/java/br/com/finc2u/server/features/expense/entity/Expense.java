@@ -64,6 +64,10 @@ public class Expense extends BaseModel {
     // de expense, e o contrário fecharia um ciclo. O JPA não cria a FK; ela entra à mão na V1 do Flyway.
     private UUID recurringExpenseId;
 
+    // Mês em que o modelo recorrente gerou a despesa (sempre o dia 1; nulo nas demais). Anda junto com recurringExpenseId: os dois são
+    // nulos ou os dois preenchidos. É a chave da geração: o vencimento pode ser editado depois, o mês não.
+    private LocalDate recurrenceMonth;
+
     /*
      * Resolve a data de vencimento da despesa:
      * - Se dueDate já foi informado, ele prevalece (override manual).
