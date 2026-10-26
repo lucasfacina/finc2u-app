@@ -132,6 +132,26 @@ public class Expense extends BaseModel {
     }
 
     /*
+     * Confere se uma edição respeita o grupo de parcelas, comparando esta despesa com o que o usuário mandou (`edited`):
+     * - Numa parcela (com installmentGroupId), o tipo, o total e a parcela atual são a identidade dela: mandar outro valor é
+     *   erro, e valor nulo quer dizer "não mexer". Descrição, valor, vencimento e status seguem editáveis por parcela.
+     * - Numa despesa avulsa, não dá para virar parcelada por edição: o parcelamento nasce da compra, pelo POST.
+     */
+    public void assertEditKeepsTheInstallments(Expense edited) {
+        if (installmentGroupId == null && edited.isParceled())
+            throw new BusinessException("Para parcelar, lance a compra parcelada pelo POST.");
+
+        if (installmentGroupId == null) return;
+
+        var changesType = edited.expenseType != null && edited.expenseType != expenseType;
+        var changesTotal = edited.totalInstallment != null && !edited.totalInstallment.equals(totalInstallment);
+        var changesCurrent = edited.currentInstallment != null && !edited.currentInstallment.equals(currentInstallment);
+
+        if (changesType || changesTotal || changesCurrent)
+            throw new BusinessException("Uma parcela não muda de tipo nem de numeração: apague a compra e lance de novo.");
+    }
+
+    /*
      * Normaliza o estado derivado da despesa antes de persistir, na ordem correta:
      * resolve o vencimento, define o status padrão (que depende do vencimento) e aplica
      * as regras de parcelamento. As duas datas chegam resolvidas: a da compra (base do vencimento pelo cartão) e a de
