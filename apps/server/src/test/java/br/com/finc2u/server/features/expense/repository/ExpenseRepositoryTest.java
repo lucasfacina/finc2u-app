@@ -46,6 +46,8 @@ class ExpenseRepositoryTest {
     private static final int EXPENSES_PER_CARD = 2;
     private static final int LIST_STATEMENTS = 1;
     private static final LocalDate TODAY = LocalDate.of(2026, 6, 15);
+    private static final LocalDate OCTOBER = LocalDate.of(2026, 10, 1);
+    private static final LocalDate NOVEMBER = LocalDate.of(2026, 11, 1);
 
     @Autowired
     private ExpenseRepository expenseRepository;
@@ -304,24 +306,25 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void existsByRecurringExpenseIdAndDueDate_shouldMatchOnlyTheSameModelAndDueDate() {
+    void existsByRecurringExpenseIdAndRecurrenceMonth_shouldMatchOnlyTheSameModelAndMonth_whateverTheDueDate() {
         var model = persistRecurringExpense("Spotify");
         var otherModel = persistRecurringExpense("Netflix");
-        persistInstance(model, LocalDate.of(2026, 10, 5));
+        testEntityManager.persistAndFlush(newInstance(model, OCTOBER, LocalDate.of(2026, 11, 5)));
 
-        assertTrue(expenseRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 10, 5)));
-        assertFalse(expenseRepository.existsByRecurringExpenseIdAndDueDate(model.getId(), LocalDate.of(2026, 11, 5)));
-        assertFalse(expenseRepository.existsByRecurringExpenseIdAndDueDate(otherModel.getId(), LocalDate.of(2026, 10, 5)));
+        assertTrue(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), OCTOBER));
+        assertFalse(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(model.getId(), NOVEMBER),
+            "o vencimento cai em novembro, mas o mês de geração é outubro");
+        assertFalse(expenseRepository.existsByRecurringExpenseIdAndRecurrenceMonth(otherModel.getId(), OCTOBER));
     }
 
-    // Trava a premissa da idempotência: o banco recusa a segunda despesa do mesmo modelo no mesmo vencimento.
+    // Trava a premissa da idempotência: o banco recusa a segunda despesa do mesmo modelo no mesmo mês, mesmo com outro vencimento.
     @Test
-    void save_shouldFailWithUniqueViolation_whenTheModelAlreadyHasAnExpenseOnTheDueDate() {
+    void save_shouldFailWithUniqueViolation_whenTheModelAlreadyHasAnExpenseInTheMonth_evenWithAnotherDueDate() {
         var model = persistRecurringExpense("Spotify");
         persistInstance(model, LocalDate.of(2026, 10, 5));
 
         var exception = assertThrows(DataIntegrityViolationException.class,
-            () -> expenseRepository.saveAndFlush(newInstance(model, LocalDate.of(2026, 10, 5))));
+            () -> expenseRepository.saveAndFlush(newInstance(model, OCTOBER, LocalDate.of(2026, 10, 20))));
 
         ConstraintViolationException violation = null;
         for (Throwable cause = exception; cause != null && violation == null; cause = cause.getCause()) {
@@ -335,13 +338,14 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void save_shouldAcceptTheSameDueDate_forAnotherModelAndForExpensesWithoutModel() {
+    void save_shouldAcceptTheSameMonth_forAnotherModelAndForExpensesWithoutModel_andAnotherMonthForTheSameModel() {
         var model = persistRecurringExpense("Spotify");
         var otherModel = persistRecurringExpense("Netflix");
         var dueDate = LocalDate.of(2026, 10, 5);
         persistInstance(model, dueDate);
 
         assertDoesNotThrow(() -> {
+            expenseRepository.saveAndFlush(newInstance(model, LocalDate.of(2026, 11, 5)));
             expenseRepository.saveAndFlush(newInstance(otherModel, dueDate));
             expenseRepository.saveAndFlush(newInstance(null, dueDate));
             expenseRepository.saveAndFlush(newInstance(null, dueDate));
@@ -349,7 +353,7 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void detachFromRecurringExpense_shouldKeepTheExpensesOfTheModelWithoutTheLink_andLeaveTheOthersAlone() {
+    void detachFromRecurringExpense_shouldKeepTheExpensesOfTheModelWithoutTheLinkAndTheMonth_andLeaveTheOthersAlone() {
         var model = persistRecurringExpense("Spotify");
         var otherModel = persistRecurringExpense("Netflix");
         var october = persistInstance(model, LocalDate.of(2026, 10, 5));
@@ -361,8 +365,12 @@ class ExpenseRepositoryTest {
         resetPersistenceContext();
 
         assertNull(expenseRepository.findById(october.getId()).orElseThrow().getRecurringExpenseId());
+        assertNull(expenseRepository.findById(october.getId()).orElseThrow().getRecurrenceMonth());
         assertNull(expenseRepository.findById(november.getId()).orElseThrow().getRecurringExpenseId());
-        assertEquals(otherModel.getId(), expenseRepository.findById(other.getId()).orElseThrow().getRecurringExpenseId());
+        assertNull(expenseRepository.findById(november.getId()).orElseThrow().getRecurrenceMonth());
+        var untouched = expenseRepository.findById(other.getId()).orElseThrow();
+        assertEquals(otherModel.getId(), untouched.getRecurringExpenseId());
+        assertEquals(OCTOBER, untouched.getRecurrenceMonth());
     }
 
     private void resetPersistenceContext() {
@@ -438,6 +446,10 @@ class ExpenseRepositoryTest {
     }
 
     private Expense newInstance(RecurringExpense model, LocalDate dueDate) {
+        return newInstance(model, YearMonth.from(dueDate).atDay(1), dueDate);
+    }
+
+    private Expense newInstance(RecurringExpense model, LocalDate recurrenceMonth, LocalDate dueDate) {
         return Expense.builder()
             .description("Instância")
             .value(BigDecimal.TEN)
@@ -448,6 +460,9 @@ class ExpenseRepositoryTest {
             .category(persistCategory("Categoria da instância " + UUID.randomUUID()))
             .recurringExpenseId(model != null
                 ? model.getId()
+                : null)
+            .recurrenceMonth(model != null
+                ? recurrenceMonth
                 : null)
             .build();
     }
