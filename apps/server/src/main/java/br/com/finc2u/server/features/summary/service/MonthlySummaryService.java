@@ -100,17 +100,6 @@ public class MonthlySummaryService {
     }
 
     /**
-     * Calcula um mês só, sem propagar o carryover (o {@link #recalculateFrom} faz isso); a transação é deste ponto de entrada.
-     *
-     * @throws ResourceNotFoundException se o usuário não existir (lançada por {@code UserService#getById})
-     * @throws IllegalArgumentException  se o mês não estiver entre 1 e 12
-     */
-    @Transactional
-    public MonthlySummaryResult calculateOrRecalculate(UUID userId, Integer month, Integer year) {
-        return calculate(userId, month, year);
-    }
-
-    /**
      * Calcula o mês pedido (criando o resumo se ele não existir) e, em ordem crescente, os resumos que já existem nos meses
      * seguintes: cada um lê o anterior já atualizado. Não cria resumo de mês que não existe; se há uma lacuna entre dois meses, o
      * seguinte a ela fica com {@code previousMonthMissing}.
