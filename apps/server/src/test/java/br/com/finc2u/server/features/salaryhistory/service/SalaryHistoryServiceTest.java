@@ -85,6 +85,15 @@ class SalaryHistoryServiceTest {
     }
 
     @Test
+    void getByUser_shouldThrowResourceNotFound_andReadNothing_whenTheUserDoesNotExist() {
+        when(userService.getById(userId)).thenThrow(new ResourceNotFoundException("Usuário não encontrado com o ID: " + userId));
+
+        assertThrows(ResourceNotFoundException.class, () -> salaryHistoryService.getByUser(userId));
+
+        verifyNoInteractions(salaryHistoryRepository);
+    }
+
+    @Test
     void getByUser_shouldReturnHistoryOrderedByDateDesc() {
         var history1 = SalaryHistory.builder()
             .user(user)
